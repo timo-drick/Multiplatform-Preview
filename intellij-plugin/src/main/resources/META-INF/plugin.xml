@@ -1,0 +1,28 @@
+<idea-plugin>
+    <id>de.drick.compose.hotpreview.plugin</id>
+    <name>Multiplatform HotPreview</name>
+    <vendor email="support@jetbrains.com" url="http://www.jetbrains.com">JetBrains</vendor>
+
+    <description><![CDATA[
+A plugin that shows previews of Compose Multiplatform files.
+    ]]></description>
+
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.gradle</depends>
+    <depends>org.jetbrains.kotlin</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+        <fileEditorProvider implementation="de.drick.compose.hotpreview.HotPreviewSplitEditorProvider" />
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+        <action id="com.jetbrains.compose.ComposeDemoAction" class="com.jetbrains.compose.ComposeDemoAction"
+                text="Show Compose Demo...">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>
