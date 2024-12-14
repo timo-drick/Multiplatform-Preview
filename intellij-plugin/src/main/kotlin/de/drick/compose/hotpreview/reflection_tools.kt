@@ -1,13 +1,9 @@
 package de.drick.compose.hotpreview
 
 import com.intellij.openapi.vfs.VirtualFile
-import io.github.classgraph.ClassGraph
-import io.github.classgraph.MethodInfo
 import org.jetbrains.kotlin.idea.gradleTooling.get
 import org.jetbrains.kotlin.load.kotlin.PackagePartClassUtils
 import org.jetbrains.kotlin.name.FqName
-import java.io.File
-import kotlin.reflect.KClass
 import kotlin.reflect.jvm.kotlinFunction
 
 @Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.FUNCTION)
@@ -21,6 +17,8 @@ annotation class HotPreview(
     val fontScale: Float = 1f, // Should be between 0.5f and 2.0f
     val darkMode: Boolean = true,
 )
+
+private const val fqNameHotPreview = "de.drick.compose.hotpreview.HotPreview"
 
 data class ComposableFunctionInfo(
     val name: String,
@@ -40,7 +38,7 @@ fun analyzeClass(clazz: Class<*>): List<HotPreviewFunction> {
             method.kotlinFunction?.let { function ->
                 val annotations = function.annotations
                     .filter {
-                        it.toString().startsWith("@de.drick.compose.hotpreview.HotPreview")
+                        it.toString().startsWith("@$fqNameHotPreview")
                     }.map {
                         HotPreview(
                             name = it["name"]?.toString() ?: "",
@@ -60,6 +58,12 @@ fun analyzeClass(clazz: Class<*>): List<HotPreviewFunction> {
             }
         }
 }
+
+fun kotlinFileHasHotPreview(kotlinFile: VirtualFile): Boolean = kotlinFile.inputStream
+    .bufferedReader()
+    .useLines { lines ->
+        lines.any { it.contains(fqNameHotPreview) }
+    }
 
 private val packageMatcher = Regex("""package\s+([a-z][a-z0-9_]*(\.[a-z0-9_]+)*[a-z0-9_]*)""")
 fun kotlinFileClassName(kotlinFile: VirtualFile): String {

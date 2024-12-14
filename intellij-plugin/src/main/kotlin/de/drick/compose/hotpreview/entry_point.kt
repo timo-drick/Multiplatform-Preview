@@ -11,7 +11,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.ui.components.BorderLayoutPanel
 import java.beans.PropertyChangeListener
 
-private const val fqNameHotPreview = "de.drick.compose.hotpreview.HotPreview"
 
 class HotPreviewSplitEditor(
     editor: TextEditor,
@@ -32,6 +31,7 @@ class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewVi
     }
     override fun accept(project: Project, file: VirtualFile): Boolean {
         if (file.extension != "kt") return false
+        return kotlinFileHasHotPreview(file)
         /*PsiManager.getInstance(project).findFile(file)?.let { psiFile ->
             var annotationFound = false
             psiFile.accept(object : KotlinRecursiveElementVisitor() {
@@ -80,7 +80,7 @@ class HotPreviewView(
     private val file: VirtualFile
 ) : UserDataHolder by UserDataHolderBase(), FileEditor {
 
-    private val mainComponent = HotPreviewWindow(project = project, file = file)
+    private val mainComponent by lazy { HotPreviewWindow(project = project, file = file) }
 
     override fun getName() = "HotPreview"
     override fun getComponent() = mainComponent
@@ -100,16 +100,6 @@ class HotPreviewWindow(
 ) : BorderLayoutPanel(), Disposable {
     val log = Logger.getInstance(HotPreviewWindow::class.java)
     init {
-        /*fun getLibraryUrl(virtualFile: VirtualFile): String? {
-            val virtualFileUrl = virtualFile.toVirtualFileUrl(fileManager)
-            return workspaceModel.currentSnapshot.getVirtualFileUrlIndex()
-                .findEntitiesByUrl(virtualFileUrl)
-                .filterIsInstance<LibraryEntity>()
-                .mapNotNull { it.roots.find {
-                    it.type == LibraryRootTypeId.SOURCES
-                } }.firstOrNull()
-                ?.url?.presentableUrl
-        }*/
 
         /*PsiManager.getInstance(project).findFile(file)?.let { file ->
             file.accept(object : KotlinRecursiveElementVisitor() {
