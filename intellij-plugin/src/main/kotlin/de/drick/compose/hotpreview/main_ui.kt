@@ -1,6 +1,8 @@
 package de.drick.compose.hotpreview
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.Icon
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
@@ -9,12 +11,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
 fun MainScreen(project: Project, file: VirtualFile) {
@@ -28,24 +28,32 @@ fun MainScreen(project: Project, file: VirtualFile) {
         previewList = renderPreviewForClass(fileClass)
     }
     fun refresh() {
-        scope.launch {
-            projectAnalyzer.executeGradleTask(file)
-            render()
+        scope.launch(Dispatchers.Default) {
+            runCatchingCancellationAware {
+                projectAnalyzer.executeGradleTask(file)
+                render()
+            }.onFailure { err ->
+                err.printStackTrace()
+            }
         }
     }
     LaunchedEffect(Unit) {
-        render()
-        refresh()
+        runCatchingCancellationAware {
+            render()
+            refresh()
+        }.onFailure { err ->
+            err.printStackTrace()
+        }
     }
 
     HotPreviewTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
-            Column {
+            Column(Modifier.fillMaxSize()) {
                 IconButton(onClick = { refresh() }) {
                     Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                 }
                 PreviewGridPanel(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
                     hotPreviewList = previewList
                 )
             }

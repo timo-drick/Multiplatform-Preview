@@ -63,6 +63,7 @@ fun PreviewGridPanel(
             Modifier
                 .padding(scrollbarPadding)
                 .verticalScroll(stateVertical)
+                .fillMaxWidth()
             //.horizontalScroll(stateHorizontal)
         ) {
             FlowRow(
