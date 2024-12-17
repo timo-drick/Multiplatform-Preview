@@ -3,21 +3,36 @@ package de.drick.compose.hotpreview
 import androidx.compose.ui.awt.ComposePanel
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.*
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.UserDataHolder
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiManager
 import com.intellij.util.ui.components.BorderLayoutPanel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.jetbrains.kotlin.idea.base.psi.kotlinFqName
+import org.jetbrains.kotlin.idea.k2.codeinsight.structuralsearch.visitor.KotlinRecursiveElementVisitor
+import org.jetbrains.kotlin.psi.KtAnnotationEntry
+import org.jetbrains.kotlin.psi.KtImportList
+import org.jetbrains.kotlin.psi.KtNamedFunction
 import java.beans.PropertyChangeListener
 
 
 class HotPreviewSplitEditor(
     editor: TextEditor,
-    preview: HotPreviewView, //TODO own implementation
+    preview: HotPreviewView,
 ) : TextEditorWithPreview(
     editor, preview, "Kotlin editor with HotPreview", Layout.SHOW_EDITOR_AND_PREVIEW
 )
+
+
+// Source of file inspection from Jetbrains sources:
+// https://github.com/JetBrains/android/blob/master/intellij.android.compose-common/src/com/android/tools/compose/inspection/BasePreviewAnnotationInspection.kt
+
 
 class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewViewProvider()) {
     override fun getEditorTypeId() = "hotpreview-preview-split-editor"
@@ -32,23 +47,35 @@ class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewVi
     override fun accept(project: Project, file: VirtualFile): Boolean {
         if (file.extension != "kt") return false
         return kotlinFileHasHotPreview(file)
-        /*PsiManager.getInstance(project).findFile(file)?.let { psiFile ->
-            var annotationFound = false
+        /*var annotationFound = false
+        PsiManager.getInstance(project).findFile(file)?.let { psiFile ->
+            /*psiFile.accept(object : KotlinRecursiveElementVisitor() {
+                /*override fun visitImportList(importList: KtImportList) {
+                    importList.imports.forEach {
+                        println("Import: ${it.name}")
+                    }
+                }*/
+            })*/
             psiFile.accept(object : KotlinRecursiveElementVisitor() {
                 override fun visitNamedFunction(function: KtNamedFunction) {
                     val annotations = function.annotations
                     val functionName = function.name
-
-                    annotationFound = true
+                    val found = function.annotationEntries.any { annotationEntry ->
+                        val name = annotationEntry.name
+                        val shortName = annotationEntry.shortName
+                        val type = annotationEntry.elementType
+                        val typeRef = annotationEntry.typeReference
+                        false
+                    }
                 }
             })
-            return annotationFound
-        }*/
+        }
+        return annotationFound
 
+         */
         //return true//checkedFile?.language == "Kotlin"
-        return true
+        //return true
     }
-
 }
 
 class HotPreviewViewProvider : WeighedFileEditorProvider() { //, AsyncFileEditorProvider {
@@ -60,7 +87,7 @@ class HotPreviewViewProvider : WeighedFileEditorProvider() { //, AsyncFileEditor
         document: Document?,
         editorCoroutineScope: CoroutineScope
     ): FileEditor = withContext(Dispatchers.Unconfined) {
-        HotPreviewFileEditor(project, file)
+        HotPreviewView(project, file)
     }*/
 
     override fun createEditor(

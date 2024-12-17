@@ -6,19 +6,7 @@ import org.jetbrains.kotlin.load.kotlin.PackagePartClassUtils
 import org.jetbrains.kotlin.name.FqName
 import kotlin.reflect.jvm.kotlinFunction
 
-@Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.FUNCTION)
-@Repeatable
-annotation class HotPreview(
-    val name: String = "",
-    val group: String = "",    // Not used yet!
-    val widthDp: Int = -1,
-    val heightDp: Int = -1,
-    //val locale: String = "", // Not supported yet!
-    val fontScale: Float = 1f, // Should be between 0.5f and 2.0f
-    val darkMode: Boolean = true,
-)
-
-private const val fqNameHotPreview = "de.drick.compose.hotpreview.HotPreview"
+private val fqNameHotPreview = requireNotNull(HotPreview::class.qualifiedName)
 
 data class ComposableFunctionInfo(
     val name: String,
@@ -45,6 +33,7 @@ fun analyzeClass(clazz: Class<*>): List<HotPreviewFunction> {
                             group = it["group"]?.toString() ?: "",
                             widthDp = it["widthDp"] as Int,
                             heightDp = it["heightDp"] as Int,
+                            locale = it["locale"] as String,
                             fontScale = it["fontScale"] as Float,
                             darkMode = it["darkMode"] as Boolean
                         )
