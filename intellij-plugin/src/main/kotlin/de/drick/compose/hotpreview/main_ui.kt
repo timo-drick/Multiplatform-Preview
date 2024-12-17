@@ -3,12 +3,6 @@ package de.drick.compose.hotpreview
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.Icon
-import androidx.compose.material.Surface
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -19,10 +13,12 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
-import de.drick.compose.hotpreview.livecompile.SourceSet
 import de.drick.compose.hotpreview.livecompile.hotRecompileFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.jetbrains.jewel.ui.component.Icon
+import org.jetbrains.jewel.ui.component.IconButton
+import org.jetbrains.jewel.ui.icons.AllIconsKeys
 import java.io.File
 
 
@@ -94,17 +90,13 @@ fun MainScreen(project: Project, file: VirtualFile) {
         }
     }
 
-    HotPreviewTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            Column(Modifier.fillMaxSize()) {
-                IconButton(onClick = { refresh() }) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                }
-                PreviewGridPanel(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                    hotPreviewList = previewList
-                )
-            }
+    Column(Modifier.fillMaxSize()) {
+        IconButton(onClick = { refresh() }) {
+            Icon(AllIconsKeys.General.Refresh, contentDescription = "Refresh")
         }
+        PreviewGridPanel(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            hotPreviewList = previewList
+        )
     }
 }

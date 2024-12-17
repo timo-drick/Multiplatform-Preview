@@ -13,6 +13,7 @@ group = "de.drick.compose.hotpreview"
 version = "1.0-SNAPSHOT"
 
 repositories {
+    maven("https://packages.jetbrains.team/maven/p/kpm/public/")
     mavenCentral()
     google()
     intellijPlatform {
@@ -24,17 +25,33 @@ repositories {
 }
 
 dependencies {
+    val ijPlatform = "2024.3"
     intellijPlatform {
-        intellijIdeaCommunity("2024.3")
+        intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
         bundledPlugins("org.jetbrains.kotlin", "com.intellij.gradle") // Plugins must be also provided in plugin.xml!!!
     }
-    implementation(compose.desktop.currentOs)
-    implementation(compose.material3)
-    implementation(kotlin("reflect"))
-    implementation(kotlin("compiler-embeddable"))
+    implementation(compose.desktop.currentOs) {
+        exclude(group = "org.jetbrains.compose.material")
+        exclude(group = "org.jetbrains.kotlinx")
+    }
 
-    implementation("de.drick.compose:hotpreview:0.1.0")
+    // See https://github.com/JetBrains/Jewel/releases for the release notes
+    // The platform version is a supported major IJP version (e.g., 232 or 233 for 2023.2 and 2023.3 respectively)
+    implementation("org.jetbrains.jewel:jewel-ide-laf-bridge-243:0.27.0")
+
+    //implementation(compose.material3)
+
+    implementation("org.jetbrains.kotlin:kotlin-reflect") {
+        exclude(group = "org.jetbrains.kotlinx")
+    }
+    implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable") {
+        exclude(group = "org.jetbrains.kotlinx")
+    }
+
+    implementation("de.drick.compose:hotpreview:0.1.0") {
+        exclude(group = "org.jetbrains.kotlinx")
+    }
 
     testImplementation("junit", "junit", "4.12")
 }

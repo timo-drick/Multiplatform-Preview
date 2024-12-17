@@ -2,23 +2,16 @@ package de.drick.compose.hotpreview
 
 import androidx.compose.ui.awt.ComposePanel
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.*
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.UserDataHolder
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiManager
 import com.intellij.util.ui.components.BorderLayoutPanel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jetbrains.kotlin.idea.base.psi.kotlinFqName
-import org.jetbrains.kotlin.idea.k2.codeinsight.structuralsearch.visitor.KotlinRecursiveElementVisitor
-import org.jetbrains.kotlin.psi.KtAnnotationEntry
-import org.jetbrains.kotlin.psi.KtImportList
-import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
 import java.beans.PropertyChangeListener
 
 
@@ -78,27 +71,20 @@ class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewVi
     }
 }
 
-class HotPreviewViewProvider : WeighedFileEditorProvider() { //, AsyncFileEditorProvider {
+class HotPreviewViewProvider : WeighedFileEditorProvider(), AsyncFileEditorProvider {
     override fun accept(project: Project, file: VirtualFile) = file.extension == "kt"
 
-    /*override suspend fun createFileEditor(
+    override suspend fun createFileEditor(
         project: Project,
         file: VirtualFile,
         document: Document?,
         editorCoroutineScope: CoroutineScope
-    ): FileEditor = withContext(Dispatchers.Unconfined) {
+    ): FileEditor = withContext(editorCoroutineScope.coroutineContext) {
         HotPreviewView(project, file)
-    }*/
-
-    override fun createEditor(
-        project: Project,
-        file: VirtualFile,
-    ): FileEditor {
-        return HotPreviewView(project, file)
     }
 
+    override fun createEditor(project: Project, file: VirtualFile, ) = HotPreviewView(project, file)
     override fun getEditorTypeId() = "hotpreview-preview-view"
-
     override fun getPolicy(): FileEditorPolicy = FileEditorPolicy.HIDE_DEFAULT_EDITOR
 }
 
@@ -125,7 +111,7 @@ class HotPreviewWindow(
     private val project: Project,
     private val file: VirtualFile
 ) : BorderLayoutPanel(), Disposable {
-    val log = Logger.getInstance(HotPreviewWindow::class.java)
+    //val log = Logger.getInstance(HotPreviewWindow::class.java)
     init {
 
         /*PsiManager.getInstance(project).findFile(file)?.let { file ->
@@ -142,7 +128,9 @@ class HotPreviewWindow(
         }*/
         val composePanel = ComposePanel().apply {
             setContent {
-                MainScreen(project, file)
+                SwingBridgeTheme {
+                    MainScreen(project, file)
+                }
             }
         }
         composePanel.bounds = bounds
