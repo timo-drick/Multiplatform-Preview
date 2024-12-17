@@ -1,2 +1,6 @@
 .idea/
+/build
+.kotlin
+.gradle
+
 

@@ -20,6 +20,7 @@ repositories {
         //releases()
         //marketplace()
     }
+    mavenLocal()
 }
 
 dependencies {
@@ -30,8 +31,11 @@ dependencies {
     }
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
-    implementation(compose.components.uiToolingPreview)
     implementation(kotlin("reflect"))
+    implementation(kotlin("compiler-embeddable"))
+
+    implementation("de.drick.compose:hotpreview:0.1.0")
+
     testImplementation("junit", "junit", "4.12")
 }
 
