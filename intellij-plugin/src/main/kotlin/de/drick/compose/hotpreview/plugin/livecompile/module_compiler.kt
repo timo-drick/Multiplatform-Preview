@@ -1,7 +1,6 @@
-package de.drick.compose.hotpreview.livecompile
+package de.drick.compose.hotpreview.plugin.livecompile
 
-import de.drick.compose.hotpreview.ProjectAnalyzer
-import de.drick.compose.hotpreview.runCatchingCancellationAware
+import de.drick.compose.hotpreview.plugin.runCatchingCancellationAware
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

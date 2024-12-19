@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview
+package de.drick.compose.hotpreview.plugin
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,7 +13,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
-import de.drick.compose.hotpreview.livecompile.hotRecompileFlow
+import de.drick.compose.hotpreview.plugin.livecompile.hotRecompileFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.jewel.ui.component.Icon
@@ -31,6 +31,11 @@ fun MainScreen(project: Project, file: VirtualFile) {
     }
     suspend fun render() {
         val fileClass = projectAnalyzer.loadFileClass(file)
+        // Workaround for legacy resource loading in old compose code
+        // See androidx.compose.ui.res.ClassLoaderResourceLoader
+        // It uses the contextClassLoader to load the resources.
+        Thread.currentThread().contextClassLoader = fileClass.classLoader
+        // For new compose.components resource system a LocalCompositionProvider is used.
         previewList = renderPreviewForClass(fileClass)
     }
     fun refresh() {

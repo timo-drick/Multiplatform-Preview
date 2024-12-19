@@ -1,12 +1,13 @@
-package de.drick.compose.hotpreview
+package de.drick.compose.hotpreview.plugin
 
 import com.intellij.openapi.vfs.VirtualFile
+import de.drick.compose.hotpreview.HotPreview
 import org.jetbrains.kotlin.idea.gradleTooling.get
 import org.jetbrains.kotlin.load.kotlin.PackagePartClassUtils
 import org.jetbrains.kotlin.name.FqName
 import kotlin.reflect.jvm.kotlinFunction
 
-private val fqNameHotPreview = requireNotNull(HotPreview::class.qualifiedName)
+val fqNameHotPreview = requireNotNull(HotPreview::class.qualifiedName)
 
 data class ComposableFunctionInfo(
     val name: String,

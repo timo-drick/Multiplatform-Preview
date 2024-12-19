@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview
+package de.drick.compose.hotpreview.plugin
 
 import androidx.compose.ui.ImageComposeScene
 import com.intellij.execution.executors.DefaultRunExecutor
@@ -36,7 +36,7 @@ class WorkspaceAnalyzer(
     private fun getClassLoader(file: VirtualFile) =
         URLClassLoader(getClassPathForFile(file).toTypedArray(), ImageComposeScene::class.java.classLoader)
 
-    private fun getClassPathForFile(file: VirtualFile): Set<URL> {
+    fun getClassPathForFile(file: VirtualFile): Set<URL> {
         val fileModule = getModule(file)
         requireNotNull(fileModule) { "No module found!" }
         val baseModuleName = fileModule.name.substringBeforeLast(".")
@@ -44,7 +44,7 @@ class WorkspaceAnalyzer(
         val desktopModule = currentSnapshot.entities(ModuleEntity::class.java)
             .filter { it.name.startsWith(baseModuleName) }
             //.filter { it.isTestModule.not() }
-            .find { it.name.contains("desktopMain") }
+            .find { it.name.contains("desktopMain") || it.name.endsWith("main") }
         requireNotNull(desktopModule) { "No desktop module found!" }
         val modules = desktopModule.dependencies
             .filterIsInstance<ModuleDependency>()

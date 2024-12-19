@@ -10,7 +10,10 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
-        <fileEditorProvider implementation="de.drick.compose.hotpreview.HotPreviewSplitEditorProvider" />
+        <fileEditorProvider implementation="de.drick.compose.hotpreview.plugin.HotPreviewSplitEditorProvider" />
+        <!--
+        <deadCode implementation="de.drick.compose.hotpreview.plugin.HotPreviewEntryPoint" />
+        -->
     </extensions>
 
 </idea-plugin>

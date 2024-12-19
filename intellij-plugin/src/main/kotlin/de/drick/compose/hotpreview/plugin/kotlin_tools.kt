@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview
+package de.drick.compose.hotpreview.plugin
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope

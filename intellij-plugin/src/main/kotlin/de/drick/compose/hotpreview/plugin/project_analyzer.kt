@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview
+package de.drick.compose.hotpreview.plugin
 
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
@@ -7,9 +7,6 @@ import androidx.compose.ui.unit.dp
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings
-import com.intellij.openapi.externalSystem.model.task.ExternalSystemTask
-import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskId
-import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskNotificationListener
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
 import com.intellij.openapi.externalSystem.task.TaskCallback
 import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
@@ -23,16 +20,17 @@ import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
-import de.drick.compose.hotpreview.livecompile.SourceSet
+import de.drick.compose.hotpreview.plugin.livecompile.SourceSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jetbrains.plugins.gradle.service.task.GradleTaskManager
-import org.jetbrains.plugins.gradle.settings.GradleExecutionSettings
+import org.jetbrains.kotlin.idea.base.facet.isMultiPlatformModule
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import java.io.File
+import java.io.InputStream
 import java.net.URL
 import java.net.URLClassLoader
+import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -60,7 +58,7 @@ class ProjectAnalyzer(
         val jvmModule = getJvmTargetModule(module)
         return readAction {
             val compiler = CompilerModuleExtension.getInstance(jvmModule)
-            requireNotNull(compiler?.compilerOutputPath?.presentableUrl) { "Compiler output path not found!" }
+            requireNotNull(compiler?.compilerOutputUrl) { "Compiler output path not found!" }
         }
     }
 
@@ -117,22 +115,31 @@ class ProjectAnalyzer(
         }
     }
 
-    private suspend fun getClassLoader(file: VirtualFile) =
-        URLClassLoader(
-            getClassPath(getJvmTargetModule(requireNotNull(getModule(file))))
-                .map { File(it).toURI().toURL() }
-                .toTypedArray(),
-            ImageComposeScene::class.java.classLoader
-        )
+    private suspend fun getClassLoader(file: VirtualFile): URLClassLoader =
+        getClassPath(getJvmTargetModule(requireNotNull(getModule(file))))
+            .map { File(it).toURI().toURL() }
+            .toTypedArray().let {
+                URLClassLoader(
+                    it,
+                    ImageComposeScene::class.java.classLoader
+                )
+            }
 
     private suspend fun getJvmTargetModule(module: Module): Module {
         val baseModuleName = module.name.substringBeforeLast(".")
         // TODO not sure if the name is always desktop for jvm modules
         return readAction {
-            val desktopModule = project.modules.filter { it.name.startsWith(baseModuleName) }
-                //.filter { it.isTestModule.not() }
-                .find { it.name.contains("jvmMain") || it.name.contains("desktopMain") }
-            requireNotNull(desktopModule) { "No desktop module found!" }
+            if (module.isMultiPlatformModule) {
+                val desktopModule = project.modules.filter { it.name.startsWith(baseModuleName) }
+                    //.filter { it.isTestModule.not() }
+                    .find { it.name.contains("jvmMain") || it.name.contains("desktopMain") }
+                requireNotNull(desktopModule) { "No desktop module found!" }
+            } else {
+                val desktopModule = project.modules.filter { it.name.startsWith(baseModuleName) }
+                    //.filter { it.isTestModule.not() }
+                    .find { it.name.substringAfterLast(".") == "main" }
+                requireNotNull(desktopModule) { "No desktop module found!" }
+            }
         }
     }
 
@@ -171,7 +178,7 @@ class ProjectAnalyzer(
         readAction { ProjectFileIndex.getInstance(project).getModuleForFile(file) }
 
     private suspend fun getModulePath(module: Module) =
-        ExternalSystemApiUtil.getExternalProjectPath(module)
+        readAction { ExternalSystemApiUtil.getExternalProjectPath(module) }
 }
 
 
@@ -190,6 +197,7 @@ fun renderPreviewForClass(clazz: Class<*>): List<HotPreviewData> =
             val heightDp = annotation.heightDp.dp
             method?.let {
                 renderMethod(
+                    clazz = clazz,
                     method = it,
                     size = DpSize(widthDp, heightDp),
                     density = Density(2f, annotation.fontScale),

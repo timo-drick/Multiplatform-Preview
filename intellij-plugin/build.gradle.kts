@@ -40,6 +40,10 @@ dependencies {
     // The platform version is a supported major IJP version (e.g., 232 or 233 for 2023.2 and 2023.3 respectively)
     implementation("org.jetbrains.jewel:jewel-ide-laf-bridge-243:0.27.0")
 
+    implementation(compose.components.resources) {
+        exclude(group = "org.jetbrains.kotlinx")
+    }
+
     //implementation(compose.material3)
 
     implementation("org.jetbrains.kotlin:kotlin-reflect") {
