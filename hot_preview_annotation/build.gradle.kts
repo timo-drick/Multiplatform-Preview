@@ -3,8 +3,6 @@ import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.compose")
-    id("org.jetbrains.compose")
     id("com.vanniktech.maven.publish") version Versions.vanniktechPlugin
 }
 
@@ -20,9 +18,6 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(compose.runtime)
-                implementation(compose.foundation)
-                implementation(compose.ui)
             }
         }
     }
@@ -39,14 +34,14 @@ mavenPublishing {
         )
     )
     publishToMavenCentral(SonatypeHost.S01, automaticRelease = true)
-    //signAllPublications()
+    signAllPublications()
 
     coordinates(mavenGroupId, mavenArtifactId, mavenVersion)
 
     pom {
         name.set("Compose Multiplatform Preview")
         description.set("""
-            A plugin that shows previews of Compose Multiplatform files.
+            A plugin that shows previews of Compose Multiplatform kotlin files.
         """.trimIndent())
         url.set("https://github.com/timo-drick/Mutliplatform-Preview")
         licenses {
