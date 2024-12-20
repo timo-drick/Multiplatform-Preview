@@ -125,7 +125,7 @@ class ProjectAnalyzer(
                 )
             }
 
-    private suspend fun getJvmTargetModule(module: Module): Module {
+    suspend fun getJvmTargetModule(module: Module): Module {
         val baseModuleName = module.name.substringBeforeLast(".")
         // TODO not sure if the name is always desktop for jvm modules
         return readAction {
@@ -153,18 +153,16 @@ class ProjectAnalyzer(
         }
     }
 
-    private suspend fun getClassPath(module: Module): Set<String> {
-        val fullCP = readAction {
-            fun getClassPathArray(module: Module) = ModuleRootManager.getInstance(module)
-                .orderEntries()
-                .classesRoots
-                .map { it.presentableUrl }
-            getClassPathArray(module) + ModuleRootManager.getInstance(module)
-                .dependencies
-                .flatMap { getClassPathArray(it) }
-        }
-        return fullCP.toSet()
-    }
+    private fun getClassPathArray(module: Module) = ModuleRootManager.getInstance(module)
+        .orderEntries()
+        .classesRoots
+        .map { it.presentableUrl }
+
+    private suspend fun getClassPath(module: Module): Set<String> = readAction {
+        getClassPathArray(module) + ModuleRootManager.getInstance(module)
+            .dependencies
+            .flatMap { getClassPathArray(it) }
+    }.toSet()
 
     private suspend fun getSourcePath(module: Module) = readAction {
         ModuleRootManager.getInstance(module)
@@ -174,7 +172,7 @@ class ProjectAnalyzer(
     }
 
 
-    private suspend fun getModule(file: VirtualFile) =
+    suspend fun getModule(file: VirtualFile) =
         readAction { ProjectFileIndex.getInstance(project).getModuleForFile(file) }
 
     private suspend fun getModulePath(module: Module) =

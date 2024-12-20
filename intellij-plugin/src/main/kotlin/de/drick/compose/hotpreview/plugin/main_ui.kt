@@ -1,10 +1,10 @@
 package de.drick.compose.hotpreview.plugin
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -29,6 +29,8 @@ fun MainScreen(project: Project, file: VirtualFile) {
     val projectAnalyzer = remember {
         ProjectAnalyzer(project)
     }
+    var scale by remember { mutableStateOf(1f) }
+
     suspend fun render() {
         val fileClass = projectAnalyzer.loadFileClass(file)
         // Workaround for legacy resource loading in old compose code
@@ -76,6 +78,10 @@ fun MainScreen(project: Project, file: VirtualFile) {
             val sourceSet = projectAnalyzer.getSourceFolder(file)
             val classPath = projectAnalyzer.getJvmClassPath(file)
             val jdkHome = projectAnalyzer.getSdkInfo()
+            val module = projectAnalyzer.getModule(file)
+            requireNotNull(module)
+            val jvmModule = projectAnalyzer.getJvmTargetModule(module)
+            println("$jvmModule")
 
             hotRecompileFlow(
                 compile = {
@@ -96,12 +102,21 @@ fun MainScreen(project: Project, file: VirtualFile) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        IconButton(onClick = { refresh() }) {
-            Icon(AllIconsKeys.General.Refresh, contentDescription = "Refresh")
+        Row(Modifier.align(Alignment.End).padding(8.dp)) {
+            IconButton(onClick = { refresh() }) {
+                Icon(AllIconsKeys.General.Refresh, contentDescription = "Refresh")
+            }
+            IconButton(onClick = { scale += .2f }) {
+                Icon(AllIconsKeys.General.ZoomIn, contentDescription = "ZoomIn")
+            }
+            IconButton(onClick = { scale -= .2f }) {
+                Icon(AllIconsKeys.General.ZoomOut, contentDescription = "ZoomOut")
+            }
         }
         PreviewGridPanel(
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            hotPreviewList = previewList
+            hotPreviewList = previewList,
+            scale = scale
         )
     }
 }

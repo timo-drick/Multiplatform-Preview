@@ -1,5 +1,5 @@
 <idea-plugin>
-    <vendor email="support@jetbrains.com" url="http://www.jetbrains.com">JetBrains</vendor>
+    <vendor url="https://github.com/timo-drick/Mutliplatform-Preview">Timo Drick</vendor>
 
 
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
@@ -11,9 +11,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
         <fileEditorProvider implementation="de.drick.compose.hotpreview.plugin.HotPreviewSplitEditorProvider" />
-        <!--
         <deadCode implementation="de.drick.compose.hotpreview.plugin.HotPreviewEntryPoint" />
-        -->
     </extensions>
 
 </idea-plugin>

@@ -1,7 +1,12 @@
 package de.drick.compose.hotpreview.plugin
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ImageComposeScene
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
@@ -12,7 +17,9 @@ import org.jetbrains.jewel.ui.component.Text
 
 @Composable
 fun Preview1() {
-    Text("Hello Preview")
+    Box(Modifier.background(Color.Gray).fillMaxSize()) {
+        Text("Hello Preview")
+    }
 }
 
 @Composable

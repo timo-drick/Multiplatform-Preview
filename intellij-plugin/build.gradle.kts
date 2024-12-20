@@ -26,11 +26,15 @@ repositories {
 
 dependencies {
     val ijPlatform = "2024.3"
+    val branch = "243"
+
     intellijPlatform {
+        //androidStudio(ijPlatform)
         intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
         bundledPlugins("org.jetbrains.kotlin", "com.intellij.gradle") // Plugins must be also provided in plugin.xml!!!
     }
+
     implementation(compose.desktop.currentOs) {
         exclude(group = "org.jetbrains.compose.material")
         exclude(group = "org.jetbrains.kotlinx")
@@ -38,7 +42,7 @@ dependencies {
 
     // See https://github.com/JetBrains/Jewel/releases for the release notes
     // The platform version is a supported major IJP version (e.g., 232 or 233 for 2023.2 and 2023.3 respectively)
-    implementation("org.jetbrains.jewel:jewel-ide-laf-bridge-243:0.27.0")
+    implementation("org.jetbrains.jewel:jewel-ide-laf-bridge-$branch:0.27.0")
 
     implementation(compose.components.resources) {
         exclude(group = "org.jetbrains.kotlinx")
@@ -72,7 +76,7 @@ intellijPlatform {
 
     pluginConfiguration {
         id = "de.drick.compose.hotpreview.plugin"
-        name = "HotPreview plugin"
+        name = "Compose Multiplatform HotPreview"
         version = "0.1.0"
 
         description = "A plugin that shows previews of Compose Multiplatform files."

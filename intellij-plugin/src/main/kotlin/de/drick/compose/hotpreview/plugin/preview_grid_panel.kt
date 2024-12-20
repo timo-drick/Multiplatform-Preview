@@ -6,29 +6,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.*
 import de.drick.compose.hotpreview.HotPreview
 import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
+import org.jetbrains.jewel.foundation.ExperimentalJewelApi
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.component.Text
+import kotlin.math.roundToInt
 
-@HotPreview(name = "PreviewItem", widthDp = 100, heightDp = 100)
-@Composable
-fun PreviewPreviewItem() {
-    SwingBridgeTheme {
-        val renderedImage = renderPreview(DpSize(100.dp, 100.dp)) {
-            Preview1()
-        }
-        val data = HotPreview(
-            name = "Test image",
-        )
-        PreviewItem("Test", data, renderedImage)
-    }
-}
 
 @Composable
-fun PreviewItem(name: String, annotation: HotPreview, image: RenderedImage?) {
+fun PreviewItem(name: String, annotation: HotPreview, image: RenderedImage?, scale: Float = 1f) {
     val borderStroke = BorderStroke(2.dp, JewelTheme.globalColors.outlines.focused)
     Column(Modifier) {
         val postFix = if (annotation.name.isNotBlank()) " - ${annotation.name}" else ""
@@ -36,9 +25,11 @@ fun PreviewItem(name: String, annotation: HotPreview, image: RenderedImage?) {
         Spacer(Modifier.height(8.dp))
         if (image != null) {
             Image(
-                modifier = Modifier.size(image.size).border(borderStroke),
+                modifier = Modifier
+                    .requiredSize(image.size * scale)
+                    .border(borderStroke),
                 bitmap = image.image,
-                contentScale = ContentScale.Fit,
+                contentScale = ContentScale.Crop,
                 contentDescription = "Preview of $name"
             )
         }
@@ -49,12 +40,13 @@ fun PreviewItem(name: String, annotation: HotPreview, image: RenderedImage?) {
 @Composable
 fun PreviewGridPanel(
     hotPreviewList: List<HotPreviewData>,
+    scale: Float,
     modifier: Modifier = Modifier
 ) {
     val stateVertical = rememberScrollState()
     val stateHorizontal = rememberScrollState()
     val scrollbarPadding = 16.dp
-    Box(Modifier.fillMaxSize()) {
+    Box(modifier.fillMaxSize()) {
         Box(
             Modifier
                 .padding(scrollbarPadding)
@@ -68,7 +60,12 @@ fun PreviewGridPanel(
             ) {
                 hotPreviewList.forEach { preview ->
                     preview.function.annotation.forEachIndexed { index, annotation ->
-                        PreviewItem(preview.function.name, annotation, preview.image.getOrNull(index))
+                        PreviewItem(
+                            name = preview.function.name,
+                            annotation = annotation,
+                            image = preview.image.getOrNull(index),
+                            scale = scale
+                        )
                     }
                 }
             }

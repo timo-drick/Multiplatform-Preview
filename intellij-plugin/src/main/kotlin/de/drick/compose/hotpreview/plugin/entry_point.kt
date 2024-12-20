@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
 import org.jdom.Element
 import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
+import org.jetbrains.jewel.foundation.ExperimentalJewelApi
 import java.beans.PropertyChangeListener
 
 
@@ -32,11 +33,14 @@ class HotPreviewSplitEditor(
 
 // Source of file inspection from Jetbrains sources:
 // https://github.com/JetBrains/android/blob/master/intellij.android.compose-common/src/com/android/tools/compose/inspection/BasePreviewAnnotationInspection.kt
+// TODO
+// Look into Android Studio sources for preview entry points:
+// compose-designer/src/com/android/tools/idea/compose/preview/ComposePreviewRepresentationProvider.kt
 
 
 class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewViewProvider()) {
     override fun getEditorTypeId() = "hotpreview-preview-split-editor"
-    override fun getPolicy() = FileEditorPolicy.HIDE_DEFAULT_EDITOR
+    override fun getPolicy() = FileEditorPolicy.HIDE_OTHER_EDITORS // Maybe just HIDE_DEFAULT? Maybe configurable?
     override fun createSplitEditor(
         firstEditor: TextEditor,
         secondEditor: FileEditor
@@ -114,6 +118,7 @@ class HotPreviewView(
     override fun removePropertyChangeListener(listener: PropertyChangeListener) {}
 }
 
+@OptIn(ExperimentalJewelApi::class)
 class HotPreviewWindow(
     private val project: Project,
     private val file: VirtualFile

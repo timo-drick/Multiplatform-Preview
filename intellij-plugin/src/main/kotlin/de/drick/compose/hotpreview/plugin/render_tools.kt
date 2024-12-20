@@ -26,8 +26,6 @@ data class RenderedImage(
 fun cropUsingSurface(image: Image, width: Int, height: Int): Image {
     val surface = Surface.makeRasterN32Premul(width, height)
     val canvas = surface.canvas
-    //val paint = Paint()
-    //canvas.drawImageRect(image, Rect(0f, 0f, width.toFloat(), height.toFloat()), paint)
     canvas.drawImage(image, 0f, 0f)
     return surface.makeImageSnapshot()
 }
@@ -60,7 +58,6 @@ fun renderMethod(
                 width = renderWidth,
                 height = renderHeight,
                 density = density,
-                //coroutineContext = coroutineContext,
                 content = {
                     CompositionLocalProvider(
                         org.jetbrains.compose.resources.LocalResourceReader provides resourceReader,
