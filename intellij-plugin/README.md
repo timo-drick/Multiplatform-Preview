@@ -2,13 +2,11 @@
 
 Still under heavy development!
 
-Currently this plugin needs IntelliJ 2024.3 as minimum. Or Android Studio Meerkat (Canary build currently)
-
-
+Currently this plugin needs IntelliJ 2024.3 as minimum. Or Android Studio Meerkat (Canary build)
 
 To run the example:
 
-1. from directory `compose-jb/examples/intellij-plugin`:
+1. from directory `intellij-plugin`:
 
 * Run command in terminal `./gradlew runIde`.
 * Or choose **runIde** configuration in IDE and run it.
@@ -16,4 +14,4 @@ To run the example:
 
 2. create project or open any existing
 3. Open a kotlin file
-4. Annotate a composable function with the @HotPreview
+4. Annotate a composable function with the @HotPreview annotation

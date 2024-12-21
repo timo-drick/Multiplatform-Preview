@@ -13,7 +13,7 @@ val mavenVersion = Versions.mavenLib
 
 
 kotlin {
-    jvm("desktop")
+    jvm()
 
     sourceSets {
         val commonMain by getting {
@@ -22,7 +22,6 @@ kotlin {
         }
     }
 }
-
 
 
 // https://vanniktech.github.io/gradle-maven-publish-plugin/central/
