@@ -1,8 +1,10 @@
 import com.vanniktech.maven.publish.KotlinMultiplatform
 import com.vanniktech.maven.publish.SonatypeHost
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-    kotlin("multiplatform")
+    kotlin("multiplatform") version Versions.kotlin
+    id("com.android.application") version Versions.androidGraglePlugin
     id("com.vanniktech.maven.publish") version Versions.vanniktechPlugin
 }
 
@@ -13,7 +15,23 @@ val mavenVersion = Versions.mavenLib
 
 
 kotlin {
+
     jvm()
+
+    androidTarget()
+
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "shared"
+            isStatic = true
+        }
+    }
+
+    @OptIn(ExperimentalWasmDsl::class) wasmJs() { browser() }
 
     sourceSets {
         val commonMain by getting {
@@ -23,6 +41,21 @@ kotlin {
     }
 }
 
+android {
+    compileSdk = Versions.androidCompileSdk
+    namespace = "de.drick.compose.hotpreview"
+    sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
+    defaultConfig {
+        minSdk = Versions.androidMinSdk
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlin {
+        jvmToolchain(17)
+    }
+}
 
 // https://vanniktech.github.io/gradle-maven-publish-plugin/central/
 

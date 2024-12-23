@@ -1,6 +1,6 @@
 # Multiplatform Preview
 
-Because the current Compose Multiplatform (CMP) preview does not have a lot of features and did not continued in development since years I started implementing my own preview system.
+Because the current Compose Multiplatform (CMP) preview does not have a lot of features and did not continue in development since years. So I started implementing my own preview system.
 
 ![](screenshots/compose_dev_challenge_home_screen.png)
 
@@ -30,12 +30,26 @@ dependencies {
 }
 ```
 
+```kotlin
+@HotPreview(name = "phone dark", widthDp = 400, heightDp = 800, fontScale = 1f, darkMode = true)
+@HotPreview(name = "phone", widthDp = 400, heightDp = 800, fontScale = 1.5f, darkMode = false)
+@HotPreview(name = "dark", widthDp = 1000, heightDp = 800, fontScale = 1f)
+@HotPreview(widthDp = 1000, heightDp = 800, fontScale = 1.5f, darkMode = false)
+@Composable
+fun PreviewHomeScreen() {
+  MyTheme {
+    HomeScreen()
+  }
+}
+```
+
 You also need the plugin. Until it is published to the marketplace you need to build it yourself.
 Please see documentation in intellij project:
 [intellij-plugin](intellij-plugin/README.md)
 
 ## Known limitations
 
-Following resource resolving function will not work:
+Following resource resolving functions will not work!
+
 - Res.getUri()
 - Res.readBytes()

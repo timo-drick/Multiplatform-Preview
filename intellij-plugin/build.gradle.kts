@@ -18,8 +18,8 @@ repositories {
     google()
     intellijPlatform {
         defaultRepositories()
-        //releases()
-        //marketplace()
+        // releases()
+        // marketplace()
     }
     mavenLocal()
 }
@@ -29,7 +29,7 @@ dependencies {
     val branch = "243"
 
     intellijPlatform {
-        //androidStudio(ijPlatform)
+        // androidStudio(ijPlatform)
         intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
         bundledPlugins("org.jetbrains.kotlin", "com.intellij.gradle") // Plugins must be also provided in plugin.xml!!!
@@ -47,8 +47,6 @@ dependencies {
     implementation(compose.components.resources) {
         exclude(group = "org.jetbrains.kotlinx")
     }
-
-    //implementation(compose.material3)
 
     implementation("org.jetbrains.kotlin:kotlin-reflect") {
         exclude(group = "org.jetbrains.kotlinx")
@@ -79,7 +77,18 @@ intellijPlatform {
         name = "Compose Multiplatform HotPreview"
         version = "0.1.0"
 
+        ideaVersion {
+            sinceBuild = "243"
+        }
+
         description = "A plugin that shows previews of Compose Multiplatform files."
+
+        vendor {
+            name = "Timo Drick"
+            url = "https://github.com/timo-drick/Mutliplatform-Preview"
+        }
+
+        //chankgeNotes = ""
     }
 }
 
@@ -98,7 +107,6 @@ fun isNonStable(version: String): Boolean {
 
 tasks.named("dependencyUpdates", com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask::class.java).configure {
     rejectVersionIf {
-        //isNonStable(candidate.version)
         (isNonStable(candidate.version) && isNonStable(currentVersion).not())
     }
 }
