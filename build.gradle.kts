@@ -1,9 +1,4 @@
 plugins {
-    //kotlin("multiplatform") version Versions.kotlin apply false
-    //kotlin("plugin.compose") version Versions.kotlin apply false
-    //kotlin("jvm") version Versions.kotlin apply false
-    //id("org.jetbrains.compose") version Versions.composeMP apply false
-
     id("com.github.ben-manes.versions") version Versions.benManesPlugin
 }
 

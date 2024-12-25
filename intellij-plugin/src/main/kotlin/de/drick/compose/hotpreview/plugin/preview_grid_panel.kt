@@ -5,19 +5,43 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import de.drick.compose.hotpreview.HotPreview
 import org.jetbrains.jewel.foundation.theme.JewelTheme
+import org.jetbrains.jewel.ui.component.Icon
+import org.jetbrains.jewel.ui.component.IconButton
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.VerticallyScrollableContainer
+import org.jetbrains.jewel.ui.icons.AllIconsKeys
 
 
 @Composable
-fun PreviewItem(name: String, annotation: HotPreview, image: RenderedImage?, scale: Float = 1f) {
+fun PreviewItem(
+    name: String,
+    annotation: HotPreview,
+    image: RenderedImage?,
+    modifier: Modifier = Modifier,
+    scale: Float = 1f
+) {
     val borderStroke = BorderStroke(2.dp, JewelTheme.globalColors.outlines.focused)
-    Column(Modifier) {
+    Column(modifier.width(IntrinsicSize.Min)) {
         val postFix = if (annotation.name.isNotBlank()) " - ${annotation.name}" else ""
-        Text("$name $postFix")
+        Row {
+            Text(
+                modifier = Modifier.weight(1f),
+                text = "$name $postFix",
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (image != null) {
+                IconButton(onClick = {
+                    ClipboardImage.write(image.image)
+                }) {
+                    Icon(AllIconsKeys.General.Copy, contentDescription = "Copy")
+                }
+            }
+        }
         Spacer(Modifier.height(8.dp))
         if (image != null) {
             Image(
