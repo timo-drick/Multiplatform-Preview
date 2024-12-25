@@ -36,7 +36,8 @@ fun analyzeClass(clazz: Class<*>): List<HotPreviewFunction> {
                             heightDp = it["heightDp"] as Int,
                             locale = it["locale"] as String,
                             fontScale = it["fontScale"] as Float,
-                            darkMode = it["darkMode"] as Boolean
+                            darkMode = it["darkMode"] as Boolean,
+                            density = it["density"] as Float
                         )
                     }
                 if (annotations.isEmpty())

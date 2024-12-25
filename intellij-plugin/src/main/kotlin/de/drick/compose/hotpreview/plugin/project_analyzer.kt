@@ -27,10 +27,7 @@ import org.jetbrains.kotlin.idea.base.facet.isMultiPlatformModule
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import java.io.File
-import java.io.InputStream
-import java.net.URL
 import java.net.URLClassLoader
-import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -167,8 +164,8 @@ class ProjectAnalyzer(
     private suspend fun getSourcePath(module: Module) = readAction {
         ModuleRootManager.getInstance(module)
             .sourceRoots
-            .first { it.name == "kotlin" }
-            .presentableUrl
+            .firstOrNull { it.name == "kotlin" }
+            ?.presentableUrl
     }
 
 
@@ -185,7 +182,7 @@ data class HotPreviewData(
     val image: List<RenderedImage?>,
 )
 
-fun renderPreviewForClass(clazz: Class<*>): List<HotPreviewData> =
+suspend fun renderPreviewForClass(clazz: Class<*>): List<HotPreviewData> = withContext(Dispatchers.Default) {
     analyzeClass(clazz).map { function ->
         println("F: $function")
         val method = clazz.declaredMethods.find { it.name == function.name }
@@ -198,7 +195,7 @@ fun renderPreviewForClass(clazz: Class<*>): List<HotPreviewData> =
                     clazz = clazz,
                     method = it,
                     size = DpSize(widthDp, heightDp),
-                    density = Density(2f, annotation.fontScale),
+                    density = Density(annotation.density, annotation.fontScale),
                     isDarkTheme = annotation.darkMode
                 )
             }
@@ -208,3 +205,4 @@ fun renderPreviewForClass(clazz: Class<*>): List<HotPreviewData> =
             image = images
         )
     }
+}
