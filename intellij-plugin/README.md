@@ -15,3 +15,8 @@ To run the example:
 2. create project or open any existing
 3. Open a kotlin file
 4. Annotate a composable function with the @HotPreview annotation
+
+
+You could also look at this Sample repository. There you see how to use the @HotPreview annotation.
+
+https://github.com/timo-drick/compose_desktop_dev_challenge
