@@ -4,7 +4,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 
 
-inline fun <R> CoroutineScope.runCatchingCancellationAware(block: () -> R): Result<R> {
+inline fun <R> runCatchingCancellationAware(block: () -> R): Result<R> {
     return try {
         Result.success(block())
     } catch (e: Throwable) {

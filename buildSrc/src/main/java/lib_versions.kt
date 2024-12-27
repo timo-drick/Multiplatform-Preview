@@ -1,5 +1,5 @@
 object Versions {
-    const val mavenLib = "0.1.2"
+    const val mavenLib = "0.1.3"
     const val mavenGroupId = "de.drick.compose"
 
     const val kotlin = "2.0.21"

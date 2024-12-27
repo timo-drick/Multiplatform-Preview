@@ -9,13 +9,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import de.drick.compose.hotpreview.HotPreview
 import org.jetbrains.jewel.foundation.theme.JewelTheme
-import org.jetbrains.jewel.ui.component.Icon
-import org.jetbrains.jewel.ui.component.IconButton
-import org.jetbrains.jewel.ui.component.Text
-import org.jetbrains.jewel.ui.component.VerticallyScrollableContainer
+import org.jetbrains.jewel.ui.component.*
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PreviewItem(
     name: String,
@@ -35,10 +33,12 @@ fun PreviewItem(
                 overflow = TextOverflow.Ellipsis
             )
             if (image != null) {
-                IconButton(onClick = {
-                    ClipboardImage.write(image.image)
-                }) {
-                    Icon(AllIconsKeys.General.Copy, contentDescription = "Copy")
+                Tooltip(tooltip = { Text("Copy image to clipboard") }) {
+                    IconButton(onClick = {
+                        ClipboardImage.write(image.image)
+                    }) {
+                        Icon(AllIconsKeys.General.Copy, contentDescription = "Copy")
+                    }
                 }
             }
         }

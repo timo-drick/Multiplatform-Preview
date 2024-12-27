@@ -13,10 +13,37 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.use
+import de.drick.compose.hotpreview.HotPreview
+import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
+import org.jetbrains.jewel.foundation.ExperimentalJewelApi
 import org.jetbrains.jewel.ui.component.Text
 
 @Composable
 fun Preview1() {
+    Box(Modifier.background(Color.Gray).fillMaxSize()) {
+        Text("Hello Preview")
+    }
+}
+
+@OptIn(ExperimentalJewelApi::class)
+@HotPreview(name = "PreviewItem", widthDp = 500, heightDp = 300)
+@Composable
+fun PreviewPreviewItem() {
+    SwingBridgeTheme {
+        val renderedImage = renderPreview(DpSize(300.dp, 400.dp)) {
+            SwingBridgeTheme {
+                Preview2()
+            }
+        }
+        val data = HotPreview(
+            name = "Test image",
+        )
+        PreviewItem("Test", data, renderedImage)
+    }
+}
+
+@Composable
+fun Preview2() {
     Box(Modifier.background(Color.Gray).fillMaxSize()) {
         Text("Hello Preview")
     }
