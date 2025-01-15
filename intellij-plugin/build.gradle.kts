@@ -9,8 +9,8 @@ plugins {
     id("com.github.ben-manes.versions") version "0.51.0"
 }
 
-group = "de.drick.compose.hotpreview"
-version = "1.0-SNAPSHOT"
+//group = "de.drick.compose.hotpreview"
+//version = "0.1.0"
 
 repositories {
     maven("https://packages.jetbrains.team/maven/p/kpm/public/")
@@ -32,6 +32,7 @@ dependencies {
         // androidStudio(ijPlatform)
         intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
+        zipSigner()
         bundledPlugins("org.jetbrains.kotlin", "com.intellij.gradle") // Plugins must be also provided in plugin.xml!!!
     }
 
@@ -62,7 +63,7 @@ dependencies {
     testImplementation("junit", "junit", "4.12")
 }
 
-// See https://github.com/JetBrains/gradle-intellij-plugin/
+// See https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin.html
 intellijPlatform {
     projectName = "HotPreviewPlugin"
 
@@ -88,7 +89,21 @@ intellijPlatform {
             url = "https://github.com/timo-drick/Mutliplatform-Preview"
         }
 
-        //chankgeNotes = ""
+        //changeNotes = ""
+    }
+
+    signing {
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+    }
+
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+        // The pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
+        // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
+        // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
+        channels = providers.gradleProperty("pluginVersion").map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
     }
 }
 
