@@ -1,6 +1,6 @@
 # Multiplatform Preview
 
-Because the current Compose Multiplatform (CMP) preview does not have a lot of features and did not continue in development since years. So I started implementing my own preview system.
+Because the current Compose Multiplatform (CMP) preview does not have a lot of features and did not continue in development since years I started implementing my own preview system.
 
 ![](screenshots/compose_dev_challenge_home_screen.png)
 
@@ -43,11 +43,11 @@ fun PreviewHomeScreen() {
 }
 ```
 
-You also need the plugin. Until it is published to the marketplace you need to build it yourself.
-Please see documentation in intellij project:
+You also need the plugin. It is published alread to the  marketplace so just search for HotPreview.
+If you want to compile it yourself please see documentation in the intellij project:
 [intellij-plugin](intellij-plugin/README.md)
 
-Sample project using the @HotPreview annotation:
+Here is a sample project using the @HotPreview annotation:
 https://github.com/timo-drick/compose_desktop_dev_challenge
 
 
