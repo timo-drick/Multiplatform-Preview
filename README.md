@@ -43,7 +43,7 @@ fun PreviewHomeScreen() {
 }
 ```
 
-You also need the plugin. It is published alread to the  marketplace so just search for HotPreview.
+You also need the plugin. It is published already to the  marketplace so just search for HotPreview.
 If you want to compile it yourself please see documentation in the intellij project:
 [intellij-plugin](intellij-plugin/README.md)
 
@@ -54,6 +54,8 @@ https://github.com/timo-drick/compose_desktop_dev_challenge
 ## Known limitations
 
 - When at IDE startup a file with previews is opened sometimes the resources can not be loaded. Not sure how to avoid this. If you reopen the file everything should work.
+- Recompilation only happens automatically when the source file is saved.
+- When adding a @HotPreview annotation to the file you have to close and open the file otherwise Android Studio / IntelliJ will not recognize that it contains a preview.
 - Following resource resolving functions will not work!
   - Res.getUri()
   - Res.readBytes()
