@@ -7,6 +7,10 @@ on:
     branches: [ "main" ]
   pull_request:
 
+defaults:
+  run:
+    working-directory: ./intellij-plugin
+
 jobs:
   build:
     name: Build
