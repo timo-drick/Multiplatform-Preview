@@ -9,9 +9,6 @@ plugins {
     id("com.github.ben-manes.versions") version "0.51.0"
 }
 
-//group = "de.drick.compose.hotpreview"
-//version = "0.1.0"
-
 repositories {
     maven("https://packages.jetbrains.team/maven/p/kpm/public/")
     mavenCentral()
@@ -24,9 +21,10 @@ repositories {
     mavenLocal()
 }
 
+val ijPlatform = "2024.3.2"
+val branch = "243"
+
 dependencies {
-    val ijPlatform = "2024.3"
-    val branch = "243"
 
     intellijPlatform {
         // androidStudio(ijPlatform)
@@ -67,19 +65,13 @@ dependencies {
 intellijPlatform {
     projectName = "HotPreviewPlugin"
 
-    pluginVerification {
-        ides {
-            recommended()
-        }
-    }
-
     pluginConfiguration {
         id = "de.drick.compose.hotpreview.plugin"
         name = "Compose Multiplatform HotPreview"
-        version = "0.1.0"
+        version = "0.1.1"
 
         ideaVersion {
-            sinceBuild = "243"
+            sinceBuild = branch
         }
 
         description = "A plugin that shows previews of Compose Multiplatform files."
@@ -89,17 +81,25 @@ intellijPlatform {
             url = "https://github.com/timo-drick/Mutliplatform-Preview"
         }
 
-        //changeNotes = ""
+        changeNotes = """
+            - Show errors when trying to compile and render the preview.
+        """.trimIndent()
     }
 
     signing {
-        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
-        privateKey = providers.environmentVariable("PRIVATE_KEY")
-        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+        certificateChain = providers.environmentVariable("PLUGIN_CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PLUGIN_PRIVATE_KEY")
+        password = providers.environmentVariable("PLUGIN_PRIVATE_KEY_PASSWORD")
+    }
+
+    pluginVerification {
+        ides {
+            recommended()
+        }
     }
 
     publishing {
-        token = providers.environmentVariable("PUBLISH_TOKEN")
+        token = providers.environmentVariable("PLUGIN_PUBLISH_TOKEN")
         // The pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
         // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
         // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
