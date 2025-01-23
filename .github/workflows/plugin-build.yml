@@ -1,4 +1,6 @@
-# This workflow will build a package using Gradle and then publish it to Maven Central when a release is created
+# This workflow will build a package using Gradle
+# and then verify and sing the plugin
+# TODO publish the plugin to IntelliJ marketplace
 
 name: Publish package to Maven Central
 
@@ -20,7 +22,6 @@ jobs:
       - name: Fetch Sources
         uses: actions/checkout@v4
 
-      # Validate wrapper
       - name: Gradle Wrapper Validation
         uses: gradle/actions/wrapper-validation@v3
 
@@ -40,3 +41,7 @@ jobs:
 
       - name: Run Plugin Verification tasks
         run: ./gradlew verifyPlugin
+
+      - name: Sign Plugin
+        run: ./gradlew signPlugin
+        
