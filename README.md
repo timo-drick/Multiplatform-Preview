@@ -24,9 +24,11 @@ Supported IDEs:
 
 ## Usage
 
+[![Maven Central](https://img.shields.io/maven-central/v/de.drick.compose/hotpreview.svg)](https://mvnrepository.com/artifact/de.drick.compose/hotpreview)
+
 ```kotlin
 dependencies {
-    implementation("de.drick.compose:hotpreview:0.1.3")
+    implementation("de.drick.compose:hotpreview:0.1.4")
 }
 ```
 
