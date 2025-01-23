@@ -26,12 +26,18 @@ private fun getMockData() = listOf(
     )
 )
 
-fun getPreviewItem(resourcePath: String, density: Float): RenderedImage {
+private fun getPreviewItem(resourcePath: String, density: Float): RenderedImage {
     val image = useResource(resourcePath, ::loadImageBitmap)
     val size = DpSize((image.width * density).dp, (image.height * density).dp)
     return RenderedImage(image, size)
 }
 
+/**
+ * Unfortunately self preview is not possible currently.
+ * I think this is because the class loader of the plugin already loaded
+ * the classes for showing previews so it will not be reloaded when changed.
+ * Maybe it could be possible when changing the parent classloader.
+ */
 @OptIn(ExperimentalJewelApi::class)
 @HotPreview(widthDp = 400, heightDp = 500)
 @Composable

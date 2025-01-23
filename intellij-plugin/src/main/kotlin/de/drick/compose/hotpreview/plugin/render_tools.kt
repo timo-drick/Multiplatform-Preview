@@ -93,6 +93,7 @@ fun renderMethod(
             )
         } catch (err: Throwable) {
             println("Problem during render!")
+            err.printStackTrace()
             log.warn(err)
         }
     }

@@ -2,10 +2,8 @@ package de.drick.compose.hotpreview.plugin
 
 import com.intellij.openapi.vfs.VirtualFile
 import de.drick.compose.hotpreview.HotPreview
-import org.jetbrains.kotlin.idea.gradleTooling.get
 import org.jetbrains.kotlin.load.kotlin.PackagePartClassUtils
 import org.jetbrains.kotlin.name.FqName
-import kotlin.reflect.jvm.kotlinFunction
 
 val fqNameHotPreview = requireNotNull(HotPreview::class.qualifiedName)
 
@@ -20,35 +18,6 @@ data class HotPreviewFunction(
     val name: String,
     val annotation: List<HotPreview>
 )
-
-fun analyzeClass(clazz: Class<*>): List<HotPreviewFunction> {
-    return clazz.declaredMethods
-        .mapNotNull { method ->
-            method.kotlinFunction?.let { function ->
-                val annotations = function.annotations
-                    .filter {
-                        it.toString().startsWith("@$fqNameHotPreview")
-                    }.map {
-                        HotPreview(
-                            name = it["name"]?.toString() ?: "",
-                            group = it["group"]?.toString() ?: "",
-                            widthDp = it["widthDp"] as Int,
-                            heightDp = it["heightDp"] as Int,
-                            locale = it["locale"] as String,
-                            fontScale = it["fontScale"] as Float,
-                            darkMode = it["darkMode"] as Boolean,
-                            density = it["density"] as Float
-                        )
-                    }
-                if (annotations.isEmpty())
-                    null
-                else HotPreviewFunction(
-                    name = function.name,
-                    annotation = annotations
-                )
-            }
-        }
-}
 
 fun kotlinFileHasHotPreview(kotlinFile: VirtualFile): Boolean = kotlinFile.inputStream
     .bufferedReader()

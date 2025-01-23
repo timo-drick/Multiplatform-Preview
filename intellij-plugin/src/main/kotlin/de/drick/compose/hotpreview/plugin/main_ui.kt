@@ -57,8 +57,9 @@ fun MainScreen(project: Project, file: VirtualFile) {
         // It uses the contextClassLoader to load the resources.
         val previousContextClassLoader = Thread.currentThread().contextClassLoader
         Thread.currentThread().contextClassLoader = fileClass.classLoader
+        val previewFunctions = projectAnalyzer.findPreviewAnnotations(file)
         // For new compose.components resource system a LocalCompositionProvider is used.
-        previewList = renderPreviewForClass(fileClass)
+        previewList = renderPreview(fileClass, previewFunctions)
         Thread.currentThread().contextClassLoader = previousContextClassLoader
     }
     fun refresh() {

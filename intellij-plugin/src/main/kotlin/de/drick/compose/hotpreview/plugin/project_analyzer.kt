@@ -1,6 +1,6 @@
 package de.drick.compose.hotpreview.plugin
 
-import androidx.compose.ui.ImageComposeScene
+import androidx.compose.runtime.Composer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -48,6 +48,14 @@ class ProjectAnalyzer(
     suspend fun loadFileClass(file: VirtualFile): Class<*> = withContext(Dispatchers.Default) {
         val fileClassName = kotlinFileClassName(file)
         getClassLoader(file).loadClass(fileClassName)
+    }
+
+    suspend fun findPreviewAnnotations(file: VirtualFile): List<HotPreviewFunction> {
+        getPsiFileSafely(project, file)?.let { psiFile ->
+            println("Find preview annotations for: $file")
+            return analyzePsiFile(psiFile)
+        }
+        return emptyList()
     }
 
     suspend fun getOutputFolder(file: VirtualFile): String {
@@ -112,15 +120,18 @@ class ProjectAnalyzer(
         }
     }
 
-    private suspend fun getClassLoader(file: VirtualFile): URLClassLoader =
-        getClassPath(getJvmTargetModule(requireNotNull(getModule(file))))
-            .map { File(it).toURI().toURL() }
-            .toTypedArray().let {
-                URLClassLoader(
-                    it,
-                    ImageComposeScene::class.java.classLoader
-                )
-            }
+    private suspend fun getClassLoader(file: VirtualFile): ClassLoader {
+        val classPath = getClassPath(getJvmTargetModule(requireNotNull(getModule(file))))
+            .filterNot { it.contains("hotpreview-jvm") }
+            .map { File(it) }
+            .filter { it.exists() }
+            .map { it.toURI().toURL() }
+        val urlClassLoader = URLClassLoader(
+            classPath.toTypedArray(),
+            Composer::class.java.classLoader
+        )
+        return urlClassLoader
+    }
 
     suspend fun getJvmTargetModule(module: Module): Module {
         val baseModuleName = module.name.substringBeforeLast(".")
@@ -156,9 +167,11 @@ class ProjectAnalyzer(
         .map { it.presentableUrl }
 
     private suspend fun getClassPath(module: Module): Set<String> = readAction {
-        getClassPathArray(module) + ModuleRootManager.getInstance(module)
+        val moduleClassPath = getClassPathArray(module)
+        val dependencyClassPath = ModuleRootManager.getInstance(module)
             .dependencies
             .flatMap { getClassPathArray(it) }
+        moduleClassPath + dependencyClassPath
     }.toSet()
 
     private suspend fun getSourcePath(module: Module) = readAction {
@@ -168,7 +181,6 @@ class ProjectAnalyzer(
             ?.presentableUrl
     }
 
-
     suspend fun getModule(file: VirtualFile) =
         readAction { ProjectFileIndex.getInstance(project).getModuleForFile(file) }
 
@@ -176,14 +188,13 @@ class ProjectAnalyzer(
         readAction { ExternalSystemApiUtil.getExternalProjectPath(module) }
 }
 
-
 data class HotPreviewData(
     val function: HotPreviewFunction,
     val image: List<RenderedImage?>,
 )
 
-suspend fun renderPreviewForClass(clazz: Class<*>): List<HotPreviewData> = withContext(Dispatchers.Default) {
-    analyzeClass(clazz).map { function ->
+suspend fun renderPreview(clazz: Class<*>, previewList: List<HotPreviewFunction>): List<HotPreviewData> = withContext(Dispatchers.Default) {
+    previewList.map { function ->
         println("F: $function")
         val method = clazz.declaredMethods.find { it.name == function.name }
         method?.isAccessible = true
