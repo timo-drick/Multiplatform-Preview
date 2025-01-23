@@ -33,6 +33,10 @@ kotlin {
 
     @OptIn(ExperimentalWasmDsl::class) wasmJs() { browser() }
 
+    js {
+        browser()
+    }
+
     sourceSets {
         val commonMain by getting {
             dependencies {
