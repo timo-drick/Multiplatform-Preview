@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin
+package de.drick.compose.hotpreview.plugin.selfpreview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.use
 import de.drick.compose.hotpreview.HotPreview
+import de.drick.compose.hotpreview.plugin.PreviewItem
+import de.drick.compose.hotpreview.plugin.RenderedImage
 import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
 import org.jetbrains.jewel.ui.component.Text

@@ -66,7 +66,7 @@ intellijPlatform {
     pluginConfiguration {
         id = "de.drick.compose.hotpreview.plugin"
         name = "Compose Multiplatform HotPreview"
-        version = "0.1.1"
+        version = "0.1.2"
 
         ideaVersion {
             sinceBuild = branch
@@ -80,6 +80,10 @@ intellijPlatform {
         }
 
         changeNotes = """
+            V 0.1.2
+            - Replaced @HotPreview annotation reflection code analzer by psi file analyzer.
+            - Set LocalInspectionMode to true in previews.
+            
             V 0.1.1
             - Show errors when trying to compile and render the preview.
         """.trimIndent()

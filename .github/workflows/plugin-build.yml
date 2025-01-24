@@ -32,7 +32,6 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
-      # Setup Gradle
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
