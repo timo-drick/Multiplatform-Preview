@@ -207,7 +207,8 @@ suspend fun renderPreview(clazz: Class<*>, previewList: List<HotPreviewFunction>
                     method = it,
                     size = DpSize(widthDp, heightDp),
                     density = Density(annotation.density, annotation.fontScale),
-                    isDarkTheme = annotation.darkMode
+                    isDarkTheme = annotation.darkMode,
+                    isInspectionMode = true
                 )
             }
         }

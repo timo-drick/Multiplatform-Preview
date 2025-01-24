@@ -7,6 +7,7 @@ import androidx.compose.runtime.currentComposer
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
@@ -37,6 +38,7 @@ fun renderMethod(
     size: DpSize,
     density: Density,
     isDarkTheme: Boolean,
+    isInspectionMode: Boolean
 ): RenderedImage? {
     val log = Logger.getInstance("renderMethod")
     val theme = if (isDarkTheme) SystemTheme.Dark else SystemTheme.Light
@@ -62,6 +64,7 @@ fun renderMethod(
                     CompositionLocalProvider(
                         org.jetbrains.compose.resources.LocalResourceReader provides resourceReader,
                         LocalSystemTheme provides theme,
+                        LocalInspectionMode provides isInspectionMode
                     ) {
                         method.invoke(null, currentComposer, 0)
                     }
