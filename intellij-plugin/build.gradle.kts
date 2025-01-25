@@ -83,6 +83,8 @@ intellijPlatform {
             V 0.1.2
             - Replaced @HotPreview annotation reflection code analzer by psi file analyzer.
             - Set LocalInspectionMode to true in previews.
+            - Added navigation to @HotPreview annotation on preview click.
+            - Added on hover focus for preview items.
             
             V 0.1.1
             - Show errors when trying to compile and render the preview.
