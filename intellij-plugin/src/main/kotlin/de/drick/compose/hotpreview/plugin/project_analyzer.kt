@@ -198,7 +198,8 @@ suspend fun renderPreview(clazz: Class<*>, previewList: List<HotPreviewFunction>
         println("F: $function")
         val method = clazz.declaredMethods.find { it.name == function.name }
         method?.isAccessible = true
-        val images = function.annotation.map { annotation ->
+        val images = function.annotation.map { hpAnnotation ->
+            val annotation = hpAnnotation.annotation
             val widthDp = annotation.widthDp.dp
             val heightDp = annotation.heightDp.dp
             method?.let {

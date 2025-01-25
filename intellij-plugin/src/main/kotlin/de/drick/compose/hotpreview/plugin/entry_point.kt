@@ -46,6 +46,7 @@ class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewVi
         secondEditor: FileEditor
     ): FileEditor {
         require(secondEditor is HotPreviewView) { "Secondary editor should be HotPreviewView" }
+        secondEditor.textEditor = firstEditor
         return HotPreviewSplitEditor(firstEditor, secondEditor)
     }
     override fun accept(project: Project, file: VirtualFile): Boolean {
@@ -94,7 +95,7 @@ class HotPreviewViewProvider : WeighedFileEditorProvider(), AsyncFileEditorProvi
         HotPreviewView(project, file)
     }
 
-    override fun createEditor(project: Project, file: VirtualFile, ) = HotPreviewView(project, file)
+    override fun createEditor(project: Project, file: VirtualFile) = HotPreviewView(project, file)
     override fun getEditorTypeId() = "hotpreview-preview-view"
     override fun getPolicy(): FileEditorPolicy = FileEditorPolicy.HIDE_DEFAULT_EDITOR
 }
@@ -104,7 +105,12 @@ class HotPreviewView(
     private val file: VirtualFile
 ) : UserDataHolder by UserDataHolderBase(), FileEditor {
 
-    private val mainComponent by lazy { HotPreviewWindow(project = project, file = file) }
+    var textEditor: TextEditor? = null
+    private val mainComponent by lazy {
+        val editor = requireNotNull(textEditor) { "TextEditor null!" }
+        val model = HotPreviewModel(project, editor, file)
+        HotPreviewWindow(model)
+    }
 
     override fun getName() = "HotPreview"
     override fun getComponent() = mainComponent
@@ -120,28 +126,14 @@ class HotPreviewView(
 
 @OptIn(ExperimentalJewelApi::class)
 class HotPreviewWindow(
-    private val project: Project,
-    private val file: VirtualFile
+    private val model: HotPreviewModel
 ) : BorderLayoutPanel(), Disposable {
     //val log = Logger.getInstance(HotPreviewWindow::class.java)
     init {
-
-        /*PsiManager.getInstance(project).findFile(file)?.let { file ->
-            file.accept(object : KotlinRecursiveElementVisitor() {
-                override fun visitNamedFunction(function: KtNamedFunction) {
-                    println("Function: ${function.fqName}")
-                    function.accept(object : KotlinRecursiveElementVisitor() {
-                        override fun visitAnnotationEntry(annotationEntry: KtAnnotationEntry) {
-                            println("Annotation entry: ${annotationEntry.name}")
-                        }
-                    })
-                }
-            })
-        }*/
         val composePanel = ComposePanel().apply {
             setContent {
                 SwingBridgeTheme {
-                    MainScreen(project, file)
+                    MainScreen(model)
                 }
             }
         }

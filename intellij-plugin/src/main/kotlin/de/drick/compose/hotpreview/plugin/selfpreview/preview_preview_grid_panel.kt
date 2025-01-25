@@ -9,6 +9,7 @@ import androidx.compose.ui.res.useResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
+import de.drick.compose.hotpreview.plugin.HotPreviewAnnotation
 import de.drick.compose.hotpreview.plugin.HotPreviewData
 import de.drick.compose.hotpreview.plugin.HotPreviewFunction
 import de.drick.compose.hotpreview.plugin.PreviewGridPanel
@@ -19,9 +20,16 @@ import org.jetbrains.jewel.foundation.ExperimentalJewelApi
 
 private fun getMockData() = listOf(
     HotPreviewData(
-        function = HotPreviewFunction("CountPoser", listOf(
-            HotPreview(name = "dark mode", widthDp = 400, heightDp = 400)
-        )),
+        function = HotPreviewFunction(
+            name = "CountPoser",
+            annotation = listOf(
+                HotPreviewAnnotation(
+                    lineRange = null,
+                    HotPreview(name = "dark mode", widthDp = 400, heightDp = 400)
+                )
+            ),
+            lineRange = null
+        ),
         image = listOf(getPreviewItem("preview_samples/countposer_dialog.png", 2f))
     )
 )
@@ -51,7 +59,8 @@ fun PreviewPreviewGridPanel() {
     SwingBridgeTheme {
         PreviewGridPanel(
             hotPreviewList = functionList,
-            scale = .3f
+            scale = .3f,
+            onNavigateCode = {}
         )
     }
 }

@@ -14,11 +14,6 @@ data class ComposableFunctionInfo(
     val lineNumber: Int
 )
 
-data class HotPreviewFunction(
-    val name: String,
-    val annotation: List<HotPreview>
-)
-
 fun kotlinFileHasHotPreview(kotlinFile: VirtualFile): Boolean = kotlinFile.inputStream
     .bufferedReader()
     .useLines { lines ->

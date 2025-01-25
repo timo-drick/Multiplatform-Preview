@@ -9,6 +9,7 @@ import de.drick.compose.hotpreview.HotPreview
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotation
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationValue
+import org.jetbrains.kotlin.idea.debugger.core.stepping.getLineRange
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtNamedFunction
@@ -54,14 +55,19 @@ suspend fun analyzePsiFile(psiFile: PsiFile): List<HotPreviewFunction> =
         functionList.mapNotNull { function ->
             analyze(function) {
                 val mySymbol = function.symbol
-                println("Symbol: $mySymbol")
                 val hotPreviewAnnotations = mySymbol.annotations
                     .filter { it.classId == hotPreviewAnnotationClassId }
-                    .map { it.toHotPreviewAnnotation() }
+                    .map {
+                        HotPreviewAnnotation(
+                            lineRange = it.psi?.getLineRange(),
+                            annotation = it.toHotPreviewAnnotation()
+                        )
+                    }
                 if (hotPreviewAnnotations.isEmpty()) null
                 else HotPreviewFunction(
                     name = function.name ?: "",
-                    annotation = hotPreviewAnnotations
+                    annotation = hotPreviewAnnotations,
+                    lineRange = function.getLineRange()
                 )
             }
         }

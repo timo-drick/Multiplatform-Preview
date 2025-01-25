@@ -3,11 +3,17 @@ package de.drick.compose.hotpreview.plugin
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import de.drick.compose.hotpreview.HotPreview
+import org.jetbrains.jewel.foundation.modifier.onHover
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.component.*
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
@@ -20,9 +26,12 @@ fun PreviewItem(
     annotation: HotPreview,
     image: RenderedImage?,
     modifier: Modifier = Modifier,
-    scale: Float = 1f
+    scale: Float = 1f,
+    hasFocus: Boolean = false,
 ) {
-    val borderStroke = BorderStroke(2.dp, JewelTheme.globalColors.outlines.focused)
+    val focusStroke = BorderStroke(2.dp, JewelTheme.globalColors.outlines.focused)
+    val borderModifier = if (hasFocus) Modifier.border(focusStroke) else Modifier
+    val borderStroke = BorderStroke(1.dp, Color.Black)
     Column(modifier.width(IntrinsicSize.Min)) {
         val postFix = if (annotation.name.isNotBlank()) " - ${annotation.name}" else ""
         Row {
@@ -47,6 +56,7 @@ fun PreviewItem(
             Image(
                 modifier = Modifier
                     .requiredSize(image.size * scale)
+                    .then(borderModifier)
                     .border(borderStroke),
                 bitmap = image.image,
                 contentScale = ContentScale.Crop,
@@ -61,7 +71,8 @@ fun PreviewItem(
 fun PreviewGridPanel(
     hotPreviewList: List<HotPreviewData>,
     scale: Float,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateCode: (Int) -> Unit
 ) {
     VerticallyScrollableContainer(
         modifier = modifier.fillMaxSize()
@@ -73,11 +84,20 @@ fun PreviewGridPanel(
         ) {
             hotPreviewList.forEach { preview ->
                 preview.function.annotation.forEachIndexed { index, annotation ->
+                    var isSelected by remember { mutableStateOf(false) }
                     PreviewItem(
+                        modifier = Modifier.onHover { isSelected = it }.clickable(
+                            onClick = {
+                                annotation.lineRange?.let { onNavigateCode(it.start) }
+                            },
+                            interactionSource = null,
+                            indication = null
+                        ),
                         name = preview.function.name,
-                        annotation = annotation,
+                        annotation = annotation.annotation,
                         image = preview.image.getOrNull(index),
-                        scale = scale
+                        scale = scale,
+                        hasFocus = isSelected
                     )
                 }
             }
