@@ -1,5 +1,8 @@
 package de.drick.compose.hotpreview.plugin
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -13,12 +16,24 @@ import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import kotlinx.coroutines.CoroutineScope
 
-class HotPreviewModel(
+class HotPreviewViewModel(
     private val project: Project,
     private val textEditor: TextEditor,
     private val file: VirtualFile
 ) {
-    val projectAnalyzer = ProjectAnalyzer(project)
+
+    private val projectAnalyzer = ProjectAnalyzer(project)
+
+    private val properties = PluginPersistentStore(project, file)
+    private val scaleProperty = properties.float("scale", 1f)
+
+    var scale: Float by mutableStateOf(scaleProperty.get())
+        private set
+
+    fun changeScale(newScale: Float) {
+        scaleProperty.set(newScale)
+        scale = newScale
+    }
 
     fun navigateCodeLine(line: Int) {
         val pos = LogicalPosition(line, 0)

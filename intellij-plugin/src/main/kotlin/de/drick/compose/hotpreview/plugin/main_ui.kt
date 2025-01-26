@@ -7,14 +7,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.intellij.openapi.editor.event.DocumentEvent
-import com.intellij.openapi.editor.event.DocumentListener
-import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.openapi.vfs.newvfs.BulkFileListener
-import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.jewel.foundation.modifier.onHover
@@ -30,10 +22,10 @@ import org.jetbrains.jewel.ui.theme.editorTabStyle
 
 
 @Composable
-fun MainScreen(model: HotPreviewModel) {
+fun MainScreen(model: HotPreviewViewModel) {
     var previewList: List<HotPreviewData> by remember { mutableStateOf(emptyList()) }
     val scope = rememberCoroutineScope()
-    var scale by remember { mutableStateOf(1f) }
+    val scale = model.scale
     var compilingInProgress by remember { mutableStateOf(false) }
     var errorMessage: Throwable? by remember { mutableStateOf(null) }
 
@@ -139,13 +131,13 @@ fun MainScreen(model: HotPreviewModel) {
                             .padding(4.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        IconButton(onClick = { scale += .2f }) {
+                        IconButton(onClick = { model.changeScale(scale + .2f) }) {
                             Icon(AllIconsKeys.General.Add, contentDescription = "ZoomIn")
                         }
-                        IconButton(onClick = { scale -= .2f }) {
+                        IconButton(onClick = { model.changeScale(scale - .2f) }) {
                             Icon(AllIconsKeys.General.Remove, contentDescription = "ZoomOut")
                         }
-                        IconButton(onClick = { scale = 1f }) {
+                        IconButton(onClick = { model.changeScale(1f) }) {
                             Icon(AllIconsKeys.General.ActualZoom, contentDescription = "100%")
                         }
                     }

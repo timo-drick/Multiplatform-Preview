@@ -108,7 +108,7 @@ class HotPreviewView(
     var textEditor: TextEditor? = null
     private val mainComponent by lazy {
         val editor = requireNotNull(textEditor) { "TextEditor null!" }
-        val model = HotPreviewModel(project, editor, file)
+        val model = HotPreviewViewModel(project, editor, file)
         HotPreviewWindow(model)
     }
 
@@ -126,7 +126,7 @@ class HotPreviewView(
 
 @OptIn(ExperimentalJewelApi::class)
 class HotPreviewWindow(
-    private val model: HotPreviewModel
+    private val model: HotPreviewViewModel
 ) : BorderLayoutPanel(), Disposable {
     //val log = Logger.getInstance(HotPreviewWindow::class.java)
     init {
