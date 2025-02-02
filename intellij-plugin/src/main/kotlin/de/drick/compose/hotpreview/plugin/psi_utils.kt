@@ -1,6 +1,7 @@
 package de.drick.compose.hotpreview.plugin
 
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
@@ -43,8 +44,9 @@ private fun KaAnnotation.toHotPreviewAnnotation(): HotPreview {
     )
 }
 
-suspend fun analyzePsiFile(psiFile: PsiFile): List<HotPreviewFunction> =
-    readAction {
+suspend fun analyzePsiFile(project: Project, psiFile: PsiFile): List<HotPreviewFunction> =
+    //TODO Find a solution which is also working in dumb mode.
+    smartReadAction(project) {
         val functionList = mutableListOf<KtNamedFunction>()
         val t = object : KtTreeVisitorVoid() {
             override fun visitNamedFunction(function: KtNamedFunction) {
