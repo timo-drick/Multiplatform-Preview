@@ -58,7 +58,7 @@ fun MainScreen(model: HotPreviewViewModel) {
         errorHandling {
             previewList = model.render()
         }
-        refresh()
+        //refresh()
     }
 
     Column(Modifier.fillMaxSize().background(JewelTheme.editorTabStyle.colors.background)) {
