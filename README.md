@@ -58,6 +58,3 @@ https://github.com/timo-drick/compose_desktop_dev_challenge
 - When at IDE startup a file with previews is opened sometimes the resources can not be loaded. Not sure how to avoid this. If you reopen the file everything should work.
 - Recompilation only happens automatically when the source file is saved.
 - When adding a @HotPreview annotation to the file you have to close and open the file otherwise Android Studio / IntelliJ will not recognize that it contains a preview.
-- Following resource resolving functions will not work!
-  - Res.getUri()
-  - Res.readBytes()

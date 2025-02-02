@@ -114,7 +114,11 @@ intellijPlatform {
         }
 
         changeNotes = """
-            V 0.1.2
+            V 0.2.0
+            - Added support for macos, window x64/arm64 should work (untested)
+            - Using an independent classloader now. Could solved some issues with resource loading.
+            - Turned off recompile when opening a file.
+            - Wait until indexing is finished before analyzing files.
             - Replaced @HotPreview annotation reflection code analzer by psi file analyzer.
             - Set LocalInspectionMode to true in previews.
             - Added navigation to @HotPreview annotation on preview click.
