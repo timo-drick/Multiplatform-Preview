@@ -21,6 +21,7 @@ import org.jetbrains.plugins.gradle.util.GradleConstants
 import java.io.File
 import java.net.URL
 import java.net.URLClassLoader
+import kotlin.collections.find
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -41,22 +42,26 @@ class WorkspaceAnalyzer(
         requireNotNull(fileModule) { "No module found!" }
         val baseModuleName = fileModule.name.substringBeforeLast(".")
         // TODO not sure if the name is always desktop for jvm modules
+        println("Base module: $baseModuleName")
         val desktopModule = currentSnapshot.entities(ModuleEntity::class.java)
             .filter { it.name.startsWith(baseModuleName) }
             //.filter { it.isTestModule.not() }
-            .find { it.name.contains("desktopMain") || it.name.endsWith("main") }
+            .find { it.name.contains("jvmMain") || it.name.contains("desktopMain") }
         requireNotNull(desktopModule) { "No desktop module found!" }
         val modules = desktopModule.dependencies
             .filterIsInstance<ModuleDependency>()
             .mapNotNull { currentSnapshot.resolve(it.module) } + desktopModule
 
         val classPath = modules.flatMap { module ->
+            module.contentRoots.forEach {
+                println(it)
+            }
             module.dependencies
                 .filterIsInstance<LibraryDependency>()
                 .mapNotNull { currentSnapshot.resolve(it.library) }
                 .mapNotNull { library ->
                     library.roots.find {
-                        it.type == LibraryRootTypeId.SOURCES
+                        it.type == LibraryRootTypeId.COMPILED
                     }?.url?.presentableUrl
                 }
         }.map { File(it).toURI().toURL() }
