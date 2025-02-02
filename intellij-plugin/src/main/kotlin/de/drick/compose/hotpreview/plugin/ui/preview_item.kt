@@ -1,29 +1,68 @@
-package de.drick.compose.hotpreview.plugin
+package de.drick.compose.hotpreview.plugin.ui
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
-import org.jetbrains.jewel.foundation.modifier.onHover
+import de.drick.compose.hotpreview.plugin.ClipboardImage
+import de.drick.compose.hotpreview.plugin.HotPreviewModel
+import de.drick.compose.hotpreview.plugin.RenderedImage
 import org.jetbrains.jewel.foundation.theme.JewelTheme
-import org.jetbrains.jewel.ui.component.*
+import org.jetbrains.jewel.ui.component.Icon
+import org.jetbrains.jewel.ui.component.IconButton
+import org.jetbrains.jewel.ui.component.Text
+import org.jetbrains.jewel.ui.component.Tooltip
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 
+@HotPreview
+@HotPreview(darkMode = false)
+@Composable
+private fun PreviewPreviewItem() {
+    val item = remember {
+        getHotPreviewDataItem("login_dark")
+    }
+    SelfPreviewTheme {
+        PreviewItem(
+            modifier = Modifier.padding(8.dp),
+            name = "TestItem",
+            annotation = item.function.annotation.first().annotation,
+            image = item.image.first()
+        )
+    }
+}
+
+@HotPreview
+@HotPreview(darkMode = false)
+@Composable
+private fun PreviewPreviewItemFocus() {
+    val item = remember {
+        getHotPreviewDataItem("login_dark")
+    }
+    SelfPreviewTheme {
+        PreviewItem(
+            modifier = Modifier.padding(8.dp),
+            name = "TestItem",
+            annotation = item.function.annotation.first().annotation,
+            image = item.image.first(),
+            hasFocus = true
+        )
+    }
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PreviewItem(
     name: String,
-    annotation: HotPreview,
+    annotation: HotPreviewModel,
     image: RenderedImage?,
     modifier: Modifier = Modifier,
     scale: Float = 1f,
@@ -62,45 +101,6 @@ fun PreviewItem(
                 contentScale = ContentScale.Crop,
                 contentDescription = "Preview of $name"
             )
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun PreviewGridPanel(
-    hotPreviewList: List<HotPreviewData>,
-    scale: Float,
-    modifier: Modifier = Modifier,
-    onNavigateCode: (Int) -> Unit
-) {
-    VerticallyScrollableContainer(
-        modifier = modifier.fillMaxSize()
-    ) {
-        FlowRow(
-            modifier = Modifier.padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            hotPreviewList.forEach { preview ->
-                preview.function.annotation.forEachIndexed { index, annotation ->
-                    var isSelected by remember { mutableStateOf(false) }
-                    PreviewItem(
-                        modifier = Modifier.onHover { isSelected = it }.clickable(
-                            onClick = {
-                                annotation.lineRange?.let { onNavigateCode(it.start) }
-                            },
-                            interactionSource = null,
-                            indication = null
-                        ),
-                        name = preview.function.name,
-                        annotation = annotation.annotation,
-                        image = preview.image.getOrNull(index),
-                        scale = scale,
-                        hasFocus = isSelected
-                    )
-                }
-            }
         }
     }
 }

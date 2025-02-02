@@ -6,7 +6,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
-import de.drick.compose.hotpreview.HotPreview
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotation
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationValue
@@ -25,14 +24,14 @@ suspend fun getPsiFileSafely(project: Project, virtualFile: VirtualFile): PsiFil
 
 private val hotPreviewAnnotationClassId = ClassId.topLevel(FqName(fqNameHotPreview))
 
-private val hotPreviewDefaultValues = HotPreview()
+private val hotPreviewDefaultValues = HotPreviewModel()
 
-private fun KaAnnotation.toHotPreviewAnnotation(): HotPreview {
+private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
     // Build a map
     val map = arguments.associateBy { it.name.toString() }
         .mapValues { (it.value.expression as? KaAnnotationValue.ConstantValue)?.value?.value }
     val dv = hotPreviewDefaultValues
-    return HotPreview(
+    return HotPreviewModel(
         name = map["name"]?.toString() ?: dv.name,
         group = map["group"]?.toString() ?: dv.group,
         widthDp = map["widthDp"] as Int? ?: dv.widthDp,

@@ -22,11 +22,20 @@ import java.io.File
 import java.net.URL
 import java.net.URLClassLoader
 
+interface HotPreviewViewModelI {
+    val scale: Float
+    fun changeScale(newScale: Float)
+    fun navigateCodeLine(line: Int)
+    suspend fun render(): List<HotPreviewData>
+    suspend fun executeGradleTask()
+    fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit)
+}
+
 class HotPreviewViewModel(
     private val project: Project,
     private val textEditor: TextEditor,
     private val file: VirtualFile
-) {
+): HotPreviewViewModelI {
 
     private val projectAnalyzer = ProjectAnalyzer(project)
     private val workspaceAnalyzer = WorkspaceAnalyzer(project)
@@ -34,21 +43,21 @@ class HotPreviewViewModel(
     private val properties = PluginPersistentStore(project, file)
     private val scaleProperty = properties.float("scale", 1f)
 
-    var scale: Float by mutableStateOf(scaleProperty.get())
+    override var scale: Float by mutableStateOf(scaleProperty.get())
         private set
 
-    fun changeScale(newScale: Float) {
+    override fun changeScale(newScale: Float) {
         scaleProperty.set(newScale)
         scale = newScale
     }
 
-    fun navigateCodeLine(line: Int) {
+    override fun navigateCodeLine(line: Int) {
         val pos = LogicalPosition(line, 0)
         textEditor.editor.caretModel.moveToLogicalPosition(pos)
         textEditor.editor.scrollingModel.scrollTo(pos, ScrollType.MAKE_VISIBLE)
     }
 
-    suspend fun render(): List<HotPreviewData> {
+    override suspend fun render(): List<HotPreviewData> {
         /*val test = workspaceAnalyzer.getClassPathForFile(file)
         test.forEach {
             println(it)
@@ -80,11 +89,11 @@ class HotPreviewViewModel(
         }
     }
 
-    suspend fun executeGradleTask() {
+    override suspend fun executeGradleTask() {
         projectAnalyzer.executeGradleTask(file)
     }
 
-    fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit) {
+    override fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit) {
         project.messageBus.connect(scope).subscribe(
             VirtualFileManager.VFS_CHANGES,
             object : BulkFileListener {

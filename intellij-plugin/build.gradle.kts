@@ -63,6 +63,11 @@ dependencies {
     // The platform version is a supported major IJP version (e.g., 232 or 233 for 2023.2 and 2023.3 respectively)
     implementation("org.jetbrains.jewel:jewel-ide-laf-bridge-$branch:0.27.0")
 
+    // needed for self preview only (jewel bridge cannot be used because there is no access to the plugin api)
+    implementation("org.jetbrains.jewel:jewel-int-ui-standalone-$branch:0.27.0") {
+        exclude(group = "org.jetbrains.kotlinx")
+    }
+
     implementation(compose.components.resources) {
         exclude(group = "org.jetbrains.kotlinx")
     }

@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin
+package de.drick.compose.hotpreview.plugin.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -7,6 +7,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import de.drick.compose.hotpreview.HotPreview
+import de.drick.compose.hotpreview.plugin.HotPreviewData
+import de.drick.compose.hotpreview.plugin.HotPreviewViewModelI
+import de.drick.compose.hotpreview.plugin.runCatchingCancellationAware
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.jewel.foundation.modifier.onHover
@@ -20,9 +24,20 @@ import org.jetbrains.jewel.ui.component.VerticallyScrollableContainer
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 import org.jetbrains.jewel.ui.theme.editorTabStyle
 
+@HotPreview(widthDp = 650, heightDp = 1400)
+@HotPreview(widthDp = 650, heightDp = 1400, darkMode = false)
+@Composable
+private fun PreviewMainScreen() {
+    val viewModel = remember {
+        mockViewModel(getMockData()).apply {
+            changeScale(1.0f)
+        }
+    }
+    SelfPreviewBase(viewModel)
+}
 
 @Composable
-fun MainScreen(model: HotPreviewViewModel) {
+fun MainScreen(model: HotPreviewViewModelI) {
     var previewList: List<HotPreviewData> by remember { mutableStateOf(emptyList()) }
     val scope = rememberCoroutineScope()
     val scale = model.scale

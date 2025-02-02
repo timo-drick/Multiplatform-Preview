@@ -14,10 +14,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.use
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.PreviewItem
+import de.drick.compose.hotpreview.plugin.HotPreviewModel
 import de.drick.compose.hotpreview.plugin.RenderedImage
-import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
-import org.jetbrains.jewel.foundation.ExperimentalJewelApi
+import de.drick.compose.hotpreview.plugin.ui.PreviewItem
+import de.drick.compose.hotpreview.plugin.ui.SelfPreviewTheme
 import org.jetbrains.jewel.ui.component.Text
 
 @Composable
@@ -27,20 +27,17 @@ fun Preview1() {
     }
 }
 
-@OptIn(ExperimentalJewelApi::class)
 @HotPreview(name = "PreviewItem", widthDp = 500, heightDp = 300)
 @Composable
 fun PreviewPreviewItem() {
-    SwingBridgeTheme {
-        val renderedImage = renderPreview(DpSize(300.dp, 400.dp)) {
-            SwingBridgeTheme {
-                Preview2()
-            }
+    SelfPreviewTheme {
+        val renderedImage = renderPreviewInception(DpSize(300.dp, 400.dp)) {
+            Preview2()
         }
         val data = HotPreview(
             name = "Test image",
         )
-        PreviewItem("Test", data, renderedImage)
+        PreviewItem("Test", HotPreviewModel("Test"), renderedImage)
     }
 }
 
@@ -52,7 +49,8 @@ fun Preview2() {
 }
 
 @Composable
-fun renderPreview(size: DpSize, content: @Composable () -> Unit): RenderedImage {
+fun renderPreviewInception(size: DpSize, content: @Composable () -> Unit): RenderedImage {
+    // Currently not working but maybe use full in the future to test the render functions
     val d = LocalDensity.current
     val sizePx = with(d) { size.toSize().toIntSize() }
     ImageComposeScene(

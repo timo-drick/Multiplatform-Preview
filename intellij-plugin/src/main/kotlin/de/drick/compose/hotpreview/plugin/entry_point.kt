@@ -15,6 +15,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.util.ui.components.BorderLayoutPanel
+import de.drick.compose.hotpreview.plugin.ui.MainScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
 import org.jdom.Element
