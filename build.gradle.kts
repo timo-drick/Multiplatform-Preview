@@ -1,4 +1,8 @@
 plugins {
+    kotlin("jvm") version Versions.kotlin apply false
+    kotlin("multiplatform") version Versions.kotlin apply false
+    id("com.android.application") version Versions.androidGraglePlugin apply false
+
     id("com.github.ben-manes.versions") version Versions.benManesPlugin
 }
 

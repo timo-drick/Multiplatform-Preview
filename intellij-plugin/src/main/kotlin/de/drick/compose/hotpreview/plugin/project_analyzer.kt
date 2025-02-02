@@ -7,6 +7,8 @@ import androidx.compose.ui.unit.dp
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings
+import com.intellij.openapi.externalSystem.model.project.LibraryDependencyData
+import com.intellij.openapi.externalSystem.model.project.LibraryPathType
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
 import com.intellij.openapi.externalSystem.task.TaskCallback
 import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
@@ -20,16 +22,24 @@ import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
+import de.drick.compose.hotpreview.RenderPreview
 import de.drick.compose.hotpreview.plugin.livecompile.SourceSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jetbrains.kotlin.idea.base.externalSystem.findAll
 import org.jetbrains.kotlin.idea.base.facet.isMultiPlatformModule
+import org.jetbrains.kotlin.idea.gradle.configuration.KotlinOutputPathsData
+import org.jetbrains.plugins.gradle.model.data.GradleSourceSetData
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
+import org.jetbrains.plugins.gradle.util.GradleUtil
 import java.io.File
+import java.net.URL
 import java.net.URLClassLoader
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.reflect.KClass
+import kotlin.text.contains
 
 
 class ProjectAnalyzer(
@@ -45,15 +55,10 @@ class ProjectAnalyzer(
         }
     }
 
-    suspend fun loadFileClass(file: VirtualFile): Class<*> = withContext(Dispatchers.Default) {
-        val fileClassName = kotlinFileClassName(file)
-        getClassLoader(file).loadClass(fileClassName)
-    }
-
     suspend fun findPreviewAnnotations(file: VirtualFile): List<HotPreviewFunction> {
         getPsiFileSafely(project, file)?.let { psiFile ->
             println("Find preview annotations for: $file")
-            return analyzePsiFile(psiFile)
+            return analyzePsiFile(project, psiFile)
         }
         return emptyList()
     }
@@ -78,10 +83,6 @@ class ProjectAnalyzer(
             jvmSrcDir = jvmSource
         )
     }
-
-    suspend fun getJvmClassPath(file: VirtualFile) =
-        getClassPath(getJvmTargetModule(requireNotNull(getModule(file)))).toTypedArray()
-
 
     suspend fun executeGradleTask(file: VirtualFile) {
         val module = requireNotNull(getModule(file))
@@ -120,17 +121,34 @@ class ProjectAnalyzer(
         }
     }
 
-    private suspend fun getClassLoader(file: VirtualFile): ClassLoader {
-        val classPath = getClassPath(getJvmTargetModule(requireNotNull(getModule(file))))
+    private suspend fun getClassPathFromGradle(file: VirtualFile) {
+        val desktopModule = getJvmTargetModule(requireNotNull(getModule(file)))
+        val gradleData = GradleUtil.findGradleModuleData(desktopModule)
+        println(gradleData)
+        gradleData?.let { data ->
+            data.children
+                .filter { it.data is GradleSourceSetData }
+                .filter { (it.data as GradleSourceSetData).moduleName == "jvmMain" }
+                .forEach { sourceSetData ->
+                    val children = sourceSetData.children.map { it.data }
+                    children.filterIsInstance<KotlinOutputPathsData>()
+                        .map { it.paths }
+                        .forEach { println(it) }
+                    children.filterIsInstance<LibraryDependencyData>()
+                        .map { it.target.getPaths(LibraryPathType.SOURCE) }
+                        .forEach { println(it) }
+                    println(sourceSetData)
+                }
+        }
+    }
+
+    suspend fun getClassPath(file: VirtualFile): List<URL> {
+        val desktopModule = getJvmTargetModule(requireNotNull(getModule(file)))
+        return getClassPath(desktopModule)
             .filterNot { it.contains("hotpreview-jvm") }
             .map { File(it) }
             .filter { it.exists() }
             .map { it.toURI().toURL() }
-        val urlClassLoader = URLClassLoader(
-            classPath.toTypedArray(),
-            Composer::class.java.classLoader
-        )
-        return urlClassLoader
     }
 
     suspend fun getJvmTargetModule(module: Module): Module {
@@ -161,11 +179,6 @@ class ProjectAnalyzer(
         }
     }
 
-    private fun getClassPathArray(module: Module) = ModuleRootManager.getInstance(module)
-        .orderEntries()
-        .classesRoots
-        .map { it.presentableUrl }
-
     private suspend fun getClassPath(module: Module): Set<String> = readAction {
         val moduleClassPath = getClassPathArray(module)
         val dependencyClassPath = ModuleRootManager.getInstance(module)
@@ -173,6 +186,15 @@ class ProjectAnalyzer(
             .flatMap { getClassPathArray(it) }
         moduleClassPath + dependencyClassPath
     }.toSet()
+
+    private fun getClassPathArray(module: Module): List<String> {
+        val rm = ModuleRootManager.getInstance(module)
+        val classPath = rm
+            .orderEntries()
+            .classesRoots
+            .map { it.presentableUrl }
+        return classPath
+    }
 
     private suspend fun getSourcePath(module: Module) = readAction {
         ModuleRootManager.getInstance(module)
@@ -192,30 +214,3 @@ data class HotPreviewData(
     val function: HotPreviewFunction,
     val image: List<RenderedImage?>,
 )
-
-suspend fun renderPreview(clazz: Class<*>, previewList: List<HotPreviewFunction>): List<HotPreviewData> = withContext(Dispatchers.Default) {
-    previewList.map { function ->
-        println("F: $function")
-        val method = clazz.declaredMethods.find { it.name == function.name }
-        method?.isAccessible = true
-        val images = function.annotation.map { hpAnnotation ->
-            val annotation = hpAnnotation.annotation
-            val widthDp = annotation.widthDp.dp
-            val heightDp = annotation.heightDp.dp
-            method?.let {
-                renderMethod(
-                    clazz = clazz,
-                    method = it,
-                    size = DpSize(widthDp, heightDp),
-                    density = Density(annotation.density, annotation.fontScale),
-                    isDarkTheme = annotation.darkMode,
-                    isInspectionMode = true
-                )
-            }
-        }
-        HotPreviewData(
-            function = function,
-            image = images
-        )
-    }
-}

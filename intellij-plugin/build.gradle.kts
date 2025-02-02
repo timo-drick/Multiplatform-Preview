@@ -34,10 +34,30 @@ dependencies {
         bundledPlugins("org.jetbrains.kotlin", "com.intellij.gradle") // Plugins must be also provided in plugin.xml!!!
     }
 
-    implementation(compose.desktop.currentOs) {
+    implementation(compose.desktop.linux_x64) {
         exclude(group = "org.jetbrains.compose.material")
         exclude(group = "org.jetbrains.kotlinx")
     }
+    implementation(compose.desktop.linux_arm64) {
+        exclude(group = "org.jetbrains.compose.material")
+        exclude(group = "org.jetbrains.kotlinx")
+    }
+    implementation(compose.desktop.macos_x64) {
+        exclude(group = "org.jetbrains.compose.material")
+        exclude(group = "org.jetbrains.kotlinx")
+    }
+    implementation(compose.desktop.macos_arm64) {
+        exclude(group = "org.jetbrains.compose.material")
+        exclude(group = "org.jetbrains.kotlinx")
+    }
+    implementation(compose.desktop.windows_x64) {
+        exclude(group = "org.jetbrains.compose.material")
+        exclude(group = "org.jetbrains.kotlinx")
+    }
+    /*implementation(compose.desktop.windows_arm64) {
+        exclude(group = "org.jetbrains.compose.material")
+        exclude(group = "org.jetbrains.kotlinx")
+    }*/
 
     // See https://github.com/JetBrains/Jewel/releases for the release notes
     // The platform version is a supported major IJP version (e.g., 232 or 233 for 2023.2 and 2023.3 respectively)
@@ -52,12 +72,26 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx")
     }*/
 
-    implementation("de.drick.compose:hotpreview:0.1.3") {
+    implementation("de.drick.compose:hotpreview:0.1.4") {
         exclude(group = "org.jetbrains.kotlinx")
     }
 
     testImplementation("junit", "junit", "4.12")
 }
+
+tasks.register<GradleBuild>("buildRenderModule") {
+    group = "build"
+    dir = file("../")
+    tasks = listOf(":hot_preview_render:shadowJar")
+}
+
+val renderModulePath = layout.projectDirectory.dir("../hot_preview_render/build/libs")
+
+tasks.processResources {
+    dependsOn("buildRenderModule")
+    from(renderModulePath)
+}
+
 
 // See https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin.html
 intellijPlatform {

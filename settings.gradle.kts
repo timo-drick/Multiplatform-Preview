@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 }
 
 include(":hot_preview_annotation")
+include(":hot_preview_render")
