@@ -1,9 +1,5 @@
 package de.drick.compose.hotpreview.plugin
 
-import androidx.compose.runtime.Composer
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings
@@ -22,11 +18,7 @@ import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
-import de.drick.compose.hotpreview.RenderPreview
 import de.drick.compose.hotpreview.plugin.livecompile.SourceSet
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.jetbrains.kotlin.idea.base.externalSystem.findAll
 import org.jetbrains.kotlin.idea.base.facet.isMultiPlatformModule
 import org.jetbrains.kotlin.idea.gradle.configuration.KotlinOutputPathsData
 import org.jetbrains.plugins.gradle.model.data.GradleSourceSetData
