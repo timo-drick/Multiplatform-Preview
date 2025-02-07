@@ -1,15 +1,18 @@
 package de.drick.compose.hotpreview.plugin
 
+import androidx.compose.runtime.Composable
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
+import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotation
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationValue
 import org.jetbrains.kotlin.idea.debugger.core.stepping.getLineRange
+import org.jetbrains.kotlin.idea.stubindex.KotlinFullClassNameIndex
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtNamedFunction
@@ -23,6 +26,7 @@ suspend fun getPsiFileSafely(project: Project, virtualFile: VirtualFile): PsiFil
 }
 
 private val hotPreviewAnnotationClassId = ClassId.topLevel(FqName(fqNameHotPreview))
+private val composableClassId = ClassId.topLevel(FqName(Composable::class.qualifiedName!!))
 
 private val hotPreviewDefaultValues = HotPreviewModel()
 
@@ -56,6 +60,7 @@ suspend fun analyzePsiFile(project: Project, psiFile: PsiFile): List<HotPreviewF
         functionList.mapNotNull { function ->
             analyze(function) {
                 val mySymbol = function.symbol
+                println("Function: ${function.name}")
                 val hotPreviewAnnotations = mySymbol.annotations
                     .filter { it.classId == hotPreviewAnnotationClassId }
                     .map {
@@ -64,10 +69,40 @@ suspend fun analyzePsiFile(project: Project, psiFile: PsiFile): List<HotPreviewF
                             annotation = it.toHotPreviewAnnotation()
                         )
                     }
-                if (hotPreviewAnnotations.isEmpty()) null
+                val hotPreviewAnnotationClasses = mutableListOf<HotPreviewAnnotation>()
+                mySymbol.annotations // Find Annotation classes which contain HotPreview annotation
+                    .filter { it.classId != composableClassId }
+                    .filter { it.classId != hotPreviewAnnotationClassId }
+                    .forEach {
+                        println("Check: $it")
+                        mySymbol.annotations.forEach { annotation ->
+                            val fqn = annotation.classId?.asSingleFqName()
+                            println("Annotation: $fqn")
+                            fqn?.let {
+                                val clazz = KotlinFullClassNameIndex.Helper[fqn.toString(), project, GlobalSearchScope.allScope(project)]
+                                clazz.forEach {
+                                    it.symbol.annotations
+                                        .filter { it.classId == hotPreviewAnnotationClassId }
+                                        .forEach {
+                                            hotPreviewAnnotationClasses.add(
+                                                HotPreviewAnnotation(
+                                                    lineRange = annotation.psi?.getLineRange(),
+                                                    annotation = it.toHotPreviewAnnotation()
+                                                )
+                                            )
+                                        }
+                                }
+                            }
+                        }
+                    }
+                hotPreviewAnnotationClasses.forEach {
+                    println(it)
+                }
+                val annotations = hotPreviewAnnotations + hotPreviewAnnotationClasses
+                if (annotations.isEmpty()) null
                 else HotPreviewFunction(
                     name = function.name ?: "",
-                    annotation = hotPreviewAnnotations,
+                    annotation = annotations,
                     lineRange = function.getLineRange()
                 )
             }
