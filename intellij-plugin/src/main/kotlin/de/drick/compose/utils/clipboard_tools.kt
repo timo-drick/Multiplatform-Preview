@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin
+package de.drick.compose.utils
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toAwtImage

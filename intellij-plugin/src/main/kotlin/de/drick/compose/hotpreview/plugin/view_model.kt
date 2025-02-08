@@ -22,6 +22,9 @@ import java.io.File
 import java.net.URL
 import java.net.URLClassLoader
 
+@Suppress("UnstableApiUsage")
+private val LOG = fileLogger()
+
 interface HotPreviewViewModelI {
     val scale: Float
     fun changeScale(newScale: Float)
@@ -104,7 +107,7 @@ class HotPreviewViewModel(
                     events.forEach { event ->
                         event.file?.let { file ->
                             if (file.extension == "kt") {
-                                println("File event: $event")
+                                LOG.debug("File event: $event")
                                 changedKotlinFile = true
                             }
                         }
@@ -119,47 +122,8 @@ class HotPreviewViewModel(
     fun subscribeForFileEditing() {
         FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(object : DocumentListener {
             override fun documentChanged(event: DocumentEvent) {
-                println("Document event: $event")
+                LOG.debug("Document event: $event")
             }
         })
-    }
-}
-
-object RuntimeLibrariesManager {
-    private var tmpFolder: File? = null
-
-    private val runtimeLibs = listOf(
-        "hot_preview_render-all.jar"
-    )
-
-    private fun getResUrl(name: String) = this.javaClass.classLoader.getResource(name)
-
-    private suspend fun initialize(): File = withContext(Dispatchers.IO) {
-        val dir = tmpFolder
-        if (dir == null) {
-            val dir = FileUtil.createTempDirectory("hotpreview", "libs", true)
-            tmpFolder = dir
-            //Copy libraries
-            println("Temp dir: $dir")
-            runtimeLibs.forEach { fileName ->
-                val url = getResUrl(fileName)
-                val outputFile = File(dir, fileName)
-                url.openStream().use { inputStream ->
-                    outputFile.outputStream().use { outputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
-            }
-            dir
-        } else {
-            dir
-        }
-    }
-
-    suspend fun getRuntimeLibs(): List<URL> {
-        val tmpFolder = initialize()
-        return runtimeLibs.map {
-            File(tmpFolder, it).toURI().toURL()
-        }
     }
 }

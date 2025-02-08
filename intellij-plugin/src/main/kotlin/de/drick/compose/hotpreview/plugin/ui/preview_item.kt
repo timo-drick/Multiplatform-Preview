@@ -13,7 +13,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.ClipboardImage
+import de.drick.compose.utils.ClipboardImage
 import de.drick.compose.hotpreview.plugin.HotPreviewModel
 import de.drick.compose.hotpreview.plugin.RenderedImage
 import org.jetbrains.jewel.foundation.theme.JewelTheme

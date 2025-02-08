@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin.livecompile
+package de.drick.compose.utils.livecompile
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

@@ -2,6 +2,7 @@ package de.drick.compose.hotpreview.plugin
 
 import androidx.compose.ui.ImageComposeScene
 import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
 import com.intellij.openapi.externalSystem.task.TaskCallback
@@ -25,6 +26,7 @@ import kotlin.collections.find
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+private val LOG = logger<WorkspaceAnalyzer>()
 /**
  * TODO Replace the project_analyzer with this implementation.
  */
@@ -42,7 +44,7 @@ class WorkspaceAnalyzer(
         requireNotNull(fileModule) { "No module found!" }
         val baseModuleName = fileModule.name.substringBeforeLast(".")
         // TODO not sure if the name is always desktop for jvm modules
-        println("Base module: $baseModuleName")
+        LOG.debug("Base module: $baseModuleName")
         val desktopModule = currentSnapshot.entities(ModuleEntity::class.java)
             .filter { it.name.startsWith(baseModuleName) }
             //.filter { it.isTestModule.not() }
@@ -54,7 +56,7 @@ class WorkspaceAnalyzer(
 
         val classPath = modules.flatMap { module ->
             module.contentRoots.forEach {
-                println(it)
+                LOG.debug(it.toString())
             }
             module.dependencies
                 .filterIsInstance<LibraryDependency>()

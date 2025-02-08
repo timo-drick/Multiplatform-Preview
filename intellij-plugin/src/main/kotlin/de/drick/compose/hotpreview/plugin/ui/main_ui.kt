@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.intellij.openapi.diagnostic.fileLogger
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.HotPreviewData
 import de.drick.compose.hotpreview.plugin.HotPreviewViewModelI
@@ -23,6 +24,9 @@ import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.VerticallyScrollableContainer
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 import org.jetbrains.jewel.ui.theme.editorTabStyle
+
+@Suppress("UnstableApiUsage")
+private val LOG = fileLogger()
 
 @HotPreview(widthDp = 650, heightDp = 1400)
 @HotPreview(widthDp = 650, heightDp = 1400, darkMode = false)
@@ -50,7 +54,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
             errorMessage = null
         }.onFailure { err ->
             errorMessage = err
-            err.printStackTrace()
+            LOG.error(err)
         }
     }
 
@@ -70,9 +74,11 @@ fun MainScreen(model: HotPreviewViewModelI) {
         }
     }
     LaunchedEffect(Unit) {
+        compilingInProgress = true
         errorHandling {
             previewList = model.render()
         }
+        compilingInProgress = false
         //refresh()
     }
 
@@ -133,7 +139,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
                     hotPreviewList = previewList,
                     scale = scale,
                     onNavigateCode = {
-                        println("Navigate to line: $it")
+                        LOG.info("Navigate to line: $it")
                         model.navigateCodeLine(it)
                     }
                 )
