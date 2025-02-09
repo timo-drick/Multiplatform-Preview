@@ -20,6 +20,8 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
 import de.drick.compose.utils.livecompile.SourceSet
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.base.facet.isMultiPlatformModule
 import org.jetbrains.kotlin.idea.gradle.configuration.KotlinOutputPathsData
 import org.jetbrains.plugins.gradle.model.data.GradleSourceSetData
@@ -48,13 +50,15 @@ class ProjectAnalyzer(
         }
     }
 
-    suspend fun findPreviewAnnotations(file: VirtualFile): List<HotPreviewFunction> {
-        getPsiFileSafely(project, file)?.let { psiFile ->
-            LOG.debug("Find preview annotations for: $file")
-            return analyzePsiFile(project, psiFile)
+    suspend fun findPreviewAnnotations(file: VirtualFile): List<HotPreviewFunction> =
+        withContext(Dispatchers.Default) {
+            getPsiFileSafely(project, file)?.let { psiFile ->
+                LOG.debug("Find preview annotations for: $file")
+                return@withContext analyzePsiFile(project, psiFile)
+            }
+            emptyList()
         }
-        return emptyList()
-    }
+
 
     suspend fun getOutputFolder(file: VirtualFile): String {
         val module = requireNotNull(getModule(file)) { "Module for file: $file not found!" }
