@@ -42,44 +42,15 @@ private fun PreviewMainScreen() {
 
 @Composable
 fun MainScreen(model: HotPreviewViewModelI) {
-    var previewList: List<HotPreviewData> by remember { mutableStateOf(emptyList()) }
     val scope = rememberCoroutineScope()
+
+    val previewList = model.previewList
     val scale = model.scale
-    var compilingInProgress by remember { mutableStateOf(false) }
-    var errorMessage: Throwable? by remember { mutableStateOf(null) }
+    val compilingInProgress = model.compilingInProgress
+    val errorMessage: Throwable? = model.errorMessage
 
-    suspend fun errorHandling(block: suspend () -> Unit) {
-        runCatchingCancellationAware {
-            block()
-            errorMessage = null
-        }.onFailure { err ->
-            errorMessage = err
-            LOG.error(err)
-        }
-    }
-
-    fun refresh() {
-        scope.launch(Dispatchers.Default) {
-            compilingInProgress = true
-            errorHandling {
-                model.executeGradleTask()
-                previewList = model.render()
-            }
-            compilingInProgress = false
-        }
-    }
     LaunchedEffect(Unit) {
-        model.subscribeForFileChanges(scope) {
-            refresh()
-        }
-    }
-    LaunchedEffect(Unit) {
-        compilingInProgress = true
-        errorHandling {
-            previewList = model.render()
-        }
-        compilingInProgress = false
-        //refresh()
+        model.monitorChanges(scope)
     }
 
     Column(Modifier.fillMaxSize().background(JewelTheme.editorTabStyle.colors.background)) {
@@ -92,7 +63,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
             horizontalArrangement = Arrangement.End
         ) {
             IconButton(
-                onClick = { refresh() },
+                onClick = { scope.launch { model.refresh() } },
                 enabled = compilingInProgress.not()
             ) {
                 if (compilingInProgress) {
