@@ -46,47 +46,45 @@ class RenderPreviewImpl {
         val method = clazz.declaredMethods.find { it.name == methodName }
         method?.isAccessible = true
         if (method == null) return null
-        repeat(3) {
-            try {
-                var calculatedSize = IntSize.Zero
-                var image = ImageComposeScene(
-                    width = renderWidth,
-                    height = renderHeight,
-                    density = Density(density, fontScale),
-                    content = {
-                        CompositionLocalProvider(
-                            LocalSystemTheme provides theme,
-                            LocalInspectionMode provides isInspectionMode
-                        ) {
-                            method.invoke(null, currentComposer, 0)
-                        }
+        try {
+            var calculatedSize = IntSize.Zero
+            var image = ImageComposeScene(
+                width = renderWidth,
+                height = renderHeight,
+                density = Density(density, fontScale),
+                content = {
+                    CompositionLocalProvider(
+                        LocalSystemTheme provides theme,
+                        LocalInspectionMode provides isInspectionMode
+                    ) {
+                        method.invoke(null, currentComposer, 0)
                     }
-                ).use { scene ->
-                    val image = scene.render(1000 * 1000)
-                    calculatedSize = scene.calculateContentSize()
-                    image
                 }
-                val realWidth = min(calculatedSize.width, renderWidth)
-                val realHeight = min(calculatedSize.height, renderHeight)
-                // Maybe crop image
-                if (widthUndefined || heightUndefined) {
-                    println("We need to crop the image")
-                    image = cropUsingSurface(
-                        image = image,
-                        width = if (widthUndefined) realWidth else renderWidth,
-                        height = if (heightUndefined) realHeight else renderHeight,
-                    )
-                    println("Cropped image size: ${image.width} x ${image.height}")
-                }
-                println("Calculated size: $calculatedSize render size: $renderWidth x $renderHeight")
-                val placedWidth = realWidth / density
-                val placedHeight = realHeight / density
-                println("Rendered size: $placedWidth x $placedHeight")
-                return image.encodeToData(EncodedImageFormat.WEBP)?.bytes
-            } catch (err: Throwable) {
-                println("Problem during render!")
-                err.printStackTrace()
+            ).use { scene ->
+                val image = scene.render(1000 * 1000)
+                calculatedSize = scene.calculateContentSize()
+                image
             }
+            val realWidth = min(calculatedSize.width, renderWidth)
+            val realHeight = min(calculatedSize.height, renderHeight)
+            // Maybe crop image
+            if (widthUndefined || heightUndefined) {
+                println("We need to crop the image")
+                image = cropUsingSurface(
+                    image = image,
+                    width = if (widthUndefined) realWidth else renderWidth,
+                    height = if (heightUndefined) realHeight else renderHeight,
+                )
+                println("Cropped image size: ${image.width} x ${image.height}")
+            }
+            println("Calculated size: $calculatedSize render size: $renderWidth x $renderHeight")
+            val placedWidth = realWidth / density
+            val placedHeight = realHeight / density
+            println("Rendered size: $placedWidth x $placedHeight")
+            return image.encodeToData(EncodedImageFormat.WEBP)?.bytes
+        } catch (err: Throwable) {
+            println("Problem during render!")
+            err.printStackTrace()
         }
         return null
     }
