@@ -100,11 +100,16 @@ suspend fun analyzePsiFile(project: Project, psiFile: PsiFile): List<HotPreviewF
                 }
                 val annotations = hotPreviewAnnotations + hotPreviewAnnotationClasses
                 if (annotations.isEmpty()) null
-                else HotPreviewFunction(
-                    name = function.name ?: "",
-                    annotation = annotations,
-                    lineRange = function.getLineRange()
-                )
+                else {
+                    require(mySymbol.valueParameters.isEmpty()) {
+                        "Function ${function.name} with @HotPreview annotation must not has parameters! See line: ${function.getLineRange()}"
+                    }
+                    HotPreviewFunction(
+                        name = function.name ?: "",
+                        annotation = annotations,
+                        lineRange = function.getLineRange()
+                    )
+                }
             }
         }
     }

@@ -9,15 +9,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.intellij.openapi.diagnostic.fileLogger
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.HotPreviewData
 import de.drick.compose.hotpreview.plugin.HotPreviewViewModelI
-import de.drick.compose.hotpreview.plugin.runCatchingCancellationAware
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jetbrains.jewel.foundation.modifier.onHover
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.component.CircularProgressIndicator
-import org.jetbrains.jewel.ui.component.HorizontallyScrollableContainer
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.IconButton
 import org.jetbrains.jewel.ui.component.Text
@@ -34,7 +30,7 @@ private val LOG = fileLogger()
 private fun PreviewMainScreen() {
     val viewModel = remember {
         mockViewModel(getMockData()).apply {
-            changeScale(1.0f)
+            changeScale(1f)
         }
     }
     SelfPreviewBase(viewModel)
@@ -47,7 +43,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
     val previewList = model.previewList
     val scale = model.scale
     val compilingInProgress = model.compilingInProgress
-    val errorMessage: Throwable? = model.errorMessage
+    val error: Throwable? = model.errorMessage
 
     LaunchedEffect(Unit) {
         model.monitorChanges(scope)
@@ -73,34 +69,31 @@ fun MainScreen(model: HotPreviewViewModelI) {
                 }
             }
         }
-        if (errorMessage != null) {
-            errorMessage?.let { error ->
-                val stackTrace = remember(error) {
-                    error.stackTraceToString().replace("\t", "    ")
-                }
-                Box(Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(8.dp)
-                ) {
-                    VerticallyScrollableContainer {
-                        HorizontallyScrollableContainer {
-                            Column {
-                                Text(
-                                    text = error.message ?: "",
-                                    color = JewelTheme.globalColors.text.error,
-                                    style = JewelTheme.editorTextStyle
-                                )
-                                Text(
-                                    text = stackTrace,
-                                    color = JewelTheme.globalColors.text.error,
-                                    style = JewelTheme.editorTextStyle
-                                )
-                            }
-                        }
+        if (error != null) {
+            val stackTrace = remember(error) {
+                error.stackTraceToString().replace("\t", "    ")
+            }
+            Box(Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(8.dp)
+            ) {
+                VerticallyScrollableContainer {
+                    Column {
+                        Text(
+                            text = error.message ?: "",
+                            color = JewelTheme.globalColors.text.error,
+                            style = JewelTheme.editorTextStyle
+                        )
+                        Text(
+                            text = stackTrace,
+                            color = JewelTheme.globalColors.text.error,
+                            style = JewelTheme.editorTextStyle
+                        )
                     }
                 }
             }
+
         } else {
             var showZoomControls by remember { mutableStateOf(false) }
             Box(

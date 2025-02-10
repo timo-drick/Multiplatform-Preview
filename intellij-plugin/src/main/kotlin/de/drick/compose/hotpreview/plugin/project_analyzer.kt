@@ -207,7 +207,3 @@ class ProjectAnalyzer(
         readAction { ExternalSystemApiUtil.getExternalProjectPath(module) }
 }
 
-data class HotPreviewData(
-    val function: HotPreviewFunction,
-    val image: List<RenderedImage?>,
-)

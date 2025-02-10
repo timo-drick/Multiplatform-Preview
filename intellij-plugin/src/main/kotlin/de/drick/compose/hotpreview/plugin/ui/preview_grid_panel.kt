@@ -60,7 +60,7 @@ fun PreviewGridPanel(
                         ),
                         name = preview.function.name,
                         annotation = annotation.annotation,
-                        image = preview.image.getOrNull(index),
+                        renderState = preview.image[index],
                         scale = scale,
                         hasFocus = isFocused
                     )

@@ -23,11 +23,12 @@ import kotlinx.coroutines.withContext
 import org.jdom.Element
 import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
+import org.jetbrains.kotlin.idea.base.util.isAndroidModule
 import java.beans.PropertyChangeListener
 
 class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewViewProvider()) {
     override fun getEditorTypeId() = "hotpreview-preview-split-editor"
-    override fun getPolicy() = FileEditorPolicy.HIDE_DEFAULT_EDITOR // Maybe just HIDE_DEFAULT? Maybe configurable?
+    override fun getPolicy() = FileEditorPolicy.HIDE_OTHER_EDITORS // Maybe just HIDE_DEFAULT? Maybe configurable?
     override fun createSplitEditor(
         firstEditor: TextEditor,
         secondEditor: FileEditor
@@ -40,13 +41,7 @@ class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewVi
         return runBlocking {
                 val analyzer = ProjectAnalyzer(project)
                 val fileModule = analyzer.getModule(file)
-            fileModule != null
-            /*try {
-                analyzer.findPreviewAnnotations(file).isNotEmpty()
-                // Not possible because in dumb mode (indexing) it suspends until indexing is finished
-            } catch (err: Throwable) {
-                false
-            }*/
+            fileModule != null && !fileModule.isAndroidModule() // We do not want to override the default android preview
         }
     }
 }

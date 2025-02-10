@@ -30,7 +30,7 @@ class RenderPreviewImpl {
         fontScale: Float,
         isDarkTheme: Boolean,
         isInspectionMode: Boolean
-    ): ByteArray? {
+    ): Any {
         val theme = if (isDarkTheme) SystemTheme.Dark else SystemTheme.Light
         val defaultWidth = 1024f * density
         val defaultHeight = 1024f * density
@@ -45,7 +45,7 @@ class RenderPreviewImpl {
         val clazz = classLoader.loadClass(clazzFqn)
         val method = clazz.declaredMethods.find { it.name == methodName }
         method?.isAccessible = true
-        if (method == null) return null
+        if (method == null) return "Unable to find method: $methodName in class: ${clazz.name} !"
         try {
             var calculatedSize = IntSize.Zero
             var image = ImageComposeScene(
@@ -81,11 +81,11 @@ class RenderPreviewImpl {
             val placedWidth = realWidth / density
             val placedHeight = realHeight / density
             println("Rendered size: $placedWidth x $placedHeight")
-            return image.encodeToData(EncodedImageFormat.WEBP)?.bytes
+            return image.encodeToData(EncodedImageFormat.WEBP)?.bytes ?: "Unable to encode rendered preview!"
         } catch (err: Throwable) {
             println("Problem during render!")
             err.printStackTrace()
+            return err.cause?.stackTraceToString() ?: err.stackTraceToString()
         }
-        return null
     }
 }
