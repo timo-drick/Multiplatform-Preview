@@ -108,7 +108,7 @@ intellijPlatform {
     pluginConfiguration {
         id = "de.drick.compose.hotpreview.plugin"
         name = "Compose Multiplatform HotPreview"
-        version = "0.2.3"
+        version = "0.3.0"
 
         ideaVersion {
             sinceBuild = branch
