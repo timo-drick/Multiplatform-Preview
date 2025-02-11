@@ -4,7 +4,10 @@
 
 name: Publish package to Maven Central
 
-on: push
+on:
+  push:
+    tags:
+      - plugin_*
 
 defaults:
   run:
@@ -12,7 +15,7 @@ defaults:
 
 jobs:
   build:
-    name: Build
+    name: Release
     runs-on: ubuntu-latest
 
     steps:
@@ -40,4 +43,6 @@ jobs:
 
       - name: Sign Plugin
         run: ./gradlew signPlugin
-        
+
+      - name: Release to plugin market
+        run: ./gradlew publishPlugin

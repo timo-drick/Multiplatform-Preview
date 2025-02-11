@@ -15,29 +15,16 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.util.ui.components.BorderLayoutPanel
+import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
 import de.drick.compose.hotpreview.plugin.ui.MainScreen
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jdom.Element
 import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
+import org.jetbrains.kotlin.idea.base.util.isAndroidModule
 import java.beans.PropertyChangeListener
-
-
-class HotPreviewSplitEditor(
-    editor: TextEditor,
-    preview: HotPreviewView,
-) : TextEditorWithPreview(
-    editor, preview, "Kotlin editor with HotPreview", Layout.SHOW_EDITOR_AND_PREVIEW
-)
-
-
-// Source of file inspection from Jetbrains sources:
-// https://github.com/JetBrains/android/blob/master/intellij.android.compose-common/src/com/android/tools/compose/inspection/BasePreviewAnnotationInspection.kt
-// TODO
-// Look into Android Studio sources for preview entry points:
-// compose-designer/src/com/android/tools/idea/compose/preview/ComposePreviewRepresentationProvider.kt
-
 
 class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewViewProvider()) {
     override fun getEditorTypeId() = "hotpreview-preview-split-editor"
@@ -47,40 +34,15 @@ class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewVi
         secondEditor: FileEditor
     ): FileEditor {
         require(secondEditor is HotPreviewView) { "Secondary editor should be HotPreviewView" }
-        secondEditor.textEditor = firstEditor
-        return HotPreviewSplitEditor(firstEditor, secondEditor)
+        return SeamlessEditorWithPreview(firstEditor, secondEditor, "Kotlin editor with HotPreview")
     }
     override fun accept(project: Project, file: VirtualFile): Boolean {
         if (file.extension != "kt") return false
-        return kotlinFileHasHotPreview(file)
-        /*var annotationFound = false
-        PsiManager.getInstance(project).findFile(file)?.let { psiFile ->
-            /*psiFile.accept(object : KotlinRecursiveElementVisitor() {
-                /*override fun visitImportList(importList: KtImportList) {
-                    importList.imports.forEach {
-                        println("Import: ${it.name}")
-                    }
-                }*/
-            })*/
-            psiFile.accept(object : KotlinRecursiveElementVisitor() {
-                override fun visitNamedFunction(function: KtNamedFunction) {
-                    val annotations = function.annotations
-                    val functionName = function.name
-                    val found = function.annotationEntries.any { annotationEntry ->
-                        val name = annotationEntry.name
-                        val shortName = annotationEntry.shortName
-                        val type = annotationEntry.elementType
-                        val typeRef = annotationEntry.typeReference
-                        false
-                    }
-                }
-            })
+        return runBlocking {
+                val analyzer = ProjectAnalyzer(project)
+                val fileModule = analyzer.getModule(file)
+            fileModule != null && !fileModule.isAndroidModule() // We do not want to override the default android preview
         }
-        return annotationFound
-
-         */
-        //return true//checkedFile?.language == "Kotlin"
-        //return true
     }
 }
 
@@ -98,18 +60,15 @@ class HotPreviewViewProvider : WeighedFileEditorProvider(), AsyncFileEditorProvi
 
     override fun createEditor(project: Project, file: VirtualFile) = HotPreviewView(project, file)
     override fun getEditorTypeId() = "hotpreview-preview-view"
-    override fun getPolicy(): FileEditorPolicy = FileEditorPolicy.HIDE_DEFAULT_EDITOR
+    override fun getPolicy(): FileEditorPolicy = FileEditorPolicy.HIDE_OTHER_EDITORS
 }
 
 class HotPreviewView(
     project: Project,
     private val file: VirtualFile
 ) : UserDataHolder by UserDataHolderBase(), FileEditor {
-
-    var textEditor: TextEditor? = null
     private val mainComponent by lazy {
-        val editor = requireNotNull(textEditor) { "TextEditor null!" }
-        val model = HotPreviewViewModel(project, editor, file)
+        val model = HotPreviewViewModel(project, this, file)
         HotPreviewWindow(model)
     }
 

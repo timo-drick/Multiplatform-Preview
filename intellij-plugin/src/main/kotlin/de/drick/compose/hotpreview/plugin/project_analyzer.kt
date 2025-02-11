@@ -2,6 +2,7 @@ package de.drick.compose.hotpreview.plugin
 
 import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings
 import com.intellij.openapi.externalSystem.model.project.LibraryDependencyData
 import com.intellij.openapi.externalSystem.model.project.LibraryPathType
@@ -18,7 +19,9 @@ import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
-import de.drick.compose.hotpreview.plugin.livecompile.SourceSet
+import de.drick.compose.utils.livecompile.SourceSet
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.base.facet.isMultiPlatformModule
 import org.jetbrains.kotlin.idea.gradle.configuration.KotlinOutputPathsData
 import org.jetbrains.plugins.gradle.model.data.GradleSourceSetData
@@ -27,12 +30,12 @@ import org.jetbrains.plugins.gradle.util.GradleConstants
 import org.jetbrains.plugins.gradle.util.GradleUtil
 import java.io.File
 import java.net.URL
-import java.net.URLClassLoader
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-import kotlin.reflect.KClass
 import kotlin.text.contains
 
+
+private val LOG = logger<ProjectAnalyzer>()
 
 class ProjectAnalyzer(
     private val project: Project
@@ -42,18 +45,20 @@ class ProjectAnalyzer(
         return readAction {
             val projectSdk = ProjectRootManager.getInstance(project)
                 .projectSdk
-            println("Sdk: ${projectSdk?.name}")
+            LOG.debug("Sdk: ${projectSdk?.name}")
             projectSdk?.homePath ?: ""
         }
     }
 
-    suspend fun findPreviewAnnotations(file: VirtualFile): List<HotPreviewFunction> {
-        getPsiFileSafely(project, file)?.let { psiFile ->
-            println("Find preview annotations for: $file")
-            return analyzePsiFile(project, psiFile)
+    suspend fun findPreviewAnnotations(file: VirtualFile): List<HotPreviewFunction> =
+        withContext(Dispatchers.Default) {
+            getPsiFileSafely(project, file)?.let { psiFile ->
+                LOG.debug("Find preview annotations for: $file")
+                return@withContext analyzePsiFile(project, psiFile)
+            }
+            emptyList()
         }
-        return emptyList()
-    }
+
 
     suspend fun getOutputFolder(file: VirtualFile): String {
         val module = requireNotNull(getModule(file)) { "Module for file: $file not found!" }
@@ -68,8 +73,8 @@ class ProjectAnalyzer(
         val module = requireNotNull(getModule(file)) { "Module for file: $file not found!" }
         val jvmSource = getSourcePath(getJvmTargetModule(module))
         val commonSource = getCommonTargetModule(module)?.let { getSourcePath(it) }
-        println("jvm source:    $jvmSource")
-        println("common source: $commonSource")
+        LOG.debug("jvm source:    $jvmSource")
+        LOG.debug("common source: $commonSource")
         return SourceSet(
             commonSrcDir = commonSource,
             jvmSrcDir = jvmSource
@@ -116,7 +121,7 @@ class ProjectAnalyzer(
     private suspend fun getClassPathFromGradle(file: VirtualFile) {
         val desktopModule = getJvmTargetModule(requireNotNull(getModule(file)))
         val gradleData = GradleUtil.findGradleModuleData(desktopModule)
-        println(gradleData)
+        LOG.debug(gradleData.toString())
         gradleData?.let { data ->
             data.children
                 .filter { it.data is GradleSourceSetData }
@@ -125,11 +130,11 @@ class ProjectAnalyzer(
                     val children = sourceSetData.children.map { it.data }
                     children.filterIsInstance<KotlinOutputPathsData>()
                         .map { it.paths }
-                        .forEach { println(it) }
+                        .forEach { LOG.debug(it.toString()) }
                     children.filterIsInstance<LibraryDependencyData>()
                         .map { it.target.getPaths(LibraryPathType.SOURCE) }
-                        .forEach { println(it) }
-                    println(sourceSetData)
+                        .forEach { LOG.debug(it.toString()) }
+                    LOG.debug(sourceSetData.toString())
                 }
         }
     }
@@ -202,7 +207,3 @@ class ProjectAnalyzer(
         readAction { ExternalSystemApiUtil.getExternalProjectPath(module) }
 }
 
-data class HotPreviewData(
-    val function: HotPreviewFunction,
-    val image: List<RenderedImage?>,
-)

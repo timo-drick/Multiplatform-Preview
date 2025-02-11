@@ -1,3 +1,5 @@
+import org.intellij.lang.annotations.Language
+
 plugins {
     id("org.jetbrains.intellij.platform") version "2.2.1"
     id("java")
@@ -27,7 +29,8 @@ val branch = "243"
 dependencies {
 
     intellijPlatform {
-        // androidStudio(ijPlatform)
+        //See this list for available versions: https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html
+        //androidStudio("2024.3.1.11")
         intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
         zipSigner()
@@ -105,7 +108,7 @@ intellijPlatform {
     pluginConfiguration {
         id = "de.drick.compose.hotpreview.plugin"
         name = "Compose Multiplatform HotPreview"
-        version = "0.2.0"
+        version = "0.2.3"
 
         ideaVersion {
             sinceBuild = branch
@@ -118,19 +121,35 @@ intellijPlatform {
             url = "https://github.com/timo-drick/Mutliplatform-Preview"
         }
 
+        @Language("HTML")
         changeNotes = """
-            V 0.2.0
-            - Added support for macos, window x64/arm64 should work (untested)
-            - Using an independent classloader now. Could solved some issues with resource loading.
-            - Turned off recompile when opening a file.
-            - Wait until indexing is finished before analyzing files.
-            - Replaced @HotPreview annotation reflection code analzer by psi file analyzer.
-            - Set LocalInspectionMode to true in previews.
-            - Added navigation to @HotPreview annotation on preview click.
-            - Added on hover focus for preview items.
-            
-            V 0.1.1
-            - Show errors when trying to compile and render the preview.
+<h3>V 0.3.0</h3>
+<ul>
+    <li>Improved error handling and visualization.</li>
+    <li>
+        Plugin does override the default editor now all the time for kotlin files.
+        This is necessary because otherwise it is not possible to show preview when the user add @HotPreview annotation.
+    </li>
+    <li>
+        Added support for annotation classes. You can now create annotation classes with @HotPreview annotations.
+    </li>
+    <li>Self preview is now working. So the source of this plugin can also be previewed.</li>
+</ul>
+<h3>V 0.2.0</h3>
+<ul>
+    <li>Added support for macos. Window x64/arm64 should also work (untested)</li>
+    <li>Using an independent classloader now. Could solved some issues with resource loading.</li>
+    <li>Turned off recompile when opening a file.</li>
+    <li>Wait until indexing is finished before analyzing files.</li>
+    <li>Replaced @HotPreview annotation reflection code analyzer by psi file analyzer.</li>
+    <li>Set LocalInspectionMode to true in previews.</li>
+    <li>Added navigation to @HotPreview annotation on preview click.</li>
+    <li>Added on hover focus for preview items.</li>
+</ul>
+<h3>V 0.1.1</h3>
+<ul>
+    <li>Show errors when trying to compile and render the preview.</li>
+</ul>
         """.trimIndent()
     }
 

@@ -11,6 +11,10 @@ data class HotPreviewAnnotation(
     val annotation: HotPreviewModel
 )
 
+/**
+ * This is a copy of the HotPreview annotation.
+ * Because of conflicts with the classloaders it is necessary to have a copy of the data structure here.
+ */
 data class HotPreviewModel(
     val name: String = "",
     val group: String = "",    // Not used yet!

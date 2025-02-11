@@ -12,12 +12,7 @@ import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import de.drick.compose.hotpreview.plugin.HotPreviewAnnotation
-import de.drick.compose.hotpreview.plugin.HotPreviewData
-import de.drick.compose.hotpreview.plugin.HotPreviewFunction
-import de.drick.compose.hotpreview.plugin.HotPreviewModel
-import de.drick.compose.hotpreview.plugin.HotPreviewViewModelI
-import de.drick.compose.hotpreview.plugin.RenderedImage
+import de.drick.compose.hotpreview.plugin.*
 import hotpreviewplugin.generated.resources.Res
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
@@ -80,31 +75,52 @@ fun SelfPreviewTheme(content: @Composable () -> Unit) {
 fun getMockData() = sampleImages.map { getHotPreviewDataItem(it) }
 
 fun getHotPreviewDataItem(resourceName: String): HotPreviewData {
-    val previewItem = getPreviewItem("drawable/$resourceName.png", if (resourceName == "login_light") 4f else 2f)
-    return HotPreviewData(
-        function = HotPreviewFunction(
-            name = resourceName.capitalize(),
-            annotation = listOf(
-                HotPreviewAnnotation(
-                    lineRange = null,
-                    HotPreviewModel(
-                        name = "",
-                        widthDp = previewItem.size.width.value.roundToInt(),
-                        heightDp = previewItem.size.width.value.roundToInt()
+    try {
+        val previewItem = getPreviewItem("drawable/$resourceName.png", if (resourceName == "login_light") 4f else 2f)
+        return HotPreviewData(
+            function = HotPreviewFunction(
+                name = resourceName.capitalize(),
+                annotation = listOf(
+                    HotPreviewAnnotation(
+                        lineRange = null,
+                        HotPreviewModel(
+                            name = resourceName,
+                            widthDp = previewItem.size.width.value.roundToInt(),
+                            heightDp = previewItem.size.width.value.roundToInt()
+                        )
                     )
-                )
+                ),
+                lineRange = null
             ),
-            lineRange = null
-        ),
-        image = listOf(previewItem)
-    )
+            image = listOf(previewItem)
+        )
+    } catch (err: Throwable) {
+        return HotPreviewData(
+            function = HotPreviewFunction(
+                name = resourceName.capitalize(),
+                annotation = listOf(
+                    HotPreviewAnnotation(
+                        lineRange = null,
+                        HotPreviewModel(
+                            name = resourceName,
+                            widthDp = -1,
+                            heightDp = -1
+                        )
+                    )
+                ),
+                lineRange = null
+            ),
+            image = listOf(RenderError(err.stackTraceToString()))
+        )
+    }
 }
 
 val sampleImages = listOf(
     "countposer_dialog",
     "countposer_start",
     "login_dark",
-    "login_light"
+    "login_light",
+    "error"
 )
 
 @OptIn(ExperimentalResourceApi::class)
@@ -119,9 +135,13 @@ private fun getPreviewItem(resource: String, density: Float): RenderedImage {
 
 fun mockViewModel(mockData: List<HotPreviewData>) = object : HotPreviewViewModelI {
     override var scale: Float = 1f
+    override val isPureTextEditor = false
+    override var compilingInProgress = false
+    override var errorMessage: Throwable? = null
+    override var previewList = mockData
+
     override fun changeScale(newScale: Float) { scale = newScale}
     override fun navigateCodeLine(line: Int) {}
-    override suspend fun render(): List<HotPreviewData> = mockData
-    override suspend fun executeGradleTask() {}
-    override fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit) {}
+    override fun monitorChanges(scope: CoroutineScope) {}
+    override suspend fun refresh() {}
 }

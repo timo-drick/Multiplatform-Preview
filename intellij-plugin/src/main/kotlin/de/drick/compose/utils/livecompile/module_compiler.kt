@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin.livecompile
+package de.drick.compose.utils.livecompile
 
 import de.drick.compose.hotpreview.plugin.runCatchingCancellationAware
 import kotlinx.coroutines.Dispatchers

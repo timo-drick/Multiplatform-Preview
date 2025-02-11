@@ -3,48 +3,75 @@ package de.drick.compose.hotpreview.plugin
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.intellij.openapi.application.readActionBlocking
+import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.fileLogger
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.TextEditor
+import com.intellij.openapi.fileEditor.TextEditorWithPreview
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.net.URL
 import java.net.URLClassLoader
+
+@Suppress("UnstableApiUsage")
+private val LOG = fileLogger()
 
 interface HotPreviewViewModelI {
     val scale: Float
+    val isPureTextEditor: Boolean
+    val compilingInProgress: Boolean
+    val errorMessage: Throwable?
+    var previewList: List<HotPreviewData>
     fun changeScale(newScale: Float)
     fun navigateCodeLine(line: Int)
-    suspend fun render(): List<HotPreviewData>
-    suspend fun executeGradleTask()
-    fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit)
+    fun monitorChanges(scope: CoroutineScope)
+    suspend fun refresh()
+    //suspend fun render(): List<HotPreviewData>
+    //suspend fun executeGradleTask()
+    //fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit)
 }
 
 class HotPreviewViewModel(
     private val project: Project,
-    private val textEditor: TextEditor,
+    private val previewEditor: HotPreviewView,
     private val file: VirtualFile
 ): HotPreviewViewModelI {
-
+    private val splitEditor = requireNotNull(TextEditorWithPreview.getParentSplitEditor(previewEditor) as? SeamlessEditorWithPreview)
+    private val textEditor = splitEditor.textEditor
     private val projectAnalyzer = ProjectAnalyzer(project)
     private val workspaceAnalyzer = WorkspaceAnalyzer(project)
 
     private val properties = PluginPersistentStore(project, file)
     private val scaleProperty = properties.float("scale", 1f)
 
+    init {
+        //val previewFunctions = projectAnalyzer.findPreviewAnnotations(file)
+        //splitEditor.setVerticalSplit(false)
+        /*EventQueue.invokeLater {
+            splitEditor.setVerticalSplit(true)
+        }*/
+    }
+
     override var scale: Float by mutableStateOf(scaleProperty.get())
         private set
+
+
+    override var isPureTextEditor by mutableStateOf(splitEditor.isPureTextEditor)
+    override var compilingInProgress by mutableStateOf(false)
+    override var errorMessage: Throwable? by mutableStateOf(null)
+    override var previewList: List<HotPreviewData> by mutableStateOf(emptyList())
 
     override fun changeScale(newScale: Float) {
         scaleProperty.set(newScale)
@@ -57,43 +84,93 @@ class HotPreviewViewModel(
         textEditor.editor.scrollingModel.scrollTo(pos, ScrollType.MAKE_VISIBLE)
     }
 
-    override suspend fun render(): List<HotPreviewData> {
+    override suspend fun refresh() {
+        compilingInProgress = true
+        errorHandling {
+            val previewFunctions = analyzePreviewAnnotations()
+            if (previewFunctions.isNotEmpty()) {
+                projectAnalyzer.executeGradleTask(file)
+            }
+            previewList = render(previewFunctions)
+        }
+        compilingInProgress = false
+    }
+
+    override fun monitorChanges(scope: CoroutineScope) {
+        scope.launch {
+            compilingInProgress = true
+            errorHandling {
+                val previewFunctions = analyzePreviewAnnotations()
+                previewList = render(previewFunctions)
+            }
+            compilingInProgress = false
+        }
+        subscribeForFileChanges(scope) {
+            scope.launch {
+                refresh()
+            }
+        }
+    }
+
+    private fun setPureTextEditorMode(pureTextEditorMode: Boolean) {
+        isPureTextEditor = pureTextEditorMode
+        splitEditor.isPureTextEditor = isPureTextEditor
+    }
+
+    private suspend fun analyzePreviewAnnotations(): List<HotPreviewFunction> {
+        val previewFunctions = projectAnalyzer.findPreviewAnnotations(file)
+        setPureTextEditorMode(previewFunctions.isEmpty())
+        return previewFunctions
+    }
+
+    private suspend fun errorHandling(block: suspend () -> Unit) {
+        runCatchingCancellationAware {
+            block()
+            errorMessage = null
+        }.onFailure { err ->
+            errorMessage = err
+            LOG.error(err)
+        }
+    }
+
+    private suspend fun render(previewFunctions: List<HotPreviewFunction>): List<HotPreviewData> {
+        if (previewFunctions.isEmpty()) return emptyList()
         /*val test = workspaceAnalyzer.getClassPathForFile(file)
         test.forEach {
             println(it)
         }*/
-
+        //val renderService = project.service<RenderService>()
+        val dumbService = project.service<DumbService>()
+        LOG.debug("is in dumb mode: ${dumbService.isDumb}")
+        println("is in dumb mode: ${dumbService.isDumb}")
 
         val skikoLibs = RuntimeLibrariesManager.getRuntimeLibs()
-        println(skikoLibs)
+        LOG.debug(skikoLibs.toString())
         val classPath = projectAnalyzer.getClassPath(file) + skikoLibs
-        //Add skiko libs
 
         val classLoader = URLClassLoader(
             classPath.toTypedArray(),
             null
         )
         val fileClassName = kotlinFileClassName(file)
-        val previewFunctions = projectAnalyzer.findPreviewAnnotations(file)
 
-        // Workaround for legacy resource loading in old compose code
-        // See androidx.compose.ui.res.ClassLoaderResourceLoader
-        // It uses the contextClassLoader to load the resources.
-        val previousContextClassLoader = Thread.currentThread().contextClassLoader
-        // For new compose.components resource system a LocalCompositionProvider is used.
-        Thread.currentThread().contextClassLoader = classLoader
-        return try {
-            renderPreview(classLoader, fileClassName, previewFunctions)
-        } finally {
-            Thread.currentThread().contextClassLoader = previousContextClassLoader
+        return readActionBlocking {
+            // Workaround for legacy resource loading in old compose code
+            // See androidx.compose.ui.res.ClassLoaderResourceLoader
+            // It uses the contextClassLoader to load the resources.
+            val previousContextClassLoader = Thread.currentThread().contextClassLoader
+            // For new compose.components resource system a LocalCompositionProvider is used.
+            Thread.currentThread().contextClassLoader = classLoader
+            try {
+                renderPreview(classLoader, fileClassName, previewFunctions)
+            } finally {
+                Thread.currentThread().contextClassLoader = previousContextClassLoader
+            }
         }
     }
 
-    override suspend fun executeGradleTask() {
-        projectAnalyzer.executeGradleTask(file)
-    }
 
-    override fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit) {
+    private fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit) {
         project.messageBus.connect(scope).subscribe(
             VirtualFileManager.VFS_CHANGES,
             object : BulkFileListener {
@@ -104,7 +181,7 @@ class HotPreviewViewModel(
                     events.forEach { event ->
                         event.file?.let { file ->
                             if (file.extension == "kt") {
-                                println("File event: $event")
+                                LOG.debug("File event: $event")
                                 changedKotlinFile = true
                             }
                         }
@@ -116,50 +193,11 @@ class HotPreviewViewModel(
     }
 
     //TODO
-    fun subscribeForFileEditing() {
+    private fun subscribeForFileEditing() {
         FileDocumentManager.getInstance().getDocument(file)?.addDocumentListener(object : DocumentListener {
             override fun documentChanged(event: DocumentEvent) {
-                println("Document event: $event")
+                LOG.debug("Document event: $event")
             }
         })
-    }
-}
-
-object RuntimeLibrariesManager {
-    private var tmpFolder: File? = null
-
-    private val runtimeLibs = listOf(
-        "hot_preview_render-all.jar"
-    )
-
-    private fun getResUrl(name: String) = this.javaClass.classLoader.getResource(name)
-
-    private suspend fun initialize(): File = withContext(Dispatchers.IO) {
-        val dir = tmpFolder
-        if (dir == null) {
-            val dir = FileUtil.createTempDirectory("hotpreview", "libs", true)
-            tmpFolder = dir
-            //Copy libraries
-            println("Temp dir: $dir")
-            runtimeLibs.forEach { fileName ->
-                val url = getResUrl(fileName)
-                val outputFile = File(dir, fileName)
-                url.openStream().use { inputStream ->
-                    outputFile.outputStream().use { outputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
-            }
-            dir
-        } else {
-            dir
-        }
-    }
-
-    suspend fun getRuntimeLibs(): List<URL> {
-        val tmpFolder = initialize()
-        return runtimeLibs.map {
-            File(tmpFolder, it).toURI().toURL()
-        }
     }
 }
