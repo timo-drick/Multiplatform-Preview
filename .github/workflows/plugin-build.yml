@@ -4,10 +4,7 @@
 
 name: Publish package to Maven Central
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
+on: push
 
 defaults:
   run:
