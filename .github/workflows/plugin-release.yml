@@ -42,7 +42,13 @@ jobs:
         run: ./gradlew verifyPlugin
 
       - name: Sign Plugin
+        env:
+          PLUGIN_CERTIFICATE_CHAIN: ${{ secrets.PLUGIN_CERTIFICATE_CHAIN }}
+          PLUGIN_PRIVATE_KEY: ${{ secrets.PLUGIN_PRIVATE_KEY }}
+          PLUGIN_PRIVATE_KEY_PASSWORD: ${{ secrets.PLUGIN_PRIVATE_KEY_PASSWORD }}
         run: ./gradlew signPlugin
 
       - name: Release to plugin market
+        env:
+          PLUGIN_PUBLISH_TOKEN: ${{ secrets.PLUGIN_PUBLISH_TOKEN }}
         run: ./gradlew publishPlugin
