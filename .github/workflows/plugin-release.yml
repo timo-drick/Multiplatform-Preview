@@ -6,7 +6,6 @@ name: Publish package to Maven Central
 
 on:
   push:
-    branches-ignore: [ "!main" ]
     tags:
       - plugin_*
 
