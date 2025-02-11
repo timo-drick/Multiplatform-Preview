@@ -1,0 +1,49 @@
+# This workflow will build a package using Gradle
+# and then verify and sing the plugin
+# TODO publish the plugin to IntelliJ marketplace
+
+name: Publish package to Maven Central
+
+on:
+  push:
+    branches-ignore: [ "!main" ]
+    tags:
+      - plugin_*
+
+defaults:
+  run:
+    working-directory: ./intellij-plugin
+
+jobs:
+  build:
+    name: Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+
+      - name: Gradle Wrapper Validation
+        uses: gradle/actions/wrapper-validation@v3
+
+      - name: Set Up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu' # See 'Supported distributions' for available options
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build plugin
+        run: ./gradlew buildPlugin
+
+      - name: Run Plugin Verification tasks
+        run: ./gradlew verifyPlugin
+
+      - name: Sign Plugin
+        run: ./gradlew signPlugin
+
+      - name: Release to plugin market
+        run: ./gradlew publishPlugin
