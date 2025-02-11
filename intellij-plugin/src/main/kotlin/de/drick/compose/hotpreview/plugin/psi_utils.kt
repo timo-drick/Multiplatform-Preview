@@ -51,12 +51,11 @@ suspend fun analyzePsiFile(project: Project, psiFile: PsiFile): List<HotPreviewF
     //TODO Find a solution which is also working in dumb mode.
     smartReadAction(project) {
         val functionList = mutableListOf<KtNamedFunction>()
-        val t = object : KtTreeVisitorVoid() {
+        psiFile.accept(object : KtTreeVisitorVoid() {
             override fun visitNamedFunction(function: KtNamedFunction) {
                 functionList.add(function)
             }
-        }
-        psiFile.accept(t)
+        })
         functionList.mapNotNull { function ->
             analyze(function) {
                 val mySymbol = function.symbol

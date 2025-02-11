@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.compose") version Versions.kotlin
     id("org.jetbrains.compose") version Versions.composeMP
-    id("com.gradleup.shadow") version "8.3.5"
+    id("com.gradleup.shadow") version Versions.shadow
 }
 
 dependencies {

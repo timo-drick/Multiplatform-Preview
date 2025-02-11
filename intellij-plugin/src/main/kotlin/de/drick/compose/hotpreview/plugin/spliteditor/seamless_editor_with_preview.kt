@@ -4,7 +4,6 @@ import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DynamicActionGroup
-import com.intellij.openapi.editor.impl.EditorComponentImpl
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.LayoutActionsFloatingToolbar
 import com.intellij.openapi.fileEditor.SplitEditorToolbar
@@ -50,11 +49,10 @@ class SeamlessEditorWithPreview(
     override fun getTabActions(): ActionGroup = actionGroup // in tab toolbar mode
     override fun createViewActionGroup(): ActionGroup =  actionGroup // in floating toolbar mode
 
-    var isPureTextEditor: Boolean = true
+    private var pureTextModeWasOn = false
+
+    var isPureTextEditor: Boolean = false
         set(value) {
-            //println("Is show floating toolbar: $isShowFloatingToolbar")
-            //println("Is show actions in tabs: $isShowActionsInTabs")
-            //println("Set pure text editor: $value")
             actionGroup.setVisible(!value)
             val container = mainComponent
             val toolbar = toolbarComponent
@@ -73,12 +71,17 @@ class SeamlessEditorWithPreview(
                 }
             }
 
-            if (value) {
+            if (value) { // is pure text mode
+                pureTextModeWasOn = true
                 setLayout(Layout.SHOW_EDITOR)
+            } else {
+                if (pureTextModeWasOn) {
+                    pureTextModeWasOn = false
+                    setLayout(Layout.SHOW_EDITOR_AND_PREVIEW)
+                }
             }
             field = value
         }
-
 }
 
 private class HideAbleActionGroup(
