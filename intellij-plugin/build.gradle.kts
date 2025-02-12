@@ -23,14 +23,17 @@ repositories {
     mavenLocal()
 }
 
-val ijPlatform = "2024.3.2"
-val branch = "243"
+//val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.2.5")
+//val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("242")
+val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.2")
+val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("243")
 
 dependencies {
 
     intellijPlatform {
         //See this list for available versions: https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html
-        //androidStudio("2024.3.1.11")
+        //androidStudio("2024.3.1.11") //Meerkat
+        //androidStudio("2024.2.2.13")
         intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
         zipSigner()
@@ -108,7 +111,7 @@ intellijPlatform {
     pluginConfiguration {
         id = "de.drick.compose.hotpreview.plugin"
         name = "Compose Multiplatform HotPreview"
-        version = "0.3.0"
+        version = "0.3.1-$ijPlatform"
 
         ideaVersion {
             sinceBuild = branch

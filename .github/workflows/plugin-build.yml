@@ -15,6 +15,15 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        ijp_branch: [242, 243]
+        include:
+          - ijp_version: 2024.2.5
+            ijp_branch: 242
+          - ijp_version: 2024.3.2
+            ijp_branch: 243
+
     steps:
       - name: Fetch Sources
         uses: actions/checkout@v4
@@ -33,13 +42,21 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build plugin
+        env:
+          IJP_VERSION: ${{ matrix.ijp_version }}
+          IJP_BRANCH: ${{ matrix.ijp_branch }}
         run: ./gradlew buildPlugin
 
       - name: Run Plugin Verification tasks
+        env:
+          IJP_VERSION: ${{ matrix.ijp_version }}
+          IJP_BRANCH: ${{ matrix.ijp_branch }}
         run: ./gradlew verifyPlugin
 
       - name: Sign Plugin
         env:
+          IJP_VERSION: ${{ matrix.ijp_version }}
+          IJP_BRANCH: ${{ matrix.ijp_branch }}
           PLUGIN_CERTIFICATE_CHAIN: ${{ secrets.PLUGIN_CERTIFICATE_CHAIN }}
           PLUGIN_PRIVATE_KEY: ${{ secrets.PLUGIN_PRIVATE_KEY }}
           PLUGIN_PRIVATE_KEY_PASSWORD: ${{ secrets.PLUGIN_PRIVATE_KEY_PASSWORD }}
