@@ -38,9 +38,6 @@ interface HotPreviewViewModelI {
     fun navigateCodeLine(line: Int)
     fun monitorChanges(scope: CoroutineScope)
     suspend fun refresh()
-    //suspend fun render(): List<HotPreviewData>
-    //suspend fun executeGradleTask()
-    //fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit)
 }
 
 class HotPreviewViewModel(

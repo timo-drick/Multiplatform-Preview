@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
+import kotlin.collections.plus
 
 
 suspend fun getPsiFileSafely(project: Project, virtualFile: VirtualFile): PsiFile? = readAction {
@@ -47,68 +48,73 @@ private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
     )
 }
 
-suspend fun analyzePsiFile(project: Project, psiFile: PsiFile): List<HotPreviewFunction> =
-    //TODO Find a solution which is also working in dumb mode.
-    smartReadAction(project) {
-        val functionList = mutableListOf<KtNamedFunction>()
-        psiFile.accept(object : KtTreeVisitorVoid() {
-            override fun visitNamedFunction(function: KtNamedFunction) {
-                functionList.add(function)
-            }
-        })
-        functionList.mapNotNull { function ->
-            analyze(function) {
-                val mySymbol = function.symbol
-                println("Function: ${function.name}")
-                val hotPreviewAnnotations = mySymbol.annotations
-                    .filter { it.classId == hotPreviewAnnotationClassId }
-                    .map {
-                        HotPreviewAnnotation(
-                            lineRange = it.psi?.getLineRange(),
-                            annotation = it.toHotPreviewAnnotation()
-                        )
-                    }
-                val hotPreviewAnnotationClasses = mutableListOf<HotPreviewAnnotation>()
-                mySymbol.annotations // Find Annotation classes which contain HotPreview annotation
-                    .filter { it.classId != composableClassId }
-                    .filter { it.classId != hotPreviewAnnotationClassId }
-                    .forEach {
-                        println("Check: $it")
-                        mySymbol.annotations.forEach { annotation ->
-                            val fqn = annotation.classId?.asSingleFqName()
-                            println("Annotation: $fqn")
-                            fqn?.let {
-                                val clazz = KotlinFullClassNameIndex.Helper[fqn.toString(), project, GlobalSearchScope.allScope(project)]
-                                clazz.forEach {
-                                    it.symbol.annotations
-                                        .filter { it.classId == hotPreviewAnnotationClassId }
-                                        .forEach {
-                                            hotPreviewAnnotationClasses.add(
-                                                HotPreviewAnnotation(
-                                                    lineRange = annotation.psi?.getLineRange(),
-                                                    annotation = it.toHotPreviewAnnotation()
-                                                )
-                                            )
-                                        }
-                                }
-                            }
-                        }
-                    }
-                hotPreviewAnnotationClasses.forEach {
-                    println(it)
+suspend fun analyzePsiFile(project: Project, psiFile: PsiFile) = smartReadAction(project) {
+    val functionList = mutableListOf<KtNamedFunction>()
+    psiFile.accept(object : KtTreeVisitorVoid() {
+        override fun visitNamedFunction(function: KtNamedFunction) {
+            functionList.add(function)
+        }
+    })
+    functionList.mapNotNull { function ->
+            val annotations = checkFunctionForAnnotation(function)
+            if (annotations.isEmpty()) null
+            else {
+                require(function.valueParameters.isEmpty()) {
+                    "Function ${function.name} with @HotPreview annotation must not has parameters! See line: ${function.getLineRange()}"
                 }
-                val annotations = hotPreviewAnnotations + hotPreviewAnnotationClasses
-                if (annotations.isEmpty()) null
-                else {
-                    require(mySymbol.valueParameters.isEmpty()) {
-                        "Function ${function.name} with @HotPreview annotation must not has parameters! See line: ${function.getLineRange()}"
-                    }
-                    HotPreviewFunction(
-                        name = function.name ?: "",
-                        annotation = annotations,
-                        lineRange = function.getLineRange()
-                    )
-                }
+                HotPreviewFunction(
+                    name = function.name ?: "",
+                    annotation = annotations,
+                    lineRange = function.getLineRange()
+                )
             }
         }
     }
+
+fun checkFunctionForAnnotation(function: KtNamedFunction): List<HotPreviewAnnotation> {
+    //TODO Find a solution which is also working in dumb mode.
+    analyze(function) {
+        val mySymbol = function.symbol
+        println("Function: ${function.name}")
+        val hotPreviewAnnotations = mySymbol.annotations
+            .filter { it.classId == hotPreviewAnnotationClassId }
+            .map {
+                HotPreviewAnnotation(
+                    lineRange = it.psi?.getLineRange(),
+                    annotation = it.toHotPreviewAnnotation()
+                )
+            }
+        val hotPreviewAnnotationClasses = mutableListOf<HotPreviewAnnotation>()
+        mySymbol.annotations // Find Annotation classes which contain HotPreview annotation
+            .filter { it.classId != composableClassId }
+            .filter { it.classId != hotPreviewAnnotationClassId }
+            .forEach {
+                println("Check: $it")
+                mySymbol.annotations.forEach { annotation ->
+                    val fqn = annotation.classId?.asSingleFqName()
+                    println("Annotation: $fqn")
+                    fqn?.let {
+                        val project = function.project
+                        val clazz =
+                            KotlinFullClassNameIndex.Helper[fqn.toString(), project, GlobalSearchScope.allScope(project)]
+                        clazz.forEach {
+                            it.symbol.annotations
+                                .filter { it.classId == hotPreviewAnnotationClassId }
+                                .forEach {
+                                    hotPreviewAnnotationClasses.add(
+                                        HotPreviewAnnotation(
+                                            lineRange = annotation.psi?.getLineRange(),
+                                            annotation = it.toHotPreviewAnnotation()
+                                        )
+                                    )
+                                }
+                        }
+                    }
+                }
+            }
+        hotPreviewAnnotationClasses.forEach {
+            println(it)
+        }
+        return hotPreviewAnnotations + hotPreviewAnnotationClasses
+    }
+}

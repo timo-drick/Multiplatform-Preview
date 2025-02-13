@@ -24,6 +24,7 @@ import org.jdom.Element
 import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
 import org.jetbrains.kotlin.idea.base.util.isAndroidModule
+import org.jetbrains.kotlin.idea.testIntegration.framework.KotlinPsiBasedTestFramework.Companion.asKtNamedFunction
 import java.beans.PropertyChangeListener
 
 class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewViewProvider()) {
@@ -67,9 +68,16 @@ class HotPreviewView(
     project: Project,
     private val file: VirtualFile
 ) : UserDataHolder by UserDataHolderBase(), FileEditor {
+    @OptIn(ExperimentalJewelApi::class)
     private val mainComponent by lazy {
         val model = HotPreviewViewModel(project, this, file)
-        HotPreviewWindow(model)
+        ComposePanel().apply {
+            setContent {
+                SwingBridgeTheme {
+                    MainScreen(model)
+                }
+            }
+        }
     }
 
     override fun getName() = "HotPreview"
@@ -84,29 +92,6 @@ class HotPreviewView(
     override fun removePropertyChangeListener(listener: PropertyChangeListener) {}
 }
 
-@OptIn(ExperimentalJewelApi::class)
-class HotPreviewWindow(
-    private val model: HotPreviewViewModel
-) : BorderLayoutPanel(), Disposable {
-    //val log = Logger.getInstance(HotPreviewWindow::class.java)
-    init {
-        val composePanel = ComposePanel().apply {
-            setContent {
-                SwingBridgeTheme {
-                    MainScreen(model)
-                }
-            }
-        }
-        composePanel.bounds = bounds
-        add(composePanel)
-    }
-
-    override fun dispose() {
-        println("Disposed")
-    }
-}
-
-
 
 /**
  * [EntryPoint] implementation to mark `@HotPreview` functions as entry points and avoid them being flagged as unused.
@@ -120,7 +105,7 @@ class HotPreviewEntryPoint : EntryPoint() {
 
     override fun isEntryPoint(refElement: RefElement, psiElement: PsiElement): Boolean = isEntryPoint(psiElement)
     override fun isEntryPoint(psiElement: PsiElement): Boolean =
-        psiElement is PsiMethod && psiElement.hasAnnotation(fqNameHotPreview)
+        psiElement is PsiMethod && checkForAnnotationClass(psiElement)
     override fun readExternal(element: Element) = element.deserializeInto(this)
     override fun writeExternal(element: Element) {
         serializeObjectInto(this, element)
@@ -129,5 +114,13 @@ class HotPreviewEntryPoint : EntryPoint() {
     override fun isSelected(): Boolean = ADD_PREVIEW_TO_ENTRIES
     override fun setSelected(selected: Boolean) {
         this.ADD_PREVIEW_TO_ENTRIES = selected
+    }
+
+    private fun checkForAnnotationClass(psiMethod: PsiMethod): Boolean {
+        if (psiMethod.hasAnnotation(fqNameHotPreview)) return true
+        psiMethod.asKtNamedFunction()?.let {
+            return checkFunctionForAnnotation(it).isNotEmpty()
+        }
+        return false
     }
 }

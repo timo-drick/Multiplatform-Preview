@@ -1,5 +1,3 @@
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-
 package de.drick.compose.hotpreview.plugin
 
 import androidx.compose.ui.graphics.ImageBitmap
