@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import org.jdom.Element
 import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
+import org.jetbrains.jewel.foundation.enableNewSwingCompositing
 import org.jetbrains.kotlin.idea.base.util.isAndroidModule
 import org.jetbrains.kotlin.idea.testIntegration.framework.KotlinPsiBasedTestFramework.Companion.asKtNamedFunction
 import java.beans.PropertyChangeListener
@@ -71,6 +72,7 @@ class HotPreviewView(
     @OptIn(ExperimentalJewelApi::class)
     private val mainComponent by lazy {
         val model = HotPreviewViewModel(project, this, file)
+        enableNewSwingCompositing()
         ComposePanel().apply {
             setContent {
                 SwingBridgeTheme {
