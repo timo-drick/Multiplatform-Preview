@@ -5,7 +5,6 @@ import com.intellij.codeInspection.reference.EntryPoint
 import com.intellij.codeInspection.reference.RefElement
 import com.intellij.configurationStore.deserializeInto
 import com.intellij.configurationStore.serializeObjectInto
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.*
 import com.intellij.openapi.project.Project
@@ -14,18 +13,16 @@ import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
-import com.intellij.util.ui.components.BorderLayoutPanel
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
 import de.drick.compose.hotpreview.plugin.ui.MainScreen
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jdom.Element
 import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
 import org.jetbrains.jewel.foundation.enableNewSwingCompositing
-import org.jetbrains.kotlin.idea.base.util.isAndroidModule
 import org.jetbrains.kotlin.idea.testIntegration.framework.KotlinPsiBasedTestFramework.Companion.asKtNamedFunction
+import org.jetbrains.kotlin.idea.util.projectStructure.getModule
 import java.beans.PropertyChangeListener
 
 class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewViewProvider()) {
@@ -38,13 +35,11 @@ class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewVi
         require(secondEditor is HotPreviewView) { "Secondary editor should be HotPreviewView" }
         return SeamlessEditorWithPreview(firstEditor, secondEditor, "Kotlin editor with HotPreview")
     }
-    override fun accept(project: Project, file: VirtualFile): Boolean {
-        if (file.extension != "kt") return false
-        return runBlocking {
-                val analyzer = ProjectAnalyzer(project)
-                val fileModule = analyzer.getModule(file)
-            fileModule != null && !fileModule.isAndroidModule() // We do not want to override the default android preview
-        }
+    override fun accept(project: Project, file: VirtualFile) = when {
+        file.extension != "kt" -> false
+        file.getModule(project) == null -> false
+        WorkspaceAnalyzer(project).isAndroid(file) -> false
+        else -> true
     }
 }
 
@@ -62,7 +57,7 @@ class HotPreviewViewProvider : WeighedFileEditorProvider(), AsyncFileEditorProvi
 
     override fun createEditor(project: Project, file: VirtualFile) = HotPreviewView(project, file)
     override fun getEditorTypeId() = "hotpreview-preview-view"
-    override fun getPolicy(): FileEditorPolicy = FileEditorPolicy.HIDE_OTHER_EDITORS
+    override fun getPolicy(): FileEditorPolicy = FileEditorPolicy.HIDE_DEFAULT_EDITOR
 }
 
 class HotPreviewView(
