@@ -133,12 +133,21 @@ private fun getPreviewItem(resource: String, density: Float): RenderedImage {
     return RenderedImage(image, size)
 }
 
-fun mockViewModel(mockData: List<HotPreviewData>) = object : HotPreviewViewModelI {
+fun mockViewModel(
+    mockData: List<HotPreviewData>,
+    disabledGroups: Set<String> = emptySet()
+) = object : HotPreviewViewModelI {
     override var scale: Float = 1f
     override val isPureTextEditor = false
     override var compilingInProgress = false
     override var errorMessage: Throwable? = null
     override var previewList = mockData
+    override val groups: List<PreviewGroup> = mockData.flatMap { previewData ->
+        previewData.function.annotation.groupBy { it.annotation.group }.keys.filter { it.isNotBlank() }
+    }.map { groupName ->
+        PreviewGroup(groupName, disabledGroups.contains(groupName).not())
+    }
+    override fun updateGroup(group: PreviewGroup) {}
 
     override fun changeScale(newScale: Float) { scale = newScale}
     override fun navigateCodeLine(line: Int) {}

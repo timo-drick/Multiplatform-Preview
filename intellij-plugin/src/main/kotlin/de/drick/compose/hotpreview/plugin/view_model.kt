@@ -3,6 +3,7 @@ package de.drick.compose.hotpreview.plugin
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.intellij.openapi.application.readActionBlocking
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.fileLogger
@@ -11,7 +12,6 @@ import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -20,20 +20,25 @@ import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.net.URLClassLoader
 
 @Suppress("UnstableApiUsage")
 private val LOG = fileLogger()
+
+data class PreviewGroup(
+    val name: String,
+    val enabled: Boolean
+)
 
 interface HotPreviewViewModelI {
     val scale: Float
     val isPureTextEditor: Boolean
     val compilingInProgress: Boolean
     val errorMessage: Throwable?
-    var previewList: List<HotPreviewData>
+    val previewList: List<HotPreviewData>
+    val groups: List<PreviewGroup>
+    fun updateGroup(group: PreviewGroup)
     fun changeScale(newScale: Float)
     fun navigateCodeLine(line: Int)
     fun monitorChanges(scope: CoroutineScope)
@@ -42,16 +47,23 @@ interface HotPreviewViewModelI {
 
 class HotPreviewViewModel(
     private val project: Project,
-    private val previewEditor: HotPreviewView,
+    private val splitEditor: SeamlessEditorWithPreview,
     private val file: VirtualFile
 ): HotPreviewViewModelI {
-    private val splitEditor = requireNotNull(TextEditorWithPreview.getParentSplitEditor(previewEditor) as? SeamlessEditorWithPreview)
+
+    private val previewGroups = SnapshotStateList<PreviewGroup>()
+    override val groups = previewGroups
+
+    private val disabledGroups = mutableSetOf<String>()
+
+
     private val textEditor = splitEditor.textEditor
     private val projectAnalyzer = ProjectAnalyzer(project)
     private val workspaceAnalyzer = WorkspaceAnalyzer(project)
 
     private val properties = PluginPersistentStore(project, file)
     private val scaleProperty = properties.float("scale", 1f)
+
 
     init {
         //val previewFunctions = projectAnalyzer.findPreviewAnnotations(file)
@@ -69,6 +81,25 @@ class HotPreviewViewModel(
     override var compilingInProgress by mutableStateOf(false)
     override var errorMessage: Throwable? by mutableStateOf(null)
     override var previewList: List<HotPreviewData> by mutableStateOf(emptyList())
+
+    override fun updateGroup(group: PreviewGroup) {
+        if (group.enabled) {
+            disabledGroups.remove(group.name)
+        } else {
+            disabledGroups.add(group.name)
+        }
+        updateGroups()
+    }
+
+    private fun updateGroups() {
+        val groups = previewList.flatMap { previewData ->
+            previewData.function.annotation.groupBy { it.annotation.group }.keys.filter { it.isNotBlank() }
+        }.map { groupName ->
+            PreviewGroup(groupName, disabledGroups.contains(groupName).not())
+        }
+        previewGroups.clear()
+        previewGroups.addAll(groups)
+    }
 
     override fun changeScale(newScale: Float) {
         scaleProperty.set(newScale)
@@ -89,6 +120,7 @@ class HotPreviewViewModel(
                 projectAnalyzer.executeGradleTask(file)
             }
             previewList = render(previewFunctions)
+            updateGroups()
         }
         compilingInProgress = false
     }

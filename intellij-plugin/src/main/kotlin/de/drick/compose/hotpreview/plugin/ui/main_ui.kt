@@ -50,25 +50,17 @@ fun MainScreen(model: HotPreviewViewModelI) {
     }
 
     Column(Modifier.fillMaxSize().background(JewelTheme.editorTabStyle.colors.background)) {
-        Row(
-            modifier = Modifier
-                .background(JewelTheme.globalColors.panelBackground)
-                .fillMaxWidth()
-                .align(Alignment.End)
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.End
-        ) {
-            IconButton(
-                onClick = { scope.launch { model.refresh() } },
-                enabled = compilingInProgress.not()
-            ) {
-                if (compilingInProgress) {
-                    CircularProgressIndicator()
-                } else {
-                    Icon(AllIconsKeys.General.Refresh, contentDescription = "Refresh")
+        MainTopBar(
+            modifier = Modifier.fillMaxWidth(),
+            compilingInProgress = compilingInProgress,
+            groups = model.groups,
+            onAction = { action ->
+                when (action) {
+                    TopBarAction.Refresh -> scope.launch { model.refresh() }
+                    is TopBarAction.UpdateGroup -> model.updateGroup(action.previewGroup)
                 }
             }
-        }
+        )
         if (error != null) {
             val stackTrace = remember(error) {
                 error.stackTraceToString().replace("\t", "    ")
