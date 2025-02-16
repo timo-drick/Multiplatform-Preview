@@ -8,15 +8,14 @@ import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMo
 import com.intellij.openapi.externalSystem.task.TaskCallback
 import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
-import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.backend.workspace.toVirtualFileUrl
 import com.intellij.platform.workspace.jps.entities.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jetbrains.kotlin.idea.util.projectStructure.getModule
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import java.io.File
@@ -34,10 +33,24 @@ class WorkspaceAnalyzer(
     private val project: Project
 ) {
     private val workspaceModel = com.intellij.platform.backend.workspace.WorkspaceModel.getInstance(project)
-    private val currentSnapshot = workspaceModel.currentSnapshot
+    private val currentSnapshot
+        get() = workspaceModel.currentSnapshot
 
     private fun getClassLoader(file: VirtualFile) =
         URLClassLoader(getClassPathForFile(file).toTypedArray(), ImageComposeScene::class.java.classLoader)
+
+    suspend fun getJvmTargetModule(module: ModuleEntity): ModuleEntity {
+        val baseModuleName = module.name.substringBeforeLast(".")
+
+        val desktopModule = currentSnapshot.entities(ModuleEntity::class.java)
+            .filter { it.name.startsWith(baseModuleName) }
+            //.filter { it.isTestModule.not() }
+            .find {
+                it.name.contains("jvmMain") || it.name.contains("desktopMain") || it.name.substringAfterLast(".") == "main"
+            }
+        requireNotNull(desktopModule) { "No desktop module found!" }
+        return desktopModule
+    }
 
     fun getClassPathForFile(file: VirtualFile): Set<URL> {
         val fileModule = getModule(file)
@@ -70,15 +83,23 @@ class WorkspaceAnalyzer(
         return classPath.toSet()
     }
 
-    private fun getModule(file: VirtualFile): ModuleEntity? {
-        val module = ModuleUtil.findModuleForFile(file, project)
-        val fileManager = workspaceModel.getVirtualFileUrlManager()
-        val virtualFileUrl = file.toVirtualFileUrl(fileManager)
-        val result = currentSnapshot.getVirtualFileUrlIndex().findEntitiesByUrl(virtualFileUrl)
+    fun getModule(file: VirtualFile): ModuleEntity? {
+        return file.getModule(project)?.let { module ->
+            currentSnapshot.resolve(ModuleId(module.name))
+        }
+    }
 
-        val moduleName = module?.name
-        checkNotNull(moduleName)
-        return currentSnapshot.resolve(ModuleId(moduleName))
+    fun isAndroid(file: VirtualFile) =
+        getModule(file)?.facets?.find { it.typeId.name == "android" } != null
+
+    fun analyzeModule(module: ModuleEntity) {
+        println("Module: ${module.name} type: ${module.type}")
+        module.facets.forEach {
+            println("Facet: ${it.name} type: ${it.typeId.name}")
+        }
+        module.dependencies.forEach { dep ->
+            println("Dep: $dep")
+        }
     }
 
     private fun getModulePath(file: VirtualFile): String? {

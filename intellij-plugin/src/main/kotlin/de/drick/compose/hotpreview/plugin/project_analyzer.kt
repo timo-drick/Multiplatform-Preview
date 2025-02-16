@@ -48,16 +48,6 @@ class ProjectAnalyzer(
         }
     }
 
-    suspend fun findPreviewAnnotations(file: VirtualFile): List<HotPreviewFunction> =
-        withContext(Dispatchers.Default) {
-            getPsiFileSafely(project, file)?.let { psiFile ->
-                LOG.debug("Find preview annotations for: $file")
-                return@withContext analyzePsiFile(project, psiFile)
-            }
-            emptyList()
-        }
-
-
     suspend fun getOutputFolder(file: VirtualFile): String {
         val module = requireNotNull(getModule(file)) { "Module for file: $file not found!" }
         val jvmModule = getJvmTargetModule(module)

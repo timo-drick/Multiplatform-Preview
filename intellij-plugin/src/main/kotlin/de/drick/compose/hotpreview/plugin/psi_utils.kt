@@ -9,6 +9,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotation
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationValue
@@ -52,6 +54,15 @@ private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
     )
 }
 
+suspend fun findPreviewAnnotations(project: Project, file: VirtualFile): List<HotPreviewFunction> =
+    withContext(Dispatchers.Default) {
+        getPsiFileSafely(project, file)?.let { psiFile ->
+            LOG.debug("Find preview annotations for: $file")
+            return@withContext analyzePsiFile(project, psiFile)
+        }
+        emptyList()
+    }
+
 suspend fun analyzePsiFile(project: Project, psiFile: PsiFile) = smartReadAction(project) {
     val functionList = mutableListOf<KtNamedFunction>()
     psiFile.accept(object : KtTreeVisitorVoid() {
@@ -60,20 +71,20 @@ suspend fun analyzePsiFile(project: Project, psiFile: PsiFile) = smartReadAction
         }
     })
     functionList.mapNotNull { function ->
-            val annotations = checkFunctionForAnnotation(function)
-            if (annotations.isEmpty()) null
-            else {
-                require(function.valueParameters.isEmpty()) {
-                    "Function ${function.name} with @HotPreview annotation must not has parameters! See line: ${function.getLineRange()}"
-                }
-                HotPreviewFunction(
-                    name = function.name ?: "",
-                    annotation = annotations,
-                    lineRange = function.getLineRange()
-                )
+        val annotations = checkFunctionForAnnotation(function)
+        if (annotations.isEmpty()) null
+        else {
+            require(function.valueParameters.isEmpty()) {
+                "Function ${function.name} with @HotPreview annotation must not has parameters! See line: ${function.getLineRange()}"
             }
+            HotPreviewFunction(
+                name = function.name ?: "",
+                annotation = annotations,
+                lineRange = function.getLineRange()
+            )
         }
     }
+}
 
 fun checkFunctionForAnnotation(function: KtNamedFunction): List<HotPreviewAnnotation> {
     //TODO Find a solution which is also working in dumb mode.

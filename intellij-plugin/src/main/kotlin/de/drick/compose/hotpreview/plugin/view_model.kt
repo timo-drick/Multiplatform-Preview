@@ -115,7 +115,12 @@ class HotPreviewViewModel(
     }
 
     private suspend fun analyzePreviewAnnotations(): List<HotPreviewFunction> {
-        val previewFunctions = projectAnalyzer.findPreviewAnnotations(file)
+        withContext(Dispatchers.Default) {
+            workspaceAnalyzer.getModule(file)?.let { module ->
+                workspaceAnalyzer.analyzeModule(module)
+            }
+        }
+        val previewFunctions = findPreviewAnnotations(project, file)
         setPureTextEditorMode(previewFunctions.isEmpty())
         return previewFunctions
     }
