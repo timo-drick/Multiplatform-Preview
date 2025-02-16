@@ -3,6 +3,7 @@ package de.drick.compose.hotpreview.plugin
 import androidx.compose.runtime.Composable
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.application.smartReadAction
+import com.intellij.openapi.diagnostic.fileLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
@@ -18,6 +19,9 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import kotlin.collections.plus
+
+@Suppress("UnstableApiUsage")
+private val LOG = fileLogger()
 
 
 suspend fun getPsiFileSafely(project: Project, virtualFile: VirtualFile): PsiFile? = readAction {
@@ -75,7 +79,7 @@ fun checkFunctionForAnnotation(function: KtNamedFunction): List<HotPreviewAnnota
     //TODO Find a solution which is also working in dumb mode.
     analyze(function) {
         val mySymbol = function.symbol
-        println("Function: ${function.name}")
+        LOG.debug("Function: ${function.name}")
         val hotPreviewAnnotations = mySymbol.annotations
             .filter { it.classId == hotPreviewAnnotationClassId }
             .map {
@@ -89,32 +93,33 @@ fun checkFunctionForAnnotation(function: KtNamedFunction): List<HotPreviewAnnota
             .filter { it.classId != composableClassId }
             .filter { it.classId != hotPreviewAnnotationClassId }
             .forEach {
-                println("Check: $it")
+                LOG.debug("Check: $it")
                 mySymbol.annotations.forEach { annotation ->
                     val fqn = annotation.classId?.asSingleFqName()
-                    println("Annotation: $fqn")
+                    LOG.debug("Annotation: $fqn")
                     fqn?.let {
                         val project = function.project
                         val clazz =
                             KotlinFullClassNameIndex.Helper[fqn.toString(), project, GlobalSearchScope.allScope(project)]
                         clazz.forEach {
-                            it.symbol.annotations
-                                .filter { it.classId == hotPreviewAnnotationClassId }
-                                .forEach {
-                                    hotPreviewAnnotationClasses.add(
-                                        HotPreviewAnnotation(
-                                            lineRange = annotation.psi?.getLineRange(),
-                                            annotation = it.toHotPreviewAnnotation()
+                            try {
+                                it.symbol.annotations
+                                    .filter { it.classId == hotPreviewAnnotationClassId }
+                                    .forEach {
+                                        hotPreviewAnnotationClasses.add(
+                                            HotPreviewAnnotation(
+                                                lineRange = annotation.psi?.getLineRange(),
+                                                annotation = it.toHotPreviewAnnotation()
+                                            )
                                         )
-                                    )
-                                }
+                                    }
+                            } catch (err: Throwable) {
+                                LOG.error(err)
+                            }
                         }
                     }
                 }
             }
-        hotPreviewAnnotationClasses.forEach {
-            println(it)
-        }
         return hotPreviewAnnotations + hotPreviewAnnotationClasses
     }
 }
