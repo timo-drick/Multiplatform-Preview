@@ -20,8 +20,6 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
 import de.drick.compose.utils.livecompile.SourceSet
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.base.facet.isMultiPlatformModule
 import org.jetbrains.kotlin.idea.gradle.configuration.KotlinOutputPathsData
 import org.jetbrains.plugins.gradle.model.data.GradleSourceSetData
@@ -85,8 +83,15 @@ class ProjectAnalyzer(
         val module = requireNotNull(getModule(file))
         val modulePath = requireNotNull(getModulePath(module))
         val desktopModule = getJvmTargetModule(module)
-        val moduleName = desktopModule.name.substringAfterLast(".")
-        val taskName = "${moduleName}Classes"
+        /*
+        val gradleData = GradleUtil.findGradleModuleData(desktopModule)
+        gradleData?.let { gradle ->
+            println("Gradle data: ${gradle.data.moduleName} ${gradle.data.gradlePath}")
+        }
+        */
+        val tokens = desktopModule.name.split(".")
+        val moduleName = tokens.drop(1).joinToString(":")
+        val taskName = ":${moduleName}Classes"
         val gradleSettings = GradleSettings.getInstance(project)
         val gradleVmOptions = gradleSettings.gradleVmOptions
         val settings = ExternalSystemTaskExecutionSettings()
