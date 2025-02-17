@@ -38,7 +38,7 @@ class RenderService(
             null
         )
         val fileClassName = kotlinFileClassName(file)
-        val previewFunctions = projectAnalyzer.findPreviewAnnotations(file)
+        val previewFunctions = findPreviewAnnotations(project, file)
 
         // Workaround for legacy resource loading in old compose code
         // See androidx.compose.ui.res.ClassLoaderResourceLoader

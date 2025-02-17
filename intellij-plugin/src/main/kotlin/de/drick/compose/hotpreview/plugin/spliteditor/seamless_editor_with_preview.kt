@@ -15,14 +15,12 @@ import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-
 class SeamlessEditorWithPreview(
     myEditor: TextEditor,
     myPreview: FileEditor,
     name: String = "SeamlessTextEditorWithPreview",
     defaultLayout: Layout = Layout.SHOW_EDITOR_AND_PREVIEW,
 ) : TextEditorWithPreview(myEditor, myPreview, name, defaultLayout) {
-
 
     private val actionGroup = HideAbleActionGroup(arrayOf(
         showEditorAction,
