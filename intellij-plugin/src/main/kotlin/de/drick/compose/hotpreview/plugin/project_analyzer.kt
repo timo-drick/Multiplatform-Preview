@@ -4,8 +4,6 @@ import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings
-import com.intellij.openapi.externalSystem.model.project.LibraryDependencyData
-import com.intellij.openapi.externalSystem.model.project.LibraryPathType
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
 import com.intellij.openapi.externalSystem.task.TaskCallback
 import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
@@ -15,17 +13,16 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.roots.CompilerModuleExtension
 import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
 import de.drick.compose.utils.livecompile.SourceSet
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.base.facet.isMultiPlatformModule
-import org.jetbrains.kotlin.idea.gradle.configuration.KotlinOutputPathsData
-import org.jetbrains.plugins.gradle.model.data.GradleSourceSetData
+import org.jetbrains.kotlin.idea.util.projectStructure.getModule
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
-import org.jetbrains.plugins.gradle.util.GradleUtil
 import java.io.File
 import java.net.URL
 import kotlin.coroutines.resume
@@ -48,17 +45,15 @@ class ProjectAnalyzer(
         }
     }
 
-    suspend fun getOutputFolder(file: VirtualFile): String {
-        val module = requireNotNull(getModule(file)) { "Module for file: $file not found!" }
-        val jvmModule = getJvmTargetModule(module)
+    suspend fun getOutputFolder(module: Module): String {
         return readAction {
-            val compiler = CompilerModuleExtension.getInstance(jvmModule)
+            val compiler = CompilerModuleExtension.getInstance(module)
             requireNotNull(compiler?.compilerOutputUrl) { "Compiler output path not found!" }
         }
     }
 
     suspend fun getSourceFolder(file: VirtualFile): SourceSet {
-        val module = requireNotNull(getModule(file)) { "Module for file: $file not found!" }
+        val module = getModule(file)
         val jvmSource = getSourcePath(getJvmTargetModule(module))
         val commonSource = getCommonTargetModule(module)?.let { getSourcePath(it) }
         LOG.debug("jvm source:    $jvmSource")
@@ -70,7 +65,7 @@ class ProjectAnalyzer(
     }
 
     suspend fun executeGradleTask(file: VirtualFile) {
-        val module = requireNotNull(getModule(file))
+        val module = getModule(file)
         val modulePath = requireNotNull(getModulePath(module))
         val desktopModule = getJvmTargetModule(module)
         /*
@@ -113,35 +108,17 @@ class ProjectAnalyzer(
         }
     }
 
-    private suspend fun getClassPathFromGradle(file: VirtualFile) {
-        val desktopModule = getJvmTargetModule(requireNotNull(getModule(file)))
-        val gradleData = GradleUtil.findGradleModuleData(desktopModule)
-        LOG.debug(gradleData.toString())
-        gradleData?.let { data ->
-            data.children
-                .filter { it.data is GradleSourceSetData }
-                .filter { (it.data as GradleSourceSetData).moduleName == "jvmMain" }
-                .forEach { sourceSetData ->
-                    val children = sourceSetData.children.map { it.data }
-                    children.filterIsInstance<KotlinOutputPathsData>()
-                        .map { it.paths }
-                        .forEach { LOG.debug(it.toString()) }
-                    children.filterIsInstance<LibraryDependencyData>()
-                        .map { it.target.getPaths(LibraryPathType.SOURCE) }
-                        .forEach { LOG.debug(it.toString()) }
-                    LOG.debug(sourceSetData.toString())
-                }
-        }
-    }
-
-    suspend fun getClassPath(file: VirtualFile): List<URL> {
-        val desktopModule = getJvmTargetModule(requireNotNull(getModule(file)))
-        return getClassPath(desktopModule)
+    suspend fun getClassPath(file: VirtualFile): List<URL> = withContext(Dispatchers.Default) {
+        val desktopModule = getJvmTargetModule(file)
+        getClassPath(desktopModule)
             .filterNot { it.contains("hotpreview-jvm") }
             .map { File(it) }
             .filter { it.exists() }
             .map { it.toURI().toURL() }
     }
+
+    suspend fun getJvmTargetModule(file: VirtualFile): Module =
+        getJvmTargetModule(getModule(file))
 
     suspend fun getJvmTargetModule(module: Module): Module {
         val baseModuleName = module.name.substringBeforeLast(".")
@@ -196,7 +173,9 @@ class ProjectAnalyzer(
     }
 
     suspend fun getModule(file: VirtualFile) =
-        readAction { ProjectFileIndex.getInstance(project).getModuleForFile(file) }
+        readAction {
+            requireNotNull(file.getModule(project)) { "Module for file: $file not found!" }
+        }
 
     private suspend fun getModulePath(module: Module) =
         readAction { ExternalSystemApiUtil.getExternalProjectPath(module) }

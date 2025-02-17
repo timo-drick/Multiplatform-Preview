@@ -20,9 +20,7 @@ import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.net.URLClassLoader
 
 @Suppress("UnstableApiUsage")
@@ -45,10 +43,10 @@ class HotPreviewViewModel(
     private val previewEditor: HotPreviewView,
     private val file: VirtualFile
 ): HotPreviewViewModelI {
-    private val splitEditor = requireNotNull(TextEditorWithPreview.getParentSplitEditor(previewEditor) as? SeamlessEditorWithPreview)
-    private val textEditor = splitEditor.textEditor
-    private val projectAnalyzer = ProjectAnalyzer(project)
-    private val workspaceAnalyzer = WorkspaceAnalyzer(project)
+    private val splitEditor
+        get() = requireNotNull(TextEditorWithPreview.getParentSplitEditor(previewEditor) as? SeamlessEditorWithPreview)
+    private val textEditor
+        get() = splitEditor.textEditor
 
     private val properties = PluginPersistentStore(project, file)
     private val scaleProperty = properties.float("scale", 1f)
@@ -77,8 +75,10 @@ class HotPreviewViewModel(
 
     override fun navigateCodeLine(line: Int) {
         val pos = LogicalPosition(line, 0)
-        textEditor.editor.caretModel.moveToLogicalPosition(pos)
-        textEditor.editor.scrollingModel.scrollTo(pos, ScrollType.MAKE_VISIBLE)
+        textEditor.editor.apply {
+            caretModel.moveToLogicalPosition(pos)
+            scrollingModel.scrollTo(pos, ScrollType.MAKE_VISIBLE)
+        }
     }
 
     override suspend fun refresh() {
@@ -86,7 +86,13 @@ class HotPreviewViewModel(
         errorHandling {
             val previewFunctions = analyzePreviewAnnotations()
             if (previewFunctions.isNotEmpty()) {
-                projectAnalyzer.executeGradleTask(file)
+                project.useSuspendWorkspace {
+                    val module = requireNotNull(getModule(file)) { "No module found for file: ${file.name}" }
+                    val desktopModule = requireNotNull(getJvmTargetModule(module)) { "No desktop module found for module: ${module.name}" }
+                    val gradleTask = getGradleTaskName(desktopModule)
+                    val path = requireNotNull(getModulePath(module)) { "No module path found!" }
+                    executeGradleTask(project, gradleTask, path)
+                }
             }
             previewList = render(previewFunctions)
         }
@@ -115,11 +121,6 @@ class HotPreviewViewModel(
     }
 
     private suspend fun analyzePreviewAnnotations(): List<HotPreviewFunction> {
-        withContext(Dispatchers.Default) {
-            workspaceAnalyzer.getModule(file)?.let { module ->
-                workspaceAnalyzer.analyzeModule(module)
-            }
-        }
         val previewFunctions = findPreviewAnnotations(project, file)
         setPureTextEditorMode(previewFunctions.isEmpty())
         return previewFunctions
@@ -146,9 +147,23 @@ class HotPreviewViewModel(
         LOG.debug("is in dumb mode: ${dumbService.isDumb}")
         println("is in dumb mode: ${dumbService.isDumb}")
 
-        val skikoLibs = RuntimeLibrariesManager.getRuntimeLibs()
-        LOG.debug(skikoLibs.toString())
-        val classPath = projectAnalyzer.getClassPath(file) + skikoLibs
+        val runtimeLibs = RuntimeLibrariesManager.getRuntimeLibs()
+        LOG.debug(runtimeLibs.toString())
+        //val classPath = project.useSuspendWorkspace { getClassPath(file) } + runtimeLibs
+
+        /*println("Workspace path:")
+        classPath.forEach {
+            println(it)
+        }*/
+        val pa = ProjectAnalyzer(project)
+        val classPath = pa.getClassPath(file) + runtimeLibs
+        //val classPath = getClassPathFromGradle(pa.getJvmTargetModule(file)) + runtimeLibs
+        /*println()
+        println("Project path:")
+        classPath.forEach {
+            println(it)
+        }*/
+
 
         val classLoader = URLClassLoader(
             classPath.toTypedArray(),

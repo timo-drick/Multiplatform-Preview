@@ -38,7 +38,7 @@ class HotPreviewSplitEditorProvider : TextEditorWithPreviewProvider(HotPreviewVi
     override fun accept(project: Project, file: VirtualFile) = when {
         file.extension != "kt" -> false
         file.getModule(project) == null -> false
-        WorkspaceAnalyzer(project).isAndroid(file) -> false
+        project.useWorkspace { getModule(file)?.isAndroid() == true } -> false
         else -> true
     }
 }

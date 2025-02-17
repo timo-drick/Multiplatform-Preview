@@ -12,7 +12,7 @@ object Versions {
     const val shadow = "8.3.6"
 
     // Android
-    const val androidGraglePlugin = "8.8.0"
+    const val androidGraglePlugin = "8.7.3"
     const val androidMinSdk = 21
     const val androidTargetSdk = 35
     const val androidCompileSdk = 35
