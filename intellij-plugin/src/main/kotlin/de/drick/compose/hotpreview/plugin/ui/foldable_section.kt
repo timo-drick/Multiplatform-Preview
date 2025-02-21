@@ -12,17 +12,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
-import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.Orientation
 import org.jetbrains.jewel.ui.component.Divider
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.styling.LocalGroupHeaderStyle
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
-import org.jetbrains.jewel.ui.theme.dividerStyle
 
 
 @HotPreview(widthDp = 300)
@@ -30,7 +27,7 @@ import org.jetbrains.jewel.ui.theme.dividerStyle
 @Composable
 private fun PreviewConfigSection() {
     SelfPreviewTheme {
-        ConfigSection(modifier = Modifier, label = "Test Section", isInitiallyFolded = false) {
+        FoldableSection(modifier = Modifier, label = "Test Section", isInitiallyFolded = false) {
             Text("Config value")
         }
     }
@@ -40,14 +37,14 @@ private fun PreviewConfigSection() {
 @Composable
 private fun PreviewConfigSectionFolded() {
     SelfPreviewTheme {
-        ConfigSection(modifier = Modifier, label = "Test Section", isInitiallyFolded = true) {
+        FoldableSection(modifier = Modifier, label = "Test Section", isInitiallyFolded = true) {
             Text("Config value")
         }
     }
 }
 
 @Composable
-fun ConfigSection(
+fun FoldableSection(
     label: String,
     isInitiallyFolded: Boolean = false,
     modifier: Modifier = Modifier,

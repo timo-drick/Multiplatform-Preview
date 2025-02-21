@@ -37,7 +37,7 @@ fun PreviewPreviewItem() {
         val data = HotPreview(
             name = "Test image",
         )
-        PreviewItem("Test", HotPreviewModel("Test"), renderedImage)
+        //PreviewItem("Test", HotPreviewModel("Test"), renderedImage)
     }
 }
 

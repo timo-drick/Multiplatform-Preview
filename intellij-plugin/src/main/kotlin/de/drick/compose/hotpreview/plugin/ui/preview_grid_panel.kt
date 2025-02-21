@@ -48,24 +48,62 @@ fun PreviewGridPanel(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             hotPreviewList.forEach { preview ->
-                preview.function.annotation.forEachIndexed { index, annotation ->
-                    var isFocused by remember { mutableStateOf(false) }
-                    PreviewItem(
-                        modifier = Modifier.onHover { isFocused = it }.clickable(
-                            onClick = {
-                                annotation.lineRange?.let { onNavigateCode(it.start) }
-                            },
-                            interactionSource = null,
-                            indication = null
-                        ),
-                        name = preview.function.name,
-                        annotation = annotation.annotation,
-                        renderState = preview.image[index],
+                if (preview.function.annotation.size > 1) {
+                    FoldableSection(preview.function.name) {
+                        PreviewSection(
+                            hasHeader = true,
+                            scale = scale,
+                            preview = preview,
+                            onNavigateCode = onNavigateCode
+                        )
+                    }
+                } else {
+                    PreviewSection(
+                        hasHeader = false,
                         scale = scale,
-                        hasFocus = isFocused
+                        preview = preview,
+                        onNavigateCode = onNavigateCode
                     )
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun PreviewSection(
+    hasHeader: Boolean,
+    scale: Float,
+    preview: HotPreviewData,
+    onNavigateCode: (Int) -> Unit
+) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        preview.function.annotation.forEachIndexed { index, annotation ->
+            var isFocused by remember { mutableStateOf(false) }
+
+            val fName = preview.function.name
+            val aName = annotation.annotation.name
+            val name = when {
+                hasHeader && aName.isNotBlank() -> aName
+                aName.isNotBlank() -> "$fName - $aName"
+                else -> fName
+            }
+            PreviewItem(
+                modifier = Modifier.onHover { isFocused = it }.clickable(
+                    onClick = {
+                        annotation.lineRange?.let { onNavigateCode(it.start) }
+                    },
+                    interactionSource = null,
+                    indication = null
+                ),
+                name = name,
+                renderState = preview.image[index],
+                scale = scale,
+                hasFocus = isFocused
+            )
         }
     }
 }

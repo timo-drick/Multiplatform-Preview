@@ -125,7 +125,7 @@ fun checkFunctionForAnnotation(function: KtNamedFunction): List<HotPreviewAnnota
                                         )
                                     }
                             } catch (err: Throwable) {
-                                LOG.error(err)
+                                LOG.debug(err)
                             }
                         }
                     }
