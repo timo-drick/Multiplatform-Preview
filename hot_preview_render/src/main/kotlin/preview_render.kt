@@ -29,6 +29,7 @@ class RenderPreviewImpl {
         density: Float,
         fontScale: Float,
         isDarkTheme: Boolean,
+        locale: String,
         isInspectionMode: Boolean
     ): Any {
         val theme = if (isDarkTheme) SystemTheme.Dark else SystemTheme.Light
@@ -57,7 +58,9 @@ class RenderPreviewImpl {
                         LocalSystemTheme provides theme,
                         LocalInspectionMode provides isInspectionMode
                     ) {
-                        method.invoke(null, currentComposer, 0)
+                        OverrideEnv(locale = locale) {
+                            method.invoke(null, currentComposer, 0)
+                        }
                     }
                 }
             ).use { scene ->

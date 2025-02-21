@@ -43,42 +43,44 @@ fun renderPreview(
         LOG.debug(renderClassInstance.toString())
         LOG.debug(functionRef.toString())
         requireNotNull(functionRef) { "Unable to find method: $previewRenderImplFqn:render" }
-        val images: List<RenderState> = function.annotation.map { hpAnnotation ->
-            val annotation = hpAnnotation.annotation
-            try {
-                val result = functionRef.call(
-                    renderClassInstance,
-                    fileClassName,
-                    function.name,
-                    annotation.widthDp.toFloat(),
-                    annotation.heightDp.toFloat(),
-                    annotation.density,
-                    annotation.fontScale,
-                    annotation.darkMode,
-                    true
-                )
-                when (result) {
-                    is ByteArray -> {
-                        val image = ByteArrayInputStream(result).use { ImageIO.read(it) }.toComposeImageBitmap()
-                        val widthDp = image.width.toFloat() / annotation.density
-                        val heightDp = image.height.toFloat() / annotation.density
-                        RenderedImage(
-                            image = image,
-                            size = DpSize(widthDp.dp, heightDp.dp)
-                        )
+        val images: List<RenderState> = function.annotation
+            .map { hpAnnotation ->
+                val annotation = hpAnnotation.annotation
+                try {
+                    val result = functionRef.call(
+                        renderClassInstance,
+                        fileClassName,
+                        function.name,
+                        annotation.widthDp.toFloat(),
+                        annotation.heightDp.toFloat(),
+                        annotation.density,
+                        annotation.fontScale,
+                        annotation.darkMode,
+                        annotation.locale,
+                        true
+                    )
+                    when (result) {
+                        is ByteArray -> {
+                            val image = ByteArrayInputStream(result).use { ImageIO.read(it) }.toComposeImageBitmap()
+                            val widthDp = image.width.toFloat() / annotation.density
+                            val heightDp = image.height.toFloat() / annotation.density
+                            RenderedImage(
+                                image = image,
+                                size = DpSize(widthDp.dp, heightDp.dp)
+                            )
+                        }
+                        is String -> {
+                            println("render method returned string")
+                            println(result)
+                            RenderError(result)
+                        }
+                        else -> {
+                            RenderError("Unexpected error during rendering!")
+                        }
                     }
-                    is String -> {
-                        println("render method returned string")
-                        println(result)
-                        RenderError(result)
-                    }
-                    else -> {
-                        RenderError("Unexpected error during rendering!")
-                    }
+                } catch (err: Throwable) {
+                    RenderError(err.message ?: err.stackTraceToString())
                 }
-            } catch (err: Throwable) {
-                RenderError(err.message ?: err.stackTraceToString())
-            }
         }
         HotPreviewData(
             function = function,
