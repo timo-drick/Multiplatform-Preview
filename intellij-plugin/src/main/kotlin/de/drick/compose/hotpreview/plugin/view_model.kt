@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.time.measureTimedValue
 
 @Suppress("UnstableApiUsage")
 private val LOG = fileLogger()
@@ -91,6 +92,8 @@ class HotPreviewViewModel(
 
     private var previewFunctions: List<HotPreviewFunction> = emptyList()
 
+    private var compileCounter = 0
+
     override fun selectGroup(group: String?) {
         selectGroupProperty.set(group)
         val previousSelected = selectedGroup
@@ -137,6 +140,7 @@ class HotPreviewViewModel(
                         val path = requireNotNull(getModulePath(module)) { "No module path found!" }
                         println("task: $gradleTask path: $path")
                         executeGradleTask(project, gradleTask, path)
+                        compileCounter++
                     }
                 }
                 previewFunctions = functions
@@ -222,34 +226,28 @@ class HotPreviewViewModel(
         }
 
         withContext(Dispatchers.Default) {
-            val renderClassLoader = classPathService.get().createRenderClassLoaderInstance()
-
+            val (renderClassLoader, duration) = measureTimedValue {
+                classPathService.get().getRenderClassLoaderInstance(compileCounter)
+            }
+            println("Get classloader: $duration")
             renderList.forEach { queue ->
-                val state = render(renderClassLoader, queue.function, queue.annotation)
+                // Workaround for legacy resource loading in old compose code
+                // See androidx.compose.ui.res.ClassLoaderResourceLoader
+                // It uses the contextClassLoader to load the resources.
+                val previousContextClassLoader = Thread.currentThread().contextClassLoader
+                // For new compose.components resource system a LocalCompositionProvider is used.
+                Thread.currentThread().contextClassLoader = renderClassLoader.classLoader
+                val state = try {
+                    renderPreview(renderClassLoader, queue.function, queue.annotation)
+                } finally {
+                    Thread.currentThread().contextClassLoader = previousContextClassLoader
+                }
+                //val state = render(renderClassLoader, queue.function, queue.annotation)
                 queue.ui.state = state
                 if (state is RenderedImage) renderCache[RenderCacheKey(queue.function.name, queue.annotation)] = state
             }
         }
     }
-
-    private fun render(
-        renderClassLoader: RenderClassLoaderInstance,
-        function: HotPreviewFunction,
-        annotation: HotPreviewModel
-    ): RenderState {
-        // Workaround for legacy resource loading in old compose code
-        // See androidx.compose.ui.res.ClassLoaderResourceLoader
-        // It uses the contextClassLoader to load the resources.
-        val previousContextClassLoader = Thread.currentThread().contextClassLoader
-        // For new compose.components resource system a LocalCompositionProvider is used.
-        Thread.currentThread().contextClassLoader = renderClassLoader.classLoader
-        return try {
-            renderPreview(renderClassLoader, function, annotation)
-        } finally {
-            Thread.currentThread().contextClassLoader = previousContextClassLoader
-        }
-    }
-
 
     private fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit) {
         project.messageBus.connect(scope).subscribe(

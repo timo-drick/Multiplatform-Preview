@@ -43,7 +43,11 @@ class ClassPathService private constructor(
         }
     }
     val classPathFull = classPathLocal + classPathLibs
-    fun createRenderClassLoaderInstance(): RenderClassLoaderInstance {
+
+    private var cache: RenderClassLoaderInstance? = null
+    private var cacheCompileCounter = -1
+    fun getRenderClassLoaderInstance(compileCounter: Int): RenderClassLoaderInstance {
+        if (cacheCompileCounter == compileCounter) cache?.let { return it }
         val classLoader = URLClassLoader(classPathFull, null)
         val fileClass = classLoader.loadClass(fileClassName)
         requireNotNull(fileClass) { "Unable to find class: $fileClassName" }
@@ -58,7 +62,10 @@ class ClassPathService private constructor(
             renderClassInstance = renderClassInstance,
             renderFunctionRef = renderFunctionRef,
             fileClass = fileClass
-        )
+        ).also {
+            cache = it
+            cacheCompileCounter = compileCounter
+        }
     }
 }
 
