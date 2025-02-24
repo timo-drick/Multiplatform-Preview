@@ -78,11 +78,6 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx")
     }
 
-    /*
-    implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable") {
-        exclude(group = "org.jetbrains.kotlinx")
-    }*/
-
     implementation("de.drick.compose:hotpreview:0.1.4") {
         exclude(group = "org.jetbrains.kotlinx")
     }
@@ -93,14 +88,17 @@ dependencies {
 tasks.register<GradleBuild>("buildRenderModule") {
     group = "build"
     dir = file("../")
-    tasks = listOf(":hot_preview_render:shadowJar")
+    tasks = listOf(
+        ":hot_preview_render:shadowJar",
+        ":kotlin_compiler:shadowJar"
+    )
 }
-
-val renderModulePath = layout.projectDirectory.dir("../hot_preview_render/build/libs")
-
 tasks.processResources {
     dependsOn("buildRenderModule")
-    from(renderModulePath)
+    from(
+        layout.projectDirectory.dir("../hot_preview_render/build/libs"),
+        layout.projectDirectory.dir("../kotlin_compiler/build/libs")
+    )
 }
 
 
