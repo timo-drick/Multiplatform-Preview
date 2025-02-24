@@ -32,6 +32,10 @@ import kotlin.text.contains
 
 private val LOG = logger<ProjectAnalyzer>()
 
+enum class ClassPathMode {
+    ALL, ONLY_LIBS, ONLY_LOCAL
+}
+
 class ProjectAnalyzer(
     private val project: Project
 ) {
@@ -110,11 +114,7 @@ class ProjectAnalyzer(
 
     suspend fun getClassPath(file: VirtualFile): List<URL> = withContext(Dispatchers.Default) {
         val desktopModule = getJvmTargetModule(file)
-        getClassPath(desktopModule)
-            .filterNot { it.contains("hotpreview-jvm") }
-            .map { File(it) }
-            .filter { it.exists() }
-            .map { it.toURI().toURL() }
+        getClassPath(desktopModule).distinct()
     }
 
     suspend fun getJvmTargetModule(file: VirtualFile): Module =
@@ -148,20 +148,29 @@ class ProjectAnalyzer(
         }
     }
 
-    private suspend fun getClassPath(module: Module): Set<String> = readAction {
-        val moduleClassPath = getClassPathArray(module)
+    suspend fun getClassPath(module: Module, mode: ClassPathMode = ClassPathMode.ALL): List<URL> = readAction {
+        val moduleClassPath = getClassPathArray(module, mode)
         val dependencyClassPath = ModuleRootManager.getInstance(module)
             .dependencies
-            .flatMap { getClassPathArray(it) }
+            .flatMap { getClassPathArray(it, mode) }
         moduleClassPath + dependencyClassPath
-    }.toSet()
+    }
 
-    private fun getClassPathArray(module: Module): List<String> {
+    private fun getClassPathArray(module: Module, mode: ClassPathMode): List<URL> {
         val rm = ModuleRootManager.getInstance(module)
         val classPath = rm
             .orderEntries()
             .classesRoots
-            .map { it.presentableUrl }
+            .filter {
+                when (mode) {
+                    ClassPathMode.ALL -> true
+                    ClassPathMode.ONLY_LIBS -> !it.isInLocalFileSystem
+                    ClassPathMode.ONLY_LOCAL -> it.isInLocalFileSystem
+                }
+            }
+            .map { File(it.presentableUrl) }
+            .filter { it.exists() }
+            .map { it.toURI().toURL() }
         return classPath
     }
 

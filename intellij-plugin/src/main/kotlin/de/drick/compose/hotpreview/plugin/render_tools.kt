@@ -5,9 +5,10 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.intellij.openapi.diagnostic.fileLogger
+import org.jetbrains.skia.Image
+import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
-import javax.imageio.ImageIO
-import kotlin.reflect.full.declaredFunctions
+import kotlin.time.TimeSource
 
 @Suppress("UnstableApiUsage")
 private val LOG = fileLogger()
@@ -21,68 +22,66 @@ data class RenderedImage(
     val size: DpSize
 ): RenderState
 
-data class HotPreviewData(
-    val function: HotPreviewFunction,
-    val image: List<RenderState>,
-)
-
-private const val previewRenderImplFqn = "de.drick.compose.hotpreview.RenderPreviewImpl"
-
 fun renderPreview(
-    classLoader: ClassLoader,
-    fileClassName: String,
-    previewList: List<HotPreviewFunction>
-): List<HotPreviewData> {
-    return previewList.map { function ->
+    renderClassLoader: RenderClassLoaderInstance,
+    function: HotPreviewFunction,
+    annotation: HotPreviewModel
+): RenderState {
+    val clazz = renderClassLoader.fileClass
+    val functionRef = renderClassLoader.renderFunctionRef
+    val renderClassInstance = renderClassLoader.renderClassInstance
+    return try {
         LOG.debug("F: $function")
-        val renderClazz = classLoader.loadClass(previewRenderImplFqn).kotlin
-        val renderClassInstance = renderClazz.constructors.first().call()
-        val functionRef = renderClazz.declaredFunctions.find {
-            it.name == "render"
-        }
-        LOG.debug(renderClassInstance.toString())
-        LOG.debug(functionRef.toString())
-        requireNotNull(functionRef) { "Unable to find method: $previewRenderImplFqn:render" }
-        val images: List<RenderState> = function.annotation.map { hpAnnotation ->
-            val annotation = hpAnnotation.annotation
-            try {
-                val result = functionRef.call(
-                    renderClassInstance,
-                    fileClassName,
-                    function.name,
-                    annotation.widthDp.toFloat(),
-                    annotation.heightDp.toFloat(),
-                    annotation.density,
-                    annotation.fontScale,
-                    annotation.darkMode,
-                    true
+        val ts = TimeSource.Monotonic
+
+        val classLoadingStart = ts.markNow()
+        val method = clazz.declaredMethods.find { it.name == function.name }
+        requireNotNull(method) { "Unable to find method: ${function.name}" }
+        val classLoadingDuration = ts.markNow() - classLoadingStart
+        println("Class loading time: $classLoadingDuration")
+
+        val result = functionRef.call(
+            renderClassInstance,
+            method,
+            annotation.widthDp.toFloat(),
+            annotation.heightDp.toFloat(),
+            annotation.density,
+            annotation.fontScale,
+            annotation.darkMode,
+            annotation.locale,
+            true
+        )
+        when (result) {
+            is BufferedImage -> {
+                val image = result.toComposeImageBitmap()
+                val widthDp = image.width.toFloat() / annotation.density
+                val heightDp = image.height.toFloat() / annotation.density
+                RenderedImage(
+                    image = image,
+                    size = DpSize(widthDp.dp, heightDp.dp)
                 )
-                when (result) {
-                    is ByteArray -> {
-                        val image = ByteArrayInputStream(result).use { ImageIO.read(it) }.toComposeImageBitmap()
-                        val widthDp = image.width.toFloat() / annotation.density
-                        val heightDp = image.height.toFloat() / annotation.density
-                        RenderedImage(
-                            image = image,
-                            size = DpSize(widthDp.dp, heightDp.dp)
-                        )
-                    }
-                    is String -> {
-                        println("render method returned string")
-                        println(result)
-                        RenderError(result)
-                    }
-                    else -> {
-                        RenderError("Unexpected error during rendering!")
-                    }
-                }
-            } catch (err: Throwable) {
-                RenderError(err.message ?: err.stackTraceToString())
+            }
+            is ByteArray -> {
+                val image = ByteArrayInputStream(result).use {
+                    Image.makeFromEncoded(it.readAllBytes())
+                }.toComposeImageBitmap()
+                val widthDp = image.width.toFloat() / annotation.density
+                val heightDp = image.height.toFloat() / annotation.density
+                RenderedImage(
+                    image = image,
+                    size = DpSize(widthDp.dp, heightDp.dp)
+                )
+            }
+            is String -> {
+                println("render method returned string")
+                println(result)
+                RenderError(result)
+            }
+            else -> {
+                RenderError("Unexpected error during rendering!")
             }
         }
-        HotPreviewData(
-            function = function,
-            image = images
-        )
+    } catch (err: Throwable) {
+        RenderError(err.message ?: err.stackTraceToString())
     }
 }

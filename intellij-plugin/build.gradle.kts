@@ -32,9 +32,9 @@ dependencies {
 
     intellijPlatform {
         //See this list for available versions: https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html
-        //androidStudio("2024.3.1.11") //Meerkat
+        androidStudio("2024.3.1.11") //Meerkat
         //androidStudio("2024.2.2.13")
-        intellijIdeaCommunity(ijPlatform)
+        //intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
         zipSigner()
         bundledPlugins("org.jetbrains.kotlin", "com.intellij.gradle") // Plugins must be also provided in plugin.xml!!!
@@ -126,6 +126,18 @@ intellijPlatform {
 
         @Language("HTML")
         changeNotes = """
+<h3>V 0.4.0</h3>
+<ul>
+    <li>Added foldable sections for preview functions</li>
+    <li>Added support for locale</li>
+    <li>Added support for Groups</li>
+</ul>
+
+<h3>V 0.3.1</h3>
+<ul>
+    <li>Added support for Android Studio Ladybug and Intellij 2024.2.5</li>
+</ul>
+
 <h3>V 0.3.0</h3>
 <ul>
     <li>Improved error handling and visualization.</li>
@@ -138,6 +150,7 @@ intellijPlatform {
     </li>
     <li>Self preview is now working. So the source of this plugin can also be previewed.</li>
 </ul>
+
 <h3>V 0.2.0</h3>
 <ul>
     <li>Added support for macos. Window x64/arm64 should also work (untested)</li>
@@ -149,6 +162,7 @@ intellijPlatform {
     <li>Added navigation to @HotPreview annotation on preview click.</li>
     <li>Added on hover focus for preview items.</li>
 </ul>
+
 <h3>V 0.1.1</h3>
 <ul>
     <li>Show errors when trying to compile and render the preview.</li>

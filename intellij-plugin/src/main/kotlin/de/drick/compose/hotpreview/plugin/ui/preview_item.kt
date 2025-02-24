@@ -29,8 +29,7 @@ fun PreviewPreviewItemError() {
         PreviewItem(
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
-            annotation = item.function.annotation.first().annotation,
-            renderState = item.image.first()
+            renderState = item.annotations.first().state
         )
     }
 }
@@ -46,8 +45,7 @@ private fun PreviewPreviewItem() {
         PreviewItem(
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
-            annotation = item.function.annotation.first().annotation,
-            renderState = item.image.first()
+            renderState = item.annotations.first().state
         )
     }
 }
@@ -63,8 +61,7 @@ private fun PreviewPreviewItemFocus() {
         PreviewItem(
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
-            annotation = item.function.annotation.first().annotation,
-            renderState = item.image.first(),
+            renderState = item.annotations.first().state,
             hasFocus = true
         )
     }
@@ -74,7 +71,6 @@ private fun PreviewPreviewItemFocus() {
 @Composable
 fun PreviewItem(
     name: String,
-    annotation: HotPreviewModel,
     renderState: RenderState,
     modifier: Modifier = Modifier,
     scale: Float = 1f,
@@ -83,13 +79,11 @@ fun PreviewItem(
     val focusStroke = BorderStroke(2.dp, JewelTheme.globalColors.outlines.focused)
     val borderModifier = if (hasFocus) Modifier.border(focusStroke) else Modifier
     val borderStroke = BorderStroke(1.dp, Color.Black)
-    val image = renderState as? RenderedImage
     Column(modifier.width(IntrinsicSize.Min)) {
-        val postFix = if (annotation.name.isNotBlank()) " - ${annotation.name}" else ""
         Row {
             Text(
                 modifier = Modifier.weight(1f),
-                text = "$name $postFix",
+                text = name,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

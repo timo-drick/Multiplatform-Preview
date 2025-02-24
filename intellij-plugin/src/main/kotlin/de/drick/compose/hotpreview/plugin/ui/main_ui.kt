@@ -10,10 +10,8 @@ import androidx.compose.ui.unit.dp
 import com.intellij.openapi.diagnostic.fileLogger
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.HotPreviewViewModelI
-import kotlinx.coroutines.launch
 import org.jetbrains.jewel.foundation.modifier.onHover
 import org.jetbrains.jewel.foundation.theme.JewelTheme
-import org.jetbrains.jewel.ui.component.CircularProgressIndicator
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.IconButton
 import org.jetbrains.jewel.ui.component.Text
@@ -50,25 +48,18 @@ fun MainScreen(model: HotPreviewViewModelI) {
     }
 
     Column(Modifier.fillMaxSize().background(JewelTheme.editorTabStyle.colors.background)) {
-        Row(
-            modifier = Modifier
-                .background(JewelTheme.globalColors.panelBackground)
-                .fillMaxWidth()
-                .align(Alignment.End)
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.End
-        ) {
-            IconButton(
-                onClick = { scope.launch { model.refresh() } },
-                enabled = compilingInProgress.not()
-            ) {
-                if (compilingInProgress) {
-                    CircularProgressIndicator()
-                } else {
-                    Icon(AllIconsKeys.General.Refresh, contentDescription = "Refresh")
+        MainTopBar(
+            modifier = Modifier.fillMaxWidth(),
+            compilingInProgress = compilingInProgress,
+            groups = model.groups,
+            selectedGroup = model.selectedGroup,
+            onAction = { action ->
+                when (action) {
+                    TopBarAction.Refresh -> model.refresh()
+                    is TopBarAction.SelectGroup -> model.selectGroup(action.group)
                 }
             }
-        }
+        )
         if (error != null) {
             val stackTrace = remember(error) {
                 error.stackTraceToString().replace("\t", "    ")

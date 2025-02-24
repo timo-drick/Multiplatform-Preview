@@ -16,6 +16,7 @@ import com.intellij.psi.PsiMethod
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
 import de.drick.compose.hotpreview.plugin.ui.MainScreen
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.withContext
 import org.jdom.Element
 import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
@@ -52,22 +53,23 @@ class HotPreviewViewProvider : WeighedFileEditorProvider(), AsyncFileEditorProvi
         document: Document?,
         editorCoroutineScope: CoroutineScope
     ): FileEditor = withContext(editorCoroutineScope.coroutineContext) {
-        HotPreviewView(project, file)
+        HotPreviewView(project, file, editorCoroutineScope)
     }
 
-    override fun createEditor(project: Project, file: VirtualFile) = HotPreviewView(project, file)
+    override fun createEditor(project: Project, file: VirtualFile) = HotPreviewView(project, file, GlobalScope)
     override fun getEditorTypeId() = "hotpreview-preview-view"
     override fun getPolicy(): FileEditorPolicy = FileEditorPolicy.HIDE_DEFAULT_EDITOR
 }
 
 class HotPreviewView(
     project: Project,
-    private val file: VirtualFile
+    private val file: VirtualFile,
+    private val scope: CoroutineScope
 ) : UserDataHolder by UserDataHolderBase(), FileEditor {
     @OptIn(ExperimentalJewelApi::class)
     private val mainComponent by lazy {
-        val model = HotPreviewViewModel(project, this, file)
         enableNewSwingCompositing()
+        val model = HotPreviewViewModel(project, this@HotPreviewView, file, scope)
         ComposePanel().apply {
             setContent {
                 SwingBridgeTheme {
