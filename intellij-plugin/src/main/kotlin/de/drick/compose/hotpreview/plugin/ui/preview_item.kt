@@ -29,7 +29,7 @@ fun PreviewPreviewItemError() {
         PreviewItem(
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
-            renderState = item.image.first()
+            renderState = item.annotations.first().state
         )
     }
 }
@@ -45,7 +45,7 @@ private fun PreviewPreviewItem() {
         PreviewItem(
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
-            renderState = item.image.first()
+            renderState = item.annotations.first().state
         )
     }
 }
@@ -61,7 +61,7 @@ private fun PreviewPreviewItemFocus() {
         PreviewItem(
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
-            renderState = item.image.first(),
+            renderState = item.annotations.first().state,
             hasFocus = true
         )
     }

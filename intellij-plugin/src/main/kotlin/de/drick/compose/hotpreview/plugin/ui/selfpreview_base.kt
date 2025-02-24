@@ -29,10 +29,9 @@ import org.jetbrains.jewel.ui.ComponentStyling
 import org.jetbrains.jewel.ui.component.styling.TabColors
 import org.jetbrains.jewel.ui.component.styling.TabStyle
 import org.jetbrains.jewel.ui.theme.editorTabStyle
-import kotlin.math.roundToInt
 
 @Composable
-fun SelfPreviewBase(data: List<HotPreviewData>) {
+fun SelfPreviewBase(data: List<UIHotPreviewData>) {
     val viewModel = remember {
         mockViewModel(data)
     }
@@ -74,43 +73,33 @@ fun SelfPreviewTheme(content: @Composable () -> Unit) {
 
 fun getMockData() = sampleImages.map { getHotPreviewDataItem(it) }
 
-fun getHotPreviewDataItem(resourceName: String): HotPreviewData {
+fun getHotPreviewDataItem(resourceName: String): UIHotPreviewData {
     try {
         val previewItem = getPreviewItem("drawable/$resourceName.png", if (resourceName == "login_light") 4f else 2f)
-        return HotPreviewData(
-            function = HotPreviewFunction(
-                name = resourceName.capitalize(),
-                annotation = listOf(
-                    HotPreviewAnnotation(
-                        lineRange = null,
-                        HotPreviewModel(
-                            name = resourceName,
-                            widthDp = previewItem.size.width.value.roundToInt(),
-                            heightDp = previewItem.size.width.value.roundToInt()
-                        )
-                    )
-                ),
-                lineRange = null
+        return UIHotPreviewData(
+            functionName = resourceName.capitalize(),
+            annotations = listOf(
+                UIAnnotation(
+                    name = "Test1",
+                    lineRange = null,
+                ).also {
+                    it.state = previewItem
+                }
             ),
-            image = listOf(previewItem)
+            lineRange = null
         )
     } catch (err: Throwable) {
-        return HotPreviewData(
-            function = HotPreviewFunction(
-                name = resourceName.capitalize(),
-                annotation = listOf(
-                    HotPreviewAnnotation(
-                        lineRange = null,
-                        HotPreviewModel(
-                            name = resourceName,
-                            widthDp = -1,
-                            heightDp = -1
-                        )
-                    )
-                ),
-                lineRange = null
+        return UIHotPreviewData(
+            functionName = resourceName.capitalize(),
+            annotations = listOf(
+                UIAnnotation(
+                    name = "Test1",
+                    lineRange = null,
+                ).also {
+                    it.state = RenderError(err.stackTraceToString())
+                }
             ),
-            image = listOf(RenderError(err.stackTraceToString()))
+            lineRange = null
         )
     }
 }
@@ -134,23 +123,19 @@ private fun getPreviewItem(resource: String, density: Float): RenderedImage {
 }
 
 fun mockViewModel(
-    mockData: List<HotPreviewData>,
-    disabledGroups: Set<String> = emptySet()
+    mockData: List<UIHotPreviewData>,
 ) = object : HotPreviewViewModelI {
     override var scale: Float = 1f
     override val isPureTextEditor = false
     override var compilingInProgress = false
     override var errorMessage: Throwable? = null
     override var previewList = mockData
-    override val groups: List<PreviewGroup> = mockData.flatMap { previewData ->
-        previewData.function.annotation.groupBy { it.annotation.group }.keys.filter { it.isNotBlank() }
-    }.map { groupName ->
-        PreviewGroup(groupName, disabledGroups.contains(groupName).not())
-    }
-    override fun updateGroup(group: PreviewGroup) {}
+    override val groups = setOf("Group 1")
+    override val selectedGroup: String? = null
+    override fun selectGroup(group: String?) {}
 
     override fun changeScale(newScale: Float) { scale = newScale}
     override fun navigateCodeLine(line: Int) {}
     override fun monitorChanges(scope: CoroutineScope) {}
-    override suspend fun refresh() {}
+    override fun refresh() {}
 }

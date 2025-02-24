@@ -7,25 +7,24 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.PreviewGroup
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.component.*
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 
 interface TopBarAction {
     data object Refresh: TopBarAction
-    data class UpdateGroup(val previewGroup: PreviewGroup): TopBarAction
+    data class SelectGroup(val group: String?): TopBarAction
 }
 
 @Composable
 fun MainTopBar(
     compilingInProgress: Boolean,
-    groups: List<PreviewGroup> = emptyList(),
+    groups: Set<String>,
+    selectedGroup: String?,
     modifier: Modifier = Modifier,
     onAction: (TopBarAction) -> Unit,
 ) {
@@ -37,27 +36,31 @@ fun MainTopBar(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         if (groups.isNotEmpty()) {
-            val selectedGroups = remember(groups) {
-                groups.filter { it.enabled }
-                    .joinToString(",") { it.name }
-            }
-            Text("Group filter")
+            Text("Group")
             Dropdown(
                 menuContent = {
+                    selectableItem(
+                        selected = selectedGroup == null,
+                        onClick = {
+                            onAction(TopBarAction.SelectGroup(null))
+                        }
+                    ) {
+                        Text("All")
+                    }
+                    separator()
                     groups.forEach { group ->
                         selectableItem(
-                            selected = group.enabled,
+                            selected = group == selectedGroup,
                             onClick = {
-                                val updatedGroup = group.copy(enabled = group.enabled.not())
-                                onAction(TopBarAction.UpdateGroup(updatedGroup))
+                                onAction(TopBarAction.SelectGroup(group))
                             }
                         ) {
-                            Text(group.name)
+                            Text(group)
                         }
                     }
                 }
             ) {
-                Text(selectedGroups)
+                Text(selectedGroup ?: "All")
             }
 
         }
@@ -83,7 +86,8 @@ private fun PreviewTopAppBar() {
         MainTopBar(
             modifier = Modifier.fillMaxWidth(),
             compilingInProgress = false,
-            groups = emptyList(),
+            groups = emptySet(),
+            selectedGroup = null,
             onAction = {}
         )
     }
@@ -93,15 +97,16 @@ private fun PreviewTopAppBar() {
 @HotPreview(group = "Light", widthDp = 500, darkMode = false)
 @Composable
 private fun PreviewTopAppBarGroups() {
-    val groups = listOf(
-        PreviewGroup("Dark", true),
-        PreviewGroup("Light", false)
+    val groups = setOf(
+        "Dark",
+        "Light"
     )
     SelfPreviewTheme {
         MainTopBar(
             modifier = Modifier.fillMaxWidth(),
             compilingInProgress = false,
             groups = groups,
+            selectedGroup = groups.first(),
             onAction = {}
         )
     }

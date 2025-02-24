@@ -10,10 +10,8 @@ import androidx.compose.ui.unit.dp
 import com.intellij.openapi.diagnostic.fileLogger
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.HotPreviewViewModelI
-import kotlinx.coroutines.launch
 import org.jetbrains.jewel.foundation.modifier.onHover
 import org.jetbrains.jewel.foundation.theme.JewelTheme
-import org.jetbrains.jewel.ui.component.CircularProgressIndicator
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.IconButton
 import org.jetbrains.jewel.ui.component.Text
@@ -54,10 +52,11 @@ fun MainScreen(model: HotPreviewViewModelI) {
             modifier = Modifier.fillMaxWidth(),
             compilingInProgress = compilingInProgress,
             groups = model.groups,
+            selectedGroup = model.selectedGroup,
             onAction = { action ->
                 when (action) {
-                    TopBarAction.Refresh -> scope.launch { model.refresh() }
-                    is TopBarAction.UpdateGroup -> model.updateGroup(action.previewGroup)
+                    TopBarAction.Refresh -> model.refresh()
+                    is TopBarAction.SelectGroup -> model.selectGroup(action.group)
                 }
             }
         )

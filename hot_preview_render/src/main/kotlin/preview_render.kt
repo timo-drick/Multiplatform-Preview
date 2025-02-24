@@ -1,16 +1,20 @@
 package de.drick.compose.hotpreview
 
-import androidx.compose.runtime.Composer
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.currentComposer
 import androidx.compose.ui.*
+import androidx.compose.ui.graphics.toAwtImage
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Surface
+import java.lang.reflect.Method
 import kotlin.math.min
+import kotlin.time.TimeSource
+import kotlin.time.measureTimedValue
 
 fun cropUsingSurface(image: Image, width: Int, height: Int): Image {
     val surface = Surface.makeRasterN32Premul(width, height)
@@ -22,8 +26,7 @@ fun cropUsingSurface(image: Image, width: Int, height: Int): Image {
 class RenderPreviewImpl {
     @OptIn(InternalComposeUiApi::class, ExperimentalComposeUiApi::class)
     fun render(
-        clazzFqn: String,
-        methodName: String,
+        method: Method,
         widthDp: Float,
         heightDp: Float,
         density: Float,
@@ -41,15 +44,18 @@ class RenderPreviewImpl {
         val heightUndefined = heightPx < 1f
         val renderWidth = if (widthUndefined) defaultWidth.toInt() else widthPx.toInt()
         val renderHeight = if (heightUndefined) defaultHeight.toInt() else heightPx.toInt()
-        println("Render size: $renderWidth x $renderHeight")
-        val classLoader = Composer::class.java.classLoader
-        val clazz = classLoader.loadClass(clazzFqn)
-        val method = clazz.declaredMethods.find { it.name == methodName }
-        method?.isAccessible = true
-        if (method == null) return "Unable to find method: $methodName in class: ${clazz.name} !"
+        //println("Render size: $renderWidth x $renderHeight")
+        val ts = TimeSource.Monotonic
+        val beginComposeScene = ts.markNow()
         try {
+            /*val clazz = classLoader.loadClass(clazzFqn)
+            requireNotNull(clazz) { "Unable to find class: $clazzFqn" }
+            val method = clazz.declaredMethods.find { it.name == methodName }
+            requireNotNull(method) { "Unable to find method: $methodName" }
+*/
+            method.isAccessible = true
             var calculatedSize = IntSize.Zero
-            var image = ImageComposeScene(
+            var image: Image = ImageComposeScene(
                 width = renderWidth,
                 height = renderHeight,
                 density = Density(density, fontScale),
@@ -64,10 +70,13 @@ class RenderPreviewImpl {
                     }
                 }
             ).use { scene ->
-                val image = scene.render(1000 * 1000)
+                val image = scene.render()
                 calculatedSize = scene.calculateContentSize()
                 image
             }
+            val beginScale = ts.markNow()
+            val renderTime = beginScale - beginComposeScene
+            println("Render time: $renderTime")
             val realWidth = min(calculatedSize.width, renderWidth)
             val realHeight = min(calculatedSize.height, renderHeight)
             // Maybe crop image
@@ -80,11 +89,19 @@ class RenderPreviewImpl {
                 )
                 println("Cropped image size: ${image.width} x ${image.height}")
             }
-            println("Calculated size: $calculatedSize render size: $renderWidth x $renderHeight")
+            //println("Calculated size: $calculatedSize render size: $renderWidth x $renderHeight")
             val placedWidth = realWidth / density
             val placedHeight = realHeight / density
-            println("Rendered size: $placedWidth x $placedHeight")
-            return image.encodeToData(EncodedImageFormat.WEBP)?.bytes ?: "Unable to encode rendered preview!"
+            //println("Rendered size: $placedWidth x $placedHeight")
+            val scaleTime = ts.markNow() - beginScale
+            println("Scale time: $scaleTime")
+            val (bytes, duration) = measureTimedValue {
+                //image.peekPixels()?.buffer?.bytes
+                image.toComposeImageBitmap().toAwtImage()
+                //image.encodeToData(EncodedImageFormat.JPEG)?.bytes ?: "Unable to encode rendered preview!"
+            }
+            println("Encoding time: $duration")
+            return bytes
         } catch (err: Throwable) {
             println("Problem during render!")
             err.printStackTrace()

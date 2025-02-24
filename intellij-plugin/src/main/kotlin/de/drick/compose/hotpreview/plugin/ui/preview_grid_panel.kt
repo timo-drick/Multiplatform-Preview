@@ -10,7 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.*
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.HotPreviewData
+import de.drick.compose.hotpreview.plugin.UIHotPreviewData
 import org.jetbrains.jewel.foundation.modifier.onHover
 import org.jetbrains.jewel.ui.component.*
 
@@ -34,7 +34,7 @@ private fun PreviewPreviewGridPanel() {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PreviewGridPanel(
-    hotPreviewList: List<HotPreviewData>,
+    hotPreviewList: List<UIHotPreviewData>,
     scale: Float,
     modifier: Modifier = Modifier,
     onNavigateCode: (Int) -> Unit
@@ -48,8 +48,8 @@ fun PreviewGridPanel(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             hotPreviewList.forEach { preview ->
-                if (preview.function.annotation.size > 1) {
-                    FoldableSection(preview.function.name) {
+                if (preview.annotations.size > 1) {
+                    FoldableSection(preview.functionName) {
                         PreviewSection(
                             hasHeader = true,
                             scale = scale,
@@ -75,17 +75,17 @@ fun PreviewGridPanel(
 fun PreviewSection(
     hasHeader: Boolean,
     scale: Float,
-    preview: HotPreviewData,
+    preview: UIHotPreviewData,
     onNavigateCode: (Int) -> Unit
 ) {
     FlowRow(
         modifier = Modifier.fillMaxWidth()
     ) {
-        preview.function.annotation.forEachIndexed { index, annotation ->
+        preview.annotations.forEachIndexed { index, annotation ->
             var isFocused by remember { mutableStateOf(false) }
 
-            val fName = preview.function.name
-            val aName = annotation.annotation.name
+            val fName = preview.functionName
+            val aName = annotation.name
             val name = when {
                 hasHeader && aName.isNotBlank() -> aName
                 aName.isNotBlank() -> "$fName - $aName"
@@ -100,7 +100,7 @@ fun PreviewSection(
                     indication = null
                 ),
                 name = name,
-                renderState = preview.image[index],
+                renderState = annotation.state,
                 scale = scale,
                 hasFocus = isFocused
             )

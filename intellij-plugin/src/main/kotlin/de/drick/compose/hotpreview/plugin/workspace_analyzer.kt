@@ -10,6 +10,7 @@ import com.intellij.platform.workspace.jps.entities.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.util.projectStructure.getModule
+import org.jetbrains.kotlin.idea.workspaceModel.kotlinSettings
 import java.io.File
 import java.net.URL
 import kotlin.collections.find
@@ -25,6 +26,7 @@ interface WorkspaceDsl {
 }
 
 fun ModuleEntity.isAndroid() = facets.find { it.typeId.name == "android" } != null
+fun ModuleEntity.isMultiplatform() = kotlinSettings.firstOrNull()?.isHmppEnabled == true
 
 fun <R>Project.useWorkspace(block: WorkspaceDsl.() -> R): R {
     val env = WorkspaceAnalyzer(this)
@@ -33,7 +35,7 @@ fun <R>Project.useWorkspace(block: WorkspaceDsl.() -> R): R {
 
 suspend fun <R>Project.useSuspendWorkspace(block: suspend WorkspaceDsl.() -> R): R {
     val env = WorkspaceAnalyzer(this)
-    return block(env)
+    return withContext(Dispatchers.Default) { block(env) }
 }
 
 
@@ -51,12 +53,18 @@ private class WorkspaceAnalyzer(
 
     override fun getJvmTargetModule(module: ModuleEntity): ModuleEntity {
         val baseModuleName = module.name.substringBeforeLast(".")
-
+        println("Facet for: ${module.name}")
+        println("ExModuleOptions: ${module.exModuleOptions?.externalSystem}")
+        val isMultiplatform = module.isMultiplatform()
         val desktopModule = currentSnapshot.entities(ModuleEntity::class.java)
             .filter { it.name.startsWith(baseModuleName) }
             //.filter { it.isTestModule.not() }
             .find {
-                it.name.contains("jvmMain") || it.name.contains("desktopMain") || it.name.substringAfterLast(".") == "main"
+                if (isMultiplatform) {
+                    it.name.contains("jvmMain") || it.name.contains("desktopMain")
+                } else {
+                    it.name.contains("main")
+                }
             }
         requireNotNull(desktopModule) { "No desktop module found!" }
         return desktopModule
@@ -73,6 +81,7 @@ private class WorkspaceAnalyzer(
         val fileModule = getModule(file)
         requireNotNull(fileModule) { "No module found!" }
         val desktopModule = getJvmTargetModule(fileModule)
+        println(fileModule)
         getClassPath(desktopModule)
             .filterNot { it.contains("hotpreview-jvm") }
             .map { File(it) }

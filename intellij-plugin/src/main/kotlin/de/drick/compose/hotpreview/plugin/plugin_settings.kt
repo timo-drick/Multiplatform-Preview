@@ -17,6 +17,9 @@ class PluginPersistentStore(
 
     fun float(key: String, defaultValue: Float): PersistentValue<Float> =
         PersistentFloat(properties, "de.drick.compose.hotpreview.plugin:${file.hashCode()}_$key", defaultValue)
+
+    fun stringNA(key: String, defaultValue: String?): PersistentValue<String?> =
+        PersistentStringNA(properties, "de.drick.compose.hotpreview.plugin:${file.hashCode()}_$key", defaultValue)
 }
 
 private class PersistentFloat(
@@ -26,6 +29,17 @@ private class PersistentFloat(
 ): PersistentValue<Float> {
     override fun get(): Float = p.getFloat(key, defaultValue)
     override fun set(value: Float) {
+        p.setValue(key, value, defaultValue)
+    }
+}
+
+private class PersistentStringNA(
+    private val p: PropertiesComponent,
+    private val key: String,
+    private val defaultValue: String?
+): PersistentValue<String?> {
+    override fun get(): String? = p.getValue(key)
+    override fun set(value: String?) {
         p.setValue(key, value, defaultValue)
     }
 }
