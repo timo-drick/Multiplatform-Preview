@@ -11,7 +11,9 @@ class DeferredSuspend<T>(
     private var instance: T? = null
     suspend fun get(): T =
         instance ?: lock.withLock {
-            initBlock()
+            initBlock().also {
+                instance = it
+            }
         }
 }
 
