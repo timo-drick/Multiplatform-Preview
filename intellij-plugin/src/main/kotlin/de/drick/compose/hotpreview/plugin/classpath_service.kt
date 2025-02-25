@@ -33,11 +33,11 @@ class ClassPathService private constructor(
         suspend fun getInstance(project: Project, file: VirtualFile) = withContext(Dispatchers.Default) {
             val projectAnalyzer = ProjectAnalyzer(project)
             val jvmModule = projectAnalyzer.getJvmTargetModule(file)
-            val skikoLibs = RuntimeLibrariesManager.getRuntimeLibs()
+            val skikoLibs = EmbeddedLibrariesManager.getRuntimeLibs()
             val classPathLibs = projectAnalyzer.getClassPath(jvmModule, ClassPathMode.ONLY_LIBS) + skikoLibs
             val classPathLocal = projectAnalyzer
                 .getClassPath(jvmModule, ClassPathMode.ONLY_LOCAL)
-                .distinct() + classPathLibs
+                .distinct()
             val fileClassName = kotlinFileClassName(file)
             ClassPathService(classPathLibs.toTypedArray(), classPathLocal.toTypedArray(), fileClassName)
         }
@@ -69,14 +69,13 @@ class ClassPathService private constructor(
     }
 }
 
-object RuntimeLibrariesManager {
-    private val LOG = logger<RuntimeLibrariesManager>()
+object EmbeddedLibrariesManager {
+    private val LOG = logger<EmbeddedLibrariesManager>()
 
     private var tmpFolder: File? = null
 
-    private val runtimeLibs = listOf(
-        "hot_preview_render-all.jar"
-    )
+    private val runtimeLibs = listOf("hot_preview_render-all.jar")
+    private val compileTimeLibs = listOf("kotlin_compiler-all.jar")
 
     private fun getResUrl(name: String) = this.javaClass.classLoader.getResource(name)
 
@@ -87,7 +86,7 @@ object RuntimeLibrariesManager {
             tmpFolder = dir
             //Copy libraries
             LOG.debug("Temp dir: $dir")
-            runtimeLibs.forEach { fileName ->
+            (runtimeLibs + compileTimeLibs).forEach { fileName ->
                 val url = getResUrl(fileName)
                 val outputFile = File(dir, fileName)
                 url?.openStream()?.use { inputStream ->
@@ -105,6 +104,12 @@ object RuntimeLibrariesManager {
     suspend fun getRuntimeLibs(): List<URL> = withContext(Dispatchers.Default) {
         val tmpFolder = initialize()
         runtimeLibs.map {
+            File(tmpFolder, it).toURI().toURL()
+        }
+    }
+    suspend fun getCompileTimeLibs(): List<URL> = withContext(Dispatchers.Default) {
+        val tmpFolder = initialize()
+        compileTimeLibs.map {
             File(tmpFolder, it).toURI().toURL()
         }
     }

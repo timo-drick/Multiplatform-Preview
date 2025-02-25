@@ -23,6 +23,8 @@ import org.jetbrains.kotlin.idea.base.facet.isMultiPlatformModule
 import org.jetbrains.kotlin.idea.util.projectStructure.getModule
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
+import org.jetbrains.plugins.gradle.util.GradleUtil
+import org.jetbrains.plugins.gradle.util.gradlePath
 import java.io.File
 import java.net.URL
 import kotlin.coroutines.resume
@@ -72,12 +74,12 @@ class ProjectAnalyzer(
         val module = getModule(file)
         val modulePath = requireNotNull(getModulePath(module))
         val desktopModule = getJvmTargetModule(module)
-        /*
+
         val gradleData = GradleUtil.findGradleModuleData(desktopModule)
         gradleData?.let { gradle ->
             println("Gradle data: ${gradle.data.moduleName} ${gradle.data.gradlePath}")
         }
-        */
+
         val tokens = desktopModule.name.split(".")
         val moduleName = tokens.drop(1).joinToString(":")
         val taskName = ":${moduleName}Classes"

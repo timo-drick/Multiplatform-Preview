@@ -15,13 +15,15 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import de.drick.compose.hotpreview.plugin.embeddedcompiler.parseJsonToK2JVMCompilerArguments
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
-import de.drick.compose.utils.LRUCache
 import de.drick.compose.utils.lazySuspend
+import de.drick.compose.utils.lruCacheOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jetbrains.kotlin.idea.workspaceModel.kotlinSettings
 import kotlin.time.measureTimedValue
 
 @Suppress("UnstableApiUsage")
@@ -133,13 +135,26 @@ class HotPreviewViewModel(
             errorHandling {
                 val functions = analyzePreviewAnnotations()
                 if (functions.isNotEmpty()) {
+                    val hotRecompileService = HotRecompileService(
+                        destFolder = "test",
+                        jvmTarget = "17",
+                        languageVersion = "2.1"
+                    )
                     project.useSuspendWorkspace {
                         val module = requireNotNull(getModule(file)) { "No module found for file: ${file.name}" }
                         val desktopModule = getJvmTargetModule(module)
+
+                        hotRecompileService.compile(
+                            module = module.name,
+                            classPaths = classPathService.get().classPathFull,
+                            fileList = listOf(file.path)
+                        )
+                        /*
                         val gradleTask = getGradleTaskName(desktopModule)
                         val path = requireNotNull(getModulePath(module)) { "No module path found!" }
                         println("task: $gradleTask path: $path")
                         executeGradleTask(project, gradleTask, path)
+                         */
                         compileCounter++
                     }
                 }
@@ -147,6 +162,36 @@ class HotPreviewViewModel(
                 render()
             }
             compilingInProgress = false
+        }
+    }
+
+    //private val compiler = K2JVMCompiler
+
+    suspend fun hotRecompile() {
+        val pa = ProjectAnalyzer(project)
+        project.useSuspendWorkspace {
+
+            val module = getModule(file)!!
+            val jvmModule = getJvmTargetModule(getModule(file)!!)
+            val jvmSettings = jvmModule.kotlinSettings.first()
+            println("JVM Compiler arguments")
+            val jsonArgs = jvmSettings.compilerArguments
+            println(jsonArgs)
+            requireNotNull(jsonArgs) { "No compiler arguments found for module: ${jvmModule.name}" }
+            val args = parseJsonToK2JVMCompilerArguments(jsonArgs)
+
+            val sources = module.contentRoots.flatMap { it.sourceRoots.map { "${it.rootTypeId} -> ${it.url}" } }
+            sources.forEach {
+                println(it)
+            }
+            val sourcesJvm = jvmModule.contentRoots.flatMap { it.sourceRoots.map { "${it.rootTypeId} -> ${it.url}" } }
+            println("Jvm:")
+            sourcesJvm.forEach {
+                println(it)
+            }
+            //jvmModule.contentRoots.filterIsInstance<>()
+            //val kClass = SourceRootEntityData::class.java
+            //entities()
         }
     }
 
@@ -199,7 +244,7 @@ class HotPreviewViewModel(
         val annotation: HotPreviewModel
     )
 
-    private val renderCache = LRUCache<RenderCacheKey, RenderedImage>(20)
+    private val renderCache = lruCacheOf<RenderCacheKey, RenderedImage>(20)
 
     suspend fun render() {
         val renderList = mutableListOf<RenderQueue>()
