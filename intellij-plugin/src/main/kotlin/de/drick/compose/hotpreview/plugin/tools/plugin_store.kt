@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin
+package de.drick.compose.hotpreview.plugin.tools
 
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.project.Project

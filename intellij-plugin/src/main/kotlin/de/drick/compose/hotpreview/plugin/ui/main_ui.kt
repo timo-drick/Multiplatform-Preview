@@ -56,6 +56,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
             onAction = { action ->
                 when (action) {
                     TopBarAction.Refresh -> model.refresh()
+                    TopBarAction.OpenSettings -> model.openSettings()
                     is TopBarAction.SelectGroup -> model.selectGroup(action.group)
                 }
             }

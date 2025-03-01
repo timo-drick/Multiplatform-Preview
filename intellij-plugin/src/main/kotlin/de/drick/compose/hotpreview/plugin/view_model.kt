@@ -10,12 +10,16 @@ import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.TextEditorWithPreview
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
+import de.drick.compose.hotpreview.plugin.tools.PluginPersistentStore
+import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettings
+import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettingsConfigurable
 import de.drick.compose.utils.LRUCache
 import de.drick.compose.utils.lazySuspend
 import kotlinx.coroutines.CoroutineScope
@@ -53,6 +57,7 @@ interface HotPreviewViewModelI {
     fun navigateCodeLine(line: Int)
     fun monitorChanges(scope: CoroutineScope)
     fun refresh()
+    fun openSettings()
 }
 
 class HotPreviewViewModel(
@@ -66,6 +71,8 @@ class HotPreviewViewModel(
         get() = requireNotNull(TextEditorWithPreview.getParentSplitEditor(previewEditor) as? SeamlessEditorWithPreview)
     private val textEditor
         get() = splitEditor.textEditor
+
+    val settings = HotPreviewSettings.getInstance().state
 
     private val classPathService by lazySuspend {
         ClassPathService.getInstance(project, file)
@@ -139,7 +146,8 @@ class HotPreviewViewModel(
                         val gradleTask = getGradleTaskName(desktopModule)
                         val path = requireNotNull(getModulePath(module)) { "No module path found!" }
                         println("task: $gradleTask path: $path")
-                        executeGradleTask(project, gradleTask, path)
+                        val parameters = if (settings.gradleParametersEnabled) settings.gradleParameters else ""
+                        executeGradleTask(project, gradleTask, parameters, path)
                         compileCounter++
                     }
                 }
@@ -148,6 +156,10 @@ class HotPreviewViewModel(
             }
             compilingInProgress = false
         }
+    }
+
+    override fun openSettings() {
+        ShowSettingsUtil.getInstance().showSettingsDialog(project, HotPreviewSettingsConfigurable::class.java)
     }
 
     override fun monitorChanges(scope: CoroutineScope) {
@@ -184,7 +196,7 @@ class HotPreviewViewModel(
             errorMessage = null
         }.onFailure { err ->
             errorMessage = err
-            LOG.error(err)
+            LOG.warn(err)
         }
     }
 

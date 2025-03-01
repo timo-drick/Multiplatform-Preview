@@ -72,13 +72,14 @@ private fun getOutputPaths(data: DataNode<*>) = data.children
     }
 
 
-suspend fun executeGradleTask(project: Project, taskName: String, path: String) {
+suspend fun executeGradleTask(project: Project, taskName: String, parameters: String, path: String) {
     val gradleSettings = GradleSettings.getInstance(project)
     val gradleVmOptions = gradleSettings.gradleVmOptions
     val settings = ExternalSystemTaskExecutionSettings()
     settings.executionName = "HotPreview recompile"
     settings.externalProjectPath = path
     settings.taskNames = listOf(taskName)
+    settings.scriptParameters = parameters
     settings.vmOptions = gradleVmOptions
     settings.externalSystemIdString = GradleConstants.SYSTEM_ID.id
 

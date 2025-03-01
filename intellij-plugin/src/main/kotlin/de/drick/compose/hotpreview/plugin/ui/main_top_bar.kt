@@ -17,6 +17,7 @@ import org.jetbrains.jewel.ui.icons.AllIconsKeys
 
 interface TopBarAction {
     data object Refresh: TopBarAction
+    data object OpenSettings: TopBarAction
     data class SelectGroup(val group: String?): TopBarAction
 }
 
@@ -75,6 +76,12 @@ fun MainTopBar(
             } else {
                 Icon(AllIconsKeys.General.Refresh, contentDescription = "Refresh")
             }
+        }
+        ActionButton(
+            onClick = { onAction(TopBarAction.OpenSettings) },
+            focusable = false
+        ) {
+            Icon(AllIconsKeys.General.Settings, contentDescription = "Settings")
         }
     }
 }

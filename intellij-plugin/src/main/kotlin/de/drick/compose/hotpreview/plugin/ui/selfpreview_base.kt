@@ -138,4 +138,5 @@ fun mockViewModel(
     override fun navigateCodeLine(line: Int) {}
     override fun monitorChanges(scope: CoroutineScope) {}
     override fun refresh() {}
+    override fun openSettings() {}
 }

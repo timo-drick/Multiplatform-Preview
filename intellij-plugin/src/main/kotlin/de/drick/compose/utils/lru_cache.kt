@@ -1,7 +1,7 @@
 package de.drick.compose.utils
 
 
-public inline fun <K, V> lruCacheOf(capacity: Int): LRUCache<K, V> = LRUCache(capacity = capacity)
+fun <K, V> lruCacheOf(capacity: Int): LRUCache<K, V> = LRUCache(capacity = capacity)
 
 class LRUCache<K, V>(private val capacity: Int) {
     private val cache = LinkedHashMap<K, V>(capacity, 0.75f)

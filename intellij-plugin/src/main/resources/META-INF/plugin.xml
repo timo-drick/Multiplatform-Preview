@@ -13,6 +13,13 @@
         <!-- Add your extensions here -->
         <fileEditorProvider implementation="de.drick.compose.hotpreview.plugin.HotPreviewSplitEditorProvider" />
         <deadCode implementation="de.drick.compose.hotpreview.plugin.HotPreviewEntryPoint" />
+        <applicationService serviceImplementation="de.drick.compose.hotpreview.plugin.ui.HotPreviewSettings"/>
+        <applicationConfigurable
+            parentId="editor"
+            instance="de.drick.compose.hotpreview.plugin.ui.HotPreviewSettingsConfigurable"
+            id="de.drick.compose.hotpreview.plugin.HotPreviewSettingsConfigurable"
+            displayName="HotPreview Settings"/>
+
     </extensions>
 
 </idea-plugin>
