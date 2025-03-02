@@ -4,7 +4,10 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.openapi.keymap.KeymapManager
+import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.util.NlsContexts
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.dsl.builder.AlignX
@@ -17,23 +20,38 @@ import org.jetbrains.annotations.Nls
 import javax.swing.JComponent
 
 data class SettingsData(
-    var gradleParametersEnabled: Boolean = true,
+    var gradleParametersEnabled: Boolean = false,
     var gradleParameters: String = "--build-cache --configuration-cache --configuration-cache-problems=warn",
-    var recompileOnSave: Boolean = true,
-    var recompileOnChange: Boolean = false,
-    var recompileOnChangeThresholdMilliseconds: Int = 2000
+    var recompileOnSave: Boolean = false,
+    var recompileOnChange: Boolean = false, //Not supported yet
+    var recompileOnChangeThresholdMilliseconds: Int = 2000 //Not supported yet
 )
 
 class HotPreviewSettingsConfigurable : Configurable {
-
     private val settings: SettingsData = HotPreviewSettings.getInstance().state
     private val mainPanel = panel {
+        val recompileShortCut = KeymapManager.getInstance()
+            .activeKeymap
+            .getShortcuts("de.drick.compose.hotpreview.plugin.ReCompileShortcutAction")
+            .joinToString(" | ") {
+                KeymapUtil.getShortcutText(it)
+            }
         row {
             checkBox("Recompile on save")
                 .bindSelected(settings::recompileOnSave)
         }.rowComment(
             "When changes are saved to disk the task that compiles all Kotlin sources is executed for the module"
         )
+        row("Recompile shortcut") {
+            label(recompileShortCut)
+            button("Change Shortcut") {
+                ShowSettingsUtil.getInstance().showSettingsDialog(null, "Keymap")
+                //TODO update shortcut text after change
+            }
+        }.rowComment(
+            "You can change the shortcut in the settings menu. Search for HotPreview."
+        )
+
         /*
         row {
             checkBox("Recompile on change")

@@ -173,7 +173,12 @@ class HotPreviewViewModel(
         }
         subscribeForFileChanges(scope) {
             scope.launch {
-                refresh()
+                if (settings.recompileOnSave) {
+                    refresh()
+                } else {
+                    previewFunctions = analyzePreviewAnnotations()
+                    render()
+                }
             }
         }
     }

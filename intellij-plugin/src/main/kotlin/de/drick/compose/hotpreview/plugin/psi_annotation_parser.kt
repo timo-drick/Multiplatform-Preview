@@ -37,20 +37,25 @@ private val composableClassId = ClassId.topLevel(FqName(Composable::class.qualif
 
 private val hotPreviewDefaultValues = HotPreviewModel()
 
+inline fun <reified T>Map<String, Any?>.withDefault(key: String, defaultValue: T): T =
+    this[key] as? T ?: defaultValue
+
 private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
     // Build a map
     val map = arguments.associateBy { it.name.toString() }
         .mapValues { (it.value.expression as? KaAnnotationValue.ConstantValue)?.value?.value }
     val dv = hotPreviewDefaultValues
+    val dpi = map["dpi"] as? Int?
+    val defaultDensity = if (dpi != null) dpi.toFloat() / 160f else dv.density
     return HotPreviewModel(
-        name = map["name"]?.toString() ?: dv.name,
-        group = map["group"]?.toString() ?: dv.group,
-        widthDp = map["widthDp"] as Int? ?: dv.widthDp,
-        heightDp = map["heightDp"] as Int? ?: dv.heightDp,
-        locale = map["locale"] as String? ?: dv.locale,
-        fontScale = map["fontScale"] as Float? ?: dv.fontScale,
-        darkMode = map["darkMode"] as Boolean? ?: dv.darkMode,
-        density = map["density"] as Float? ?: dv.density
+        name = map.withDefault("name", dv.name),
+        group = map.withDefault("group", dv.group),
+        widthDp = map.withDefault("widthDp", dv.widthDp),
+        heightDp = map.withDefault("heightDp", dv.heightDp),
+        locale = map.withDefault("locale", dv.locale),
+        fontScale = map.withDefault("fontScale", dv.fontScale),
+        darkMode = map.withDefault("darkMode", dv.darkMode),
+        density = map.withDefault("density", defaultDensity)
     )
 }
 

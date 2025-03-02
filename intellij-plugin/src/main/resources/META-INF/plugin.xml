@@ -1,6 +1,4 @@
 <idea-plugin>
-    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-         on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.gradle</depends>
     <depends>org.jetbrains.kotlin</depends>
@@ -10,7 +8,6 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Add your extensions here -->
         <fileEditorProvider implementation="de.drick.compose.hotpreview.plugin.HotPreviewSplitEditorProvider" />
         <deadCode implementation="de.drick.compose.hotpreview.plugin.HotPreviewEntryPoint" />
         <applicationService serviceImplementation="de.drick.compose.hotpreview.plugin.ui.HotPreviewSettings"/>
@@ -19,7 +16,14 @@
             instance="de.drick.compose.hotpreview.plugin.ui.HotPreviewSettingsConfigurable"
             id="de.drick.compose.hotpreview.plugin.HotPreviewSettingsConfigurable"
             displayName="HotPreview Settings"/>
-
     </extensions>
 
+    <actions>
+        <action id="de.drick.compose.hotpreview.plugin.ReCompileShortcutAction"
+                class="de.drick.compose.hotpreview.plugin.ReCompileShortcutAction"
+                text="HotPreview Recompile Action"
+                description="Shortcut to trigger a recompile of the code so the preview will be updated.">
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl H"/>
+        </action>
+    </actions>
 </idea-plugin>

@@ -5,6 +5,9 @@ import com.intellij.codeInspection.reference.EntryPoint
 import com.intellij.codeInspection.reference.RefElement
 import com.intellij.configurationStore.deserializeInto
 import com.intellij.configurationStore.serializeObjectInto
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.*
 import com.intellij.openapi.project.Project
@@ -66,10 +69,14 @@ class HotPreviewView(
     private val file: VirtualFile,
     private val scope: CoroutineScope
 ) : UserDataHolder by UserDataHolderBase(), FileEditor {
+
+    val model by lazy {
+        HotPreviewViewModel(project, this@HotPreviewView, file, scope)
+    }
+
     @OptIn(ExperimentalJewelApi::class)
     private val mainComponent by lazy {
         enableNewSwingCompositing()
-        val model = HotPreviewViewModel(project, this@HotPreviewView, file, scope)
         ComposePanel().apply {
             setContent {
                 SwingBridgeTheme {
@@ -91,6 +98,17 @@ class HotPreviewView(
     override fun removePropertyChangeListener(listener: PropertyChangeListener) {}
 }
 
+class ReCompileShortcutAction: AnAction() {
+    override fun actionPerformed(event: AnActionEvent) {
+        val project  = event.project ?: return
+        val file = event.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
+        val fileEditor = FileEditorManager.getInstance(project).getSelectedEditor(file) ?: return
+        (fileEditor as? SeamlessEditorWithPreview)?.let {
+            val previewEditor = it.previewEditor
+            if (previewEditor is HotPreviewView) previewEditor.model.refresh()
+        }
+    }
+}
 
 /**
  * [EntryPoint] implementation to mark `@HotPreview` functions as entry points and avoid them being flagged as unused.
