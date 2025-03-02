@@ -25,16 +25,16 @@ repositories {
 
 //val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.2.5")
 //val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("242")
-val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.2")
+val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.4")
 val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("243")
 
 dependencies {
 
     intellijPlatform {
         //See this list for available versions: https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html
-        androidStudio("2024.3.1.11") //Meerkat
-        //androidStudio("2024.2.2.13")
-        //intellijIdeaCommunity(ijPlatform)
+        //androidStudio("2024.3.1.12") //Meerkat
+        //androidStudio("2024.2.2.13") //Ladybug
+        intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
         zipSigner()
         bundledPlugins("org.jetbrains.kotlin", "com.intellij.gradle") // Plugins must be also provided in plugin.xml!!!
@@ -128,6 +128,9 @@ intellijPlatform {
         changeNotes = """
 <h3>V 0.4.0</h3>
 <ul>
+    <li>Added shortcut key to recompile</li>
+    <li>Added settings to change gradle compile parameters and recompiling behaviour</li>
+    <li>Improved rendering performance.</li>
     <li>Added foldable sections for preview functions</li>
     <li>Added support for locale</li>
     <li>Added support for Groups</li>
