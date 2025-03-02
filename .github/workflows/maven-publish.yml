@@ -15,22 +15,7 @@ jobs:
       packages: write
 
     steps:
-    - name: Fetch Sources
-      uses: actions/checkout@v4
-
-    - name: Gradle Wrapper Validation
-      uses: gradle/actions/wrapper-validation@v3
-
-    - name: Set Up JDK
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'zulu' # See 'Supported distributions' for available options
-        java-version: '21'
-        cache: 'gradle'
-
-    # Setup Gradle
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v4
+    - uses: prepare@v1
 
     - name: Publish package
       run: ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache
