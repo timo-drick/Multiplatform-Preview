@@ -11,16 +11,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.*
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.UIHotPreviewData
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.modifier.onHover
 import org.jetbrains.jewel.ui.component.*
 
 
-@HotPreview(widthDp = 650, heightDp = 1400)
+@OptIn(ExperimentalResourceApi::class)
+@HotPreview(widthDp = 900, heightDp = 1400)
 @HotPreview(widthDp = 650, heightDp = 1400, darkMode = false)
 @Composable
 private fun PreviewPreviewGridPanel() {
+    val env = rememberResourceEnvironment()
     val data = remember {
-        getMockData()
+        getMockData(env)
     }
     SelfPreviewTheme {
         PreviewGridPanel(
@@ -79,7 +83,9 @@ fun PreviewSection(
     onNavigateCode: (Int) -> Unit
 ) {
     FlowRow(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         preview.annotations.forEachIndexed { index, annotation ->
             var isFocused by remember { mutableStateOf(false) }

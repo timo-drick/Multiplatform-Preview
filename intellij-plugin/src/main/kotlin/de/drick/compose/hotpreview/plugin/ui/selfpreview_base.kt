@@ -13,11 +13,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.plugin.*
+import hotpreviewplugin.generated.resources.*
 import hotpreviewplugin.generated.resources.Res
+import hotpreviewplugin.generated.resources.countposer_dialog
+import hotpreviewplugin.generated.resources.countposer_start
+import hotpreviewplugin.generated.resources.login_dark
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.decodeToImageBitmap
+import org.jetbrains.compose.resources.*
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.intui.standalone.styling.Default
 import org.jetbrains.jewel.intui.standalone.theme.IntUiTheme
@@ -71,26 +74,36 @@ fun SelfPreviewTheme(content: @Composable () -> Unit) {
 }
 
 
-fun getMockData() = sampleImages.map { getHotPreviewDataItem(it) }
+@OptIn(ExperimentalResourceApi::class)
+fun getMockData(
+    environment: ResourceEnvironment
+) = SamplePreviewItem.entries.chunked(2).map { items ->
+    val name = items.first().name
+    getHotPreviewDataItem(environment, name, *items.toTypedArray())
+}
 
-fun getHotPreviewDataItem(resourceName: String): UIHotPreviewData {
+@OptIn(ExperimentalResourceApi::class)
+fun getHotPreviewDataItem(
+    environment: ResourceEnvironment,
+    functionName: String,
+    vararg samples: SamplePreviewItem
+): UIHotPreviewData {
     try {
-        val previewItem = getPreviewItem("drawable/$resourceName.png", if (resourceName == "login_light") 4f else 2f)
         return UIHotPreviewData(
-            functionName = resourceName.capitalize(),
-            annotations = listOf(
+            functionName = functionName,
+            annotations = samples.map { item ->
                 UIAnnotation(
                     name = "Test1",
                     lineRange = null,
                 ).also {
-                    it.state = previewItem
+                    it.state = getPreviewItem(environment, item)
                 }
-            ),
+            },
             lineRange = null
         )
     } catch (err: Throwable) {
         return UIHotPreviewData(
-            functionName = resourceName.capitalize(),
+            functionName = functionName,
             annotations = listOf(
                 UIAnnotation(
                     name = "Test1",
@@ -104,6 +117,18 @@ fun getHotPreviewDataItem(resourceName: String): UIHotPreviewData {
     }
 }
 
+@OptIn(InternalResourceApi::class)
+enum class SamplePreviewItem(
+    val drawableResource: DrawableResource,
+    val density: Float
+) {
+    countposer_dialog(Res.drawable.countposer_dialog, 2f),
+    countposer_start(Res.drawable.countposer_start, 2f),
+    login_dark(Res.drawable.login_dark, 2f),
+    login_light(Res.drawable.login_light, 4f),
+    error_test(DrawableResource("error", emptySet()), 2f)
+}
+
 val sampleImages = listOf(
     "countposer_dialog",
     "countposer_start",
@@ -113,11 +138,25 @@ val sampleImages = listOf(
 )
 
 @OptIn(ExperimentalResourceApi::class)
-private fun getPreviewItem(resource: String, density: Float): RenderedImage {
+private fun getPreviewItem(resource: String): RenderedImage {
+    val density = if (resource == "login_light") 4f else 2f
     val image = runBlocking {
         Res.readBytes(resource).decodeToImageBitmap()
     }
     //val image = useResource(resourcePath, ::loadImageBitmap)
+    val size = DpSize((image.width / density).dp, (image.height / density).dp)
+    return RenderedImage(image, size)
+}
+
+@OptIn(ExperimentalResourceApi::class)
+private fun getPreviewItem(
+    environment: ResourceEnvironment,
+    resource: SamplePreviewItem
+): RenderedImage {
+    val density = resource.density
+    val image = runBlocking {
+        getDrawableResourceBytes(environment, resource.drawableResource).decodeToImageBitmap()
+    }
     val size = DpSize((image.width / density).dp, (image.height / density).dp)
     return RenderedImage(image, size)
 }

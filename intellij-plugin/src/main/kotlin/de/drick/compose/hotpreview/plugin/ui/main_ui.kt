@@ -10,6 +10,8 @@ import androidx.compose.ui.unit.dp
 import com.intellij.openapi.diagnostic.fileLogger
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.HotPreviewViewModelI
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.modifier.onHover
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.component.Icon
@@ -22,12 +24,14 @@ import org.jetbrains.jewel.ui.theme.editorTabStyle
 @Suppress("UnstableApiUsage")
 private val LOG = fileLogger()
 
+@OptIn(ExperimentalResourceApi::class)
 @HotPreview(widthDp = 650, heightDp = 1400)
 @HotPreview(widthDp = 650, heightDp = 1400, darkMode = false)
 @Composable
 private fun PreviewMainScreen() {
+    val env = rememberResourceEnvironment()
     val viewModel = remember {
-        mockViewModel(getMockData()).apply {
+        mockViewModel(getMockData(env)).apply {
             changeScale(1f)
         }
     }

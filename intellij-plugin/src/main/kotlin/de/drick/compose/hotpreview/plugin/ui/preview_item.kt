@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -14,16 +15,20 @@ import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.*
 import de.drick.compose.utils.ClipboardImage
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.component.*
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 
+@OptIn(ExperimentalResourceApi::class)
 @HotPreview(name = "dark", widthDp = 400, heightDp = 200)
 @HotPreview(name = "light", widthDp = 400, heightDp = 200, darkMode = false)
 @Composable
 fun PreviewPreviewItemError() {
+    val env = rememberResourceEnvironment()
     val item = remember {
-        getHotPreviewDataItem("error")
+        getHotPreviewDataItem(env, "error", SamplePreviewItem.error_test)
     }
     SelfPreviewTheme {
         PreviewItem(
@@ -34,12 +39,14 @@ fun PreviewPreviewItemError() {
     }
 }
 
+@OptIn(ExperimentalResourceApi::class)
 @HotPreview
 @HotPreview(darkMode = false)
 @Composable
 private fun PreviewPreviewItem() {
+    val env = rememberResourceEnvironment()
     val item = remember {
-        getHotPreviewDataItem("login_dark")
+        getHotPreviewDataItem(env, "login", SamplePreviewItem.login_dark)
     }
     SelfPreviewTheme {
         PreviewItem(
@@ -50,12 +57,14 @@ private fun PreviewPreviewItem() {
     }
 }
 
+@OptIn(ExperimentalResourceApi::class)
 @HotPreview
 @HotPreview(darkMode = false)
 @Composable
 private fun PreviewPreviewItemFocus() {
+    val env = rememberResourceEnvironment()
     val item = remember {
-        getHotPreviewDataItem("login_dark")
+        getHotPreviewDataItem(env, "login", SamplePreviewItem.login_dark)
     }
     SelfPreviewTheme {
         PreviewItem(
@@ -80,7 +89,9 @@ fun PreviewItem(
     val borderModifier = if (hasFocus) Modifier.border(focusStroke) else Modifier
     val borderStroke = BorderStroke(1.dp, Color.Black)
     Column(modifier.width(IntrinsicSize.Min)) {
-        Row {
+        Row(
+            verticalAlignment = Alignment.Bottom
+        ) {
             Text(
                 modifier = Modifier.weight(1f),
                 text = name,
