@@ -53,8 +53,6 @@ private class WorkspaceAnalyzer(
 
     override fun getJvmTargetModule(module: ModuleEntity): ModuleEntity {
         val baseModuleName = module.name.substringBeforeLast(".")
-        println("Facet for: ${module.name}")
-        println("ExModuleOptions: ${module.exModuleOptions?.externalSystem}")
         val isMultiplatform = module.isMultiplatform()
         val desktopModule = currentSnapshot.entities(ModuleEntity::class.java)
             .filter { it.name.startsWith(baseModuleName) }
@@ -90,14 +88,13 @@ private class WorkspaceAnalyzer(
     }
 
     fun getClassPath(module: ModuleEntity): Set<String> {
-        println("Group path: ${module.groupPath}")
         println("Content roots:")
         module.dependencies.filterIsInstance<ModuleSourceDependency>().forEach {
             println("$it")
         }
         println("Facets:")
         module.facets.forEach {
-            println("${it}")
+            println(it)
         }
         val moduleClassPath = getClassPathArray(module)
         val depModulesClassPath = module.dependencies
