@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.compose")
     id("idea")
 
-    id("com.github.ben-manes.versions") version "0.51.0"
+    id("com.github.ben-manes.versions") version "0.52.0"
 }
 
 repositories {
@@ -27,6 +27,8 @@ repositories {
 //val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("242")
 val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.4")
 val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("243")
+
+val versionName = "0.4.0-$ijPlatform"
 
 dependencies {
 
@@ -111,7 +113,7 @@ intellijPlatform {
     pluginConfiguration {
         id = "de.drick.compose.hotpreview.plugin"
         name = "Compose Multiplatform HotPreview"
-        version = "0.3.1-$ijPlatform"
+        version = versionName
 
         ideaVersion {
             sinceBuild = branch
