@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.withContext
 import org.jdom.Element
+import org.jetbrains.jewel.bridge.JewelComposePanel
 import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
 import org.jetbrains.jewel.foundation.enableNewSwingCompositing
@@ -77,12 +78,8 @@ class HotPreviewView(
     @OptIn(ExperimentalJewelApi::class)
     private val mainComponent by lazy {
         enableNewSwingCompositing()
-        ComposePanel().apply {
-            setContent {
-                SwingBridgeTheme {
-                    MainScreen(model)
-                }
-            }
+        JewelComposePanel {
+            MainScreen(model)
         }
     }
 

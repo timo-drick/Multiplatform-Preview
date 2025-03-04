@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
+import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.TextEditorWithPreview
 import com.intellij.openapi.options.ShowSettingsUtil
@@ -18,6 +19,7 @@ import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
 import de.drick.compose.hotpreview.plugin.tools.PluginPersistentStore
+import de.drick.compose.hotpreview.plugin.ui.HotPreviewGutterIcon
 import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettings
 import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettingsConfigurable
 import de.drick.compose.utils.LRUCache
@@ -26,6 +28,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jetbrains.kotlin.idea.debugger.core.stepping.getLineRange
+import java.io.File
 import kotlin.time.measureTimedValue
 
 @Suppress("UnstableApiUsage")
@@ -189,9 +193,22 @@ class HotPreviewViewModel(
     }
 
     private suspend fun analyzePreviewAnnotations(): List<HotPreviewFunction> {
-        val previewFunctions = findPreviewAnnotations(project, file)
+        val previewFunctions = findFunctionsWithHotPreviewAnnotations(project, file)
         setPureTextEditorMode(previewFunctions.isEmpty())
         updateGroups(previewFunctions)
+
+        val annotations = findHotPreviewAnnotations(project, file)
+        val editor = textEditor.editor
+        editor.markupModel.allHighlighters
+            .filter { it.gutterIconRenderer is HotPreviewGutterIcon }
+            .forEach { editor.markupModel.removeHighlighter(it) }
+
+        annotations.forEach { annotation ->
+            annotation.lineRange?.let { lineRange ->
+                val highlighter = editor.markupModel.addLineHighlighter(lineRange.first, 0, TextAttributes())
+                highlighter.gutterIconRenderer = HotPreviewGutterIcon(project, file, annotation)
+            }
+        }
         return previewFunctions
     }
 
@@ -220,48 +237,52 @@ class HotPreviewViewModel(
 
     suspend fun render() {
         val renderList = mutableListOf<RenderQueue>()
-
-        previewList = previewFunctions.map { function ->
-            val annotations = function.annotation.filter {
-                selectedGroup == null || it.annotation.group == selectedGroup
-            }.map {
-                UIAnnotation(
-                    it.annotation.name,
-                    it.lineRange
-                ).also { ui ->
-                    renderCache[RenderCacheKey(function.name, it.annotation)]?.let {  image ->
-                        ui.state = image
+        errorHandling {
+            previewList = previewFunctions.map { function ->
+                val annotations = function.annotation.filter {
+                    selectedGroup == null || it.annotation.group == selectedGroup
+                }.map {
+                    UIAnnotation(
+                        it.annotation.name,
+                        it.lineRange
+                    ).also { ui ->
+                        renderCache[RenderCacheKey(function.name, it.annotation)]?.let { image ->
+                            ui.state = image
+                        }
+                        renderList.add(RenderQueue(function, it.annotation, ui))
                     }
-                    renderList.add(RenderQueue(function, it.annotation, ui))
                 }
+                UIHotPreviewData(
+                    functionName = function.name,
+                    lineRange = function.lineRange,
+                    annotations = annotations
+                )
             }
-            UIHotPreviewData(
-                functionName = function.name,
-                lineRange = function.lineRange,
-                annotations = annotations
-            )
-        }
 
-        withContext(Dispatchers.Default) {
-            val (renderClassLoader, duration) = measureTimedValue {
-                classPathService.get().getRenderClassLoaderInstance(compileCounter)
-            }
-            println("Get classloader: $duration")
-            renderList.forEach { queue ->
-                // Workaround for legacy resource loading in old compose code
-                // See androidx.compose.ui.res.ClassLoaderResourceLoader
-                // It uses the contextClassLoader to load the resources.
-                val previousContextClassLoader = Thread.currentThread().contextClassLoader
-                // For new compose.components resource system a LocalCompositionProvider is used.
-                Thread.currentThread().contextClassLoader = renderClassLoader.classLoader
-                val state = try {
-                    renderPreview(renderClassLoader, queue.function, queue.annotation)
-                } finally {
-                    Thread.currentThread().contextClassLoader = previousContextClassLoader
+            withContext(Dispatchers.Default) {
+                val (renderClassLoader, duration) = measureTimedValue {
+                    classPathService.get().getRenderClassLoaderInstance(compileCounter)
                 }
-                //val state = render(renderClassLoader, queue.function, queue.annotation)
-                queue.ui.state = state
-                if (state is RenderedImage) renderCache[RenderCacheKey(queue.function.name, queue.annotation)] = state
+                println("Get classloader: $duration")
+                renderList.forEach { queue ->
+                    // Workaround for legacy resource loading in old compose code
+                    // See androidx.compose.ui.res.ClassLoaderResourceLoader
+                    // It uses the contextClassLoader to load the resources.
+                    val previousContextClassLoader = Thread.currentThread().contextClassLoader
+                    // For new compose.components resource system a LocalCompositionProvider is used.
+                    Thread.currentThread().contextClassLoader = renderClassLoader.classLoader
+                    val state = try {
+                        renderPreview(renderClassLoader, queue.function, queue.annotation)
+                    } finally {
+                        Thread.currentThread().contextClassLoader = previousContextClassLoader
+                    }
+                    //val state = render(renderClassLoader, queue.function, queue.annotation)
+                    queue.ui.state = state
+                    if (state is RenderedImage) renderCache[RenderCacheKey(
+                        queue.function.name,
+                        queue.annotation
+                    )] = state
+                }
             }
         }
     }

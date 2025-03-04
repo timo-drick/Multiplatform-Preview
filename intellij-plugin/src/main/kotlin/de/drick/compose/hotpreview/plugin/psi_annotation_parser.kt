@@ -2,7 +2,9 @@ package de.drick.compose.hotpreview.plugin
 
 import androidx.compose.runtime.Composable
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.readAndWriteAction
 import com.intellij.openapi.application.smartReadAction
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.fileLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -18,21 +20,18 @@ import org.jetbrains.kotlin.idea.debugger.core.stepping.getLineRange
 import org.jetbrains.kotlin.idea.stubindex.KotlinFullClassNameIndex
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.psi.KtAnnotationEntry
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import kotlin.collections.plus
 
 @Suppress("UnstableApiUsage")
 private val LOG = fileLogger()
 
-
-suspend fun getPsiFileSafely(project: Project, virtualFile: VirtualFile): PsiFile? = readAction {
-    if (project.isDisposed) return@readAction null
-    val psiFile = PsiManager.getInstance(project).findFile(virtualFile) ?: return@readAction null
-    if (psiFile.isValid) psiFile else null
-}
-
-private val hotPreviewAnnotationClassId = ClassId.topLevel(FqName(fqNameHotPreview))
+val hotPreviewAnnotationClassId = ClassId.topLevel(FqName(fqNameHotPreview))
 private val composableClassId = ClassId.topLevel(FqName(Composable::class.qualifiedName!!))
 
 private val hotPreviewDefaultValues = HotPreviewModel()
@@ -59,16 +58,72 @@ private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
     )
 }
 
-suspend fun findPreviewAnnotations(project: Project, file: VirtualFile): List<HotPreviewFunction> =
+suspend fun findHotPreviewAnnotations(project: Project, file: VirtualFile): List<HotPreviewAnnotation> =
+    project.analyzeFile(file) { ktFile ->
+        ktFile.symbol.fileScope.getAllSymbols()
+            .flatMap { it.annotations }
+            .filter { it.classId == hotPreviewAnnotationClassId }
+            .map {
+                HotPreviewAnnotation(it.psi?.getLineRange(), it.toHotPreviewAnnotation())
+            }
+            .toList()
+    } ?: emptyList()
+
+suspend fun updateAnnotationParameter(
+    project: Project,
+    file: VirtualFile,
+    line: Int,  // Line number where the Annotation starts
+    argumentName: String,
+    newValue: String?
+) {
+    getPsiFileSafely(project, file)?.let { psiFile ->
+        readAndWriteAction {
+            val annotation: KtAnnotationEntry? = analyze(psiFile as KtFile) {
+                val found = psiFile.symbol.fileScope.getAllSymbols()
+                    .flatMap { it.annotations }
+                    .filter { it.classId == hotPreviewAnnotationClassId }
+                    .firstOrNull { it.psi?.getLineRange()?.first == line }
+                found?.psi as? KtAnnotationEntry
+            }
+            val factory = KtPsiFactory(project)
+            println("Found: $annotation")
+            writeAction {
+                WriteCommandAction.runWriteCommandAction(project) { //TODO This look a bit wrong. Maybe cleanup later?
+                    if (annotation != null) {
+                        val argument =
+                            annotation.valueArgumentList?.arguments?.find { it.getArgumentName()?.asName?.asString() == argumentName }
+                        if (newValue != null) {
+                            val newExpression = factory.createExpression(newValue)
+                            if (argument != null) {
+                                argument.getArgumentExpression()?.replace(newExpression)
+                            } else {
+                                val newArgument = factory.createArgument(
+                                    newExpression,
+                                    Name.identifier(argumentName)
+                                )
+                                annotation.valueArgumentList?.addArgument(newArgument)
+                            }
+                        } else {
+                            argument?.let { annotation.valueArgumentList?.removeArgument(it) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+suspend fun findFunctionsWithHotPreviewAnnotations(project: Project, file: VirtualFile): List<HotPreviewFunction> =
     withContext(Dispatchers.Default) {
         getPsiFileSafely(project, file)?.let { psiFile ->
             LOG.debug("Find preview annotations for: $file")
-            return@withContext analyzePsiFile(project, psiFile)
+            return@withContext analyzeFunctionsInPsiFile(project, psiFile)
         }
         emptyList()
     }
 
-suspend fun analyzePsiFile(project: Project, psiFile: PsiFile) = smartReadAction(project) {
+suspend fun analyzeFunctionsInPsiFile(project: Project, psiFile: PsiFile) = smartReadAction(project) {
     val functionList = mutableListOf<KtNamedFunction>()
     psiFile.accept(object : KtTreeVisitorVoid() {
         override fun visitNamedFunction(function: KtNamedFunction) {
@@ -137,5 +192,30 @@ fun checkFunctionForAnnotation(function: KtNamedFunction): List<HotPreviewAnnota
                 }
             }
         return hotPreviewAnnotations + hotPreviewAnnotationClasses
+    }
+}
+
+suspend fun getPsiFileSafely(project: Project, virtualFile: VirtualFile): PsiFile? = readAction {
+    if (project.isDisposed) return@readAction null
+    val psiFile = PsiManager.getInstance(project).findFile(virtualFile) ?: return@readAction null
+    if (psiFile.isValid) psiFile else null
+}
+suspend fun <R>Project.smartReadActionPsiFile(
+    virtualFile: VirtualFile,
+    block: (PsiFile) -> R
+): R? = smartReadAction(this) {
+    if (this.isDisposed) return@smartReadAction null
+    val psiFile = PsiManager.getInstance(this).findFile(virtualFile) ?: return@smartReadAction null
+    if (psiFile.isValid) block(psiFile) else null
+}
+
+suspend fun <R>Project.analyzeFile(
+    virtualFile: VirtualFile,
+    action: org.jetbrains.kotlin.analysis.api.KaSession.(KtFile) -> R
+) = withContext(Dispatchers.Default) {
+    smartReadActionPsiFile(virtualFile) { psiFile ->
+        analyze(psiFile as KtFile) {
+            action(psiFile)
+        }
     }
 }
