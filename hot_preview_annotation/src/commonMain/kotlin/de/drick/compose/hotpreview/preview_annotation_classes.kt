@@ -31,16 +31,18 @@ annotation class HotPreviewScreenSizes
     const val TV_1080p = "spec:shape=Normal,width=1920,height=1080,unit=dp,dpi=420"
 */
 
+private const val mdpi = 160f
+
 @Retention(AnnotationRetention.BINARY)
 @Target(
     AnnotationTarget.ANNOTATION_CLASS,
     AnnotationTarget.FUNCTION
 )
-@HotPreview(name = "Phone", widthDp = 411, heightDp = 891, dpi = 420)
-@HotPreview(name = "Phone - Landscape", widthDp = 891, heightDp = 411, dpi = 420)
-@HotPreview(name = "Unfolded Foldable", widthDp = 673, heightDp = 841, dpi = 420)
-@HotPreview(name = "Tablet", widthDp = 1280, heightDp = 800, dpi = 240)
-@HotPreview(name = "Desktop", widthDp = 1920, heightDp = 1080, dpi = 160)
+@HotPreview(name = "Phone", widthDp = 411, heightDp = 891, density = 420/mdpi)
+@HotPreview(name = "Phone - Landscape", widthDp = 891, heightDp = 411, density = 420/mdpi)
+@HotPreview(name = "Unfolded Foldable", widthDp = 673, heightDp = 841, density = 420/mdpi)
+@HotPreview(name = "Tablet", widthDp = 1280, heightDp = 800, density = 240/mdpi)
+@HotPreview(name = "Desktop", widthDp = 1920, heightDp = 1080, density = 160/mdpi)
 annotation class HotPreviewScreenSizes
 
 /**
