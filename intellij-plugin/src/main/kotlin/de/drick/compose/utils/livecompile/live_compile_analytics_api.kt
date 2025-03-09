@@ -6,6 +6,7 @@ import de.drick.compose.hotpreview.plugin.analyzeFile
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.analysis.api.components.KaCompilerTarget
 import org.jetbrains.kotlin.analysis.api.diagnostics.KaSeverity
+import org.jetbrains.kotlin.analysis.api.projectStructure.KaModuleProvider
 import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoots
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.JVMConfigurationKeys
@@ -13,7 +14,7 @@ import org.jetbrains.kotlin.idea.util.projectStructure.getModule
 import java.io.File
 
 @OptIn(KaExperimentalApi::class)
-suspend fun compileAnalyiticsAPI(
+suspend fun compileAnalyticsAPI(
     project: Project,
     classPath: List<File>,
     virtualFile: VirtualFile,
@@ -21,7 +22,7 @@ suspend fun compileAnalyiticsAPI(
     project.analyzeFile(virtualFile) { file ->
         val module = virtualFile.getModule(project)
         val config = CompilerConfiguration().apply {
-            addJvmClasspathRoots(classPath)
+            /*addJvmClasspathRoots(classPath)
             val javaHome = System.getProperty("java.home") //TODO maybe get it from IDE
             val jmods = File(javaHome, "jmods")
             if (jmods.exists()) {
@@ -31,7 +32,7 @@ suspend fun compileAnalyiticsAPI(
                 ))
             }
             put(JVMConfigurationKeys.ENABLE_JVM_PREVIEW, true)
-            put(JVMConfigurationKeys.IR, true)
+            put(JVMConfigurationKeys.IR, true)*/
         }
         val target = KaCompilerTarget.Jvm(false)
 
