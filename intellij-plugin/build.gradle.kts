@@ -30,11 +30,59 @@ val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("243")
 
 val versionName = "0.4.0-$ijPlatform"
 
+@Language("HTML")
+val changeNotesText = """
+<h3>V 0.4.0</h3>
+<ul>
+    <li>Added shortcut key to recompile</li>
+    <li>Added settings to change gradle compile parameters and recompiling behaviour</li>
+    <li>Improved rendering performance.</li>
+    <li>Added foldable sections for preview functions</li>
+    <li>Added support for locale</li>
+    <li>Added support for Groups</li>
+</ul>
+
+<h3>V 0.3.1</h3>
+<ul>
+    <li>Added support for Android Studio Ladybug and Intellij 2024.2.5</li>
+</ul>
+
+<h3>V 0.3.0</h3>
+<ul>
+    <li>Improved error handling and visualization.</li>
+    <li>
+        Plugin does override the default editor now all the time for kotlin files.
+        This is necessary because otherwise it is not possible to show preview when the user add @HotPreview annotation.
+    </li>
+    <li>
+        Added support for annotation classes. You can now create annotation classes with @HotPreview annotations.
+    </li>
+    <li>Self preview is now working. So the source of this plugin can also be previewed.</li>
+</ul>
+
+<h3>V 0.2.0</h3>
+<ul>
+    <li>Added support for macos. Window x64/arm64 should also work (untested)</li>
+    <li>Using an independent classloader now. Could solved some issues with resource loading.</li>
+    <li>Turned off recompile when opening a file.</li>
+    <li>Wait until indexing is finished before analyzing files.</li>
+    <li>Replaced @HotPreview annotation reflection code analyzer by psi file analyzer.</li>
+    <li>Set LocalInspectionMode to true in previews.</li>
+    <li>Added navigation to @HotPreview annotation on preview click.</li>
+    <li>Added on hover focus for preview items.</li>
+</ul>
+
+<h3>V 0.1.1</h3>
+<ul>
+    <li>Show errors when trying to compile and render the preview.</li>
+</ul>
+""".trimIndent()
+
 dependencies {
 
     intellijPlatform {
         //See this list for available versions: https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html
-        //androidStudio("2024.3.1.12") //Meerkat
+        //androidStudio("2024.3.1.13") //Meerkat
         //androidStudio("2024.2.2.13") //Ladybug
         intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
@@ -126,53 +174,7 @@ intellijPlatform {
             url = "https://github.com/timo-drick/Mutliplatform-Preview"
         }
 
-        @Language("HTML")
-        changeNotes = """
-<h3>V 0.4.0</h3>
-<ul>
-    <li>Added shortcut key to recompile</li>
-    <li>Added settings to change gradle compile parameters and recompiling behaviour</li>
-    <li>Improved rendering performance.</li>
-    <li>Added foldable sections for preview functions</li>
-    <li>Added support for locale</li>
-    <li>Added support for Groups</li>
-</ul>
-
-<h3>V 0.3.1</h3>
-<ul>
-    <li>Added support for Android Studio Ladybug and Intellij 2024.2.5</li>
-</ul>
-
-<h3>V 0.3.0</h3>
-<ul>
-    <li>Improved error handling and visualization.</li>
-    <li>
-        Plugin does override the default editor now all the time for kotlin files.
-        This is necessary because otherwise it is not possible to show preview when the user add @HotPreview annotation.
-    </li>
-    <li>
-        Added support for annotation classes. You can now create annotation classes with @HotPreview annotations.
-    </li>
-    <li>Self preview is now working. So the source of this plugin can also be previewed.</li>
-</ul>
-
-<h3>V 0.2.0</h3>
-<ul>
-    <li>Added support for macos. Window x64/arm64 should also work (untested)</li>
-    <li>Using an independent classloader now. Could solved some issues with resource loading.</li>
-    <li>Turned off recompile when opening a file.</li>
-    <li>Wait until indexing is finished before analyzing files.</li>
-    <li>Replaced @HotPreview annotation reflection code analyzer by psi file analyzer.</li>
-    <li>Set LocalInspectionMode to true in previews.</li>
-    <li>Added navigation to @HotPreview annotation on preview click.</li>
-    <li>Added on hover focus for preview items.</li>
-</ul>
-
-<h3>V 0.1.1</h3>
-<ul>
-    <li>Show errors when trying to compile and render the preview.</li>
-</ul>
-        """.trimIndent()
+        changeNotes = changeNotesText
     }
 
     signing {
