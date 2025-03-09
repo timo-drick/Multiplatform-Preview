@@ -1,7 +1,7 @@
 package de.drick.compose.hotpreview.plugin
 
 import com.intellij.execution.executors.DefaultRunExecutor
-import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
@@ -41,7 +41,7 @@ class ProjectAnalyzer(
 ) {
 
     suspend fun getSdkInfo(): String {
-        return readAction {
+        return smartReadAction(project) {
             val projectSdk = ProjectRootManager.getInstance(project)
                 .projectSdk
             LOG.debug("Sdk: ${projectSdk?.name}")
@@ -50,7 +50,7 @@ class ProjectAnalyzer(
     }
 
     suspend fun getOutputFolder(module: Module): String {
-        return readAction {
+        return smartReadAction(project) {
             val compiler = CompilerModuleExtension.getInstance(module)
             requireNotNull(compiler?.compilerOutputUrl) { "Compiler output path not found!" }
         }
@@ -123,7 +123,7 @@ class ProjectAnalyzer(
     suspend fun getJvmTargetModule(module: Module): Module {
         val baseModuleName = module.name.substringBeforeLast(".")
         // TODO not sure if the name is always desktop for jvm modules
-        return readAction {
+        return smartReadAction(project) {
             if (module.isMultiPlatformModule) {
                 val desktopModule = project.modules.filter { it.name.startsWith(baseModuleName) }
                     //.filter { it.isTestModule.not() }
@@ -141,14 +141,14 @@ class ProjectAnalyzer(
     private suspend fun getCommonTargetModule(module: Module): Module? {
         val baseModuleName = module.name.substringBeforeLast(".")
         // TODO not sure if the name is always desktop for jvm modules
-        return readAction {
+        return smartReadAction(project) {
             project.modules
                 .filter { it.name.startsWith(baseModuleName) }
                 .find { it.name.contains("commonMain") }
         }
     }
 
-    suspend fun getClassPath(module: Module, mode: ClassPathMode = ClassPathMode.ALL): List<URL> = readAction {
+    suspend fun getClassPath(module: Module, mode: ClassPathMode = ClassPathMode.ALL): List<URL> = smartReadAction(project) {
         val moduleClassPath = getClassPathArray(module, mode)
         val dependencyClassPath = ModuleRootManager.getInstance(module)
             .dependencies
@@ -174,7 +174,7 @@ class ProjectAnalyzer(
         return classPath
     }
 
-    private suspend fun getSourcePath(module: Module) = readAction {
+    private suspend fun getSourcePath(module: Module) = smartReadAction(project) {
         ModuleRootManager.getInstance(module)
             .sourceRoots
             .firstOrNull { it.name == "kotlin" }
@@ -182,11 +182,11 @@ class ProjectAnalyzer(
     }
 
     suspend fun getModule(file: VirtualFile) =
-        readAction {
+        smartReadAction(project) {
             requireNotNull(file.getModule(project)) { "Module for file: $file not found!" }
         }
 
     private suspend fun getModulePath(module: Module) =
-        readAction { ExternalSystemApiUtil.getExternalProjectPath(module) }
+        smartReadAction(project) { ExternalSystemApiUtil.getExternalProjectPath(module) }
 }
 
