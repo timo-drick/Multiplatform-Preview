@@ -160,37 +160,41 @@ fun checkFunctionForAnnotation(function: KtNamedFunction): List<HotPreviewAnnota
                 )
             }
         val hotPreviewAnnotationClasses = mutableListOf<HotPreviewAnnotation>()
+        //val module = checkNotNull(function.module)
+        //val searchScope = GlobalSearchScope.moduleScope(module)
+        val project = function.project
+        val searchScope = GlobalSearchScope.everythingScope(project)
         mySymbol.annotations // Find Annotation classes which contain HotPreview annotation
             .filter { it.classId != composableClassId }
             .filter { it.classId != hotPreviewAnnotationClassId }
-            .forEach {
-                LOG.debug("Check: $it")
-                mySymbol.annotations.forEach { annotation ->
-                    val fqn = annotation.classId?.asSingleFqName()
-                    LOG.debug("Annotation: $fqn")
-                    fqn?.let {
-                        val project = function.project
-                        val clazz =
-                            KotlinFullClassNameIndex.Helper[fqn.toString(), project, GlobalSearchScope.allScope(project)]
-                        clazz.forEach {
-                            try {
-                                it.symbol.annotations
-                                    .filter { it.classId == hotPreviewAnnotationClassId }
-                                    .forEach {
-                                        hotPreviewAnnotationClasses.add(
-                                            HotPreviewAnnotation(
-                                                lineRange = annotation.psi?.getLineRange(),
-                                                annotation = it.toHotPreviewAnnotation()
-                                            )
+            .forEach { annotation ->
+                println("   Check: ${annotation.classId}")
+                val fqn = annotation.classId?.asSingleFqName()
+                println("      Annotation: $fqn")
+                fqn?.let {
+                    val clazz = KotlinFullClassNameIndex[fqn.toString(), project, searchScope]
+                    clazz.find {
+                        it.symbol.psi?.containingFile?.name?.endsWith(".kt") == true
+                    }?.let {
+                        try {
+                            it.symbol.annotations
+                                .filter { it.classId == hotPreviewAnnotationClassId }
+                                .forEach {
+                                    hotPreviewAnnotationClasses.add(
+                                        HotPreviewAnnotation(
+                                            lineRange = annotation.psi?.getLineRange(),
+                                            annotation = it.toHotPreviewAnnotation()
                                         )
-                                    }
-                            } catch (err: Throwable) {
-                                LOG.debug(err)
-                            }
+                                    )
+                                }
+                        } catch (err: Throwable) {
+                            LOG.debug(err)
                         }
                     }
                 }
             }
+        println("---")
+        println()
         return hotPreviewAnnotations + hotPreviewAnnotationClasses
     }
 }
