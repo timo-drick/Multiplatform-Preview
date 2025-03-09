@@ -15,6 +15,11 @@ class DeferredSuspend<T>(
                 instance = it
             }
         }
+    suspend fun reset() {
+        lock.withLock {
+            instance = null
+        }
+    }
 }
 
 fun <T> lazySuspend(block: suspend () -> T): Lazy<DeferredSuspend<T>> {

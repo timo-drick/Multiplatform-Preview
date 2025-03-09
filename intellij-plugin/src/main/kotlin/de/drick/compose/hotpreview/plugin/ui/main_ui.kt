@@ -14,12 +14,15 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.modifier.onHover
 import org.jetbrains.jewel.foundation.theme.JewelTheme
+import org.jetbrains.jewel.ui.Orientation
+import org.jetbrains.jewel.ui.component.Divider
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.IconButton
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.VerticallyScrollableContainer
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 import org.jetbrains.jewel.ui.theme.editorTabStyle
+import org.jetbrains.jewel.ui.theme.groupHeaderStyle
 
 @Suppress("UnstableApiUsage")
 private val LOG = fileLogger()
@@ -31,7 +34,7 @@ private val LOG = fileLogger()
 private fun PreviewMainScreen() {
     val env = rememberResourceEnvironment()
     val viewModel = remember {
-        mockViewModel(getMockData(env)).apply {
+        mockViewModel(env, getMockData()).apply {
             changeScale(1f)
         }
     }
@@ -55,54 +58,59 @@ fun MainScreen(model: HotPreviewViewModelI) {
         MainTopBar(
             modifier = Modifier.fillMaxWidth(),
             compilingInProgress = compilingInProgress,
-            groups = model.groups,
+            groups = if (model.selectedTab == null) model.groups else emptySet(),
             selectedGroup = model.selectedGroup,
             onAction = { action ->
                 when (action) {
                     TopBarAction.Refresh -> model.refresh()
                     TopBarAction.OpenSettings -> model.openSettings()
                     is TopBarAction.SelectGroup -> model.selectGroup(action.group)
+                    TopBarAction.ToggleLayout -> model.toggleLayout()
                 }
             }
         )
+        val style = JewelTheme.groupHeaderStyle
+        Divider(
+            modifier = Modifier.fillMaxWidth(),
+            orientation = Orientation.Horizontal,
+            color = style.colors.divider,
+            thickness = style.metrics.dividerThickness,
+        )
         if (error != null) {
-            val stackTrace = remember(error) {
-                error.stackTraceToString().replace("\t", "    ")
-            }
-            Box(Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(8.dp)
-            ) {
-                VerticallyScrollableContainer {
-                    Column {
-                        Text(
-                            text = error.message ?: "",
-                            color = JewelTheme.globalColors.text.error,
-                            style = JewelTheme.editorTextStyle
-                        )
-                        Text(
-                            text = stackTrace,
-                            color = JewelTheme.globalColors.text.error,
-                            style = JewelTheme.editorTextStyle
+            ErrorPanel(
+                modifier = Modifier.weight(1f)
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                error = error
+            )
+        } else {
+            var showZoomControls by remember { mutableStateOf(false) }
+            val selectedTab = model.selectedTab
+            Box(
+                modifier = Modifier.weight(1f).fillMaxWidth().onHover { showZoomControls = it }) {
+                if (selectedTab == null) {
+                    PreviewGridPanel(
+                        modifier = Modifier.fillMaxWidth(),
+                        hotPreviewList = previewList,
+                        scale = scale,
+                        onNavigateCode = { model.navigateCodeLine(it) },
+                        requestPreviews = { model.requestPreviews(it) }
+                    )
+                } else {
+                    if (previewList.isEmpty()) {
+                        Text("No previews detected yet.")
+                    } else {
+                        PreviewGalleryPanel(
+                            modifier = Modifier.fillMaxWidth(),
+                            hotPreviewList = previewList,
+                            selectedTab = selectedTab,
+                            scale = scale,
+                            requestPreviews = { model.requestPreviews(it) },
+                            onNavigateCode = { model.navigateCodeLine(it) },
+                            onSelectTab = { model.selectTab(it) }
                         )
                     }
                 }
-            }
-
-        } else {
-            var showZoomControls by remember { mutableStateOf(false) }
-            Box(
-                modifier = Modifier.weight(1f).fillMaxWidth().onHover { showZoomControls = it }) {
-                PreviewGridPanel(
-                    modifier = Modifier.fillMaxWidth(),
-                    hotPreviewList = previewList,
-                    scale = scale,
-                    onNavigateCode = {
-                        LOG.info("Navigate to line: $it")
-                        model.navigateCodeLine(it)
-                    }
-                )
                 if (showZoomControls) {
                     Column(
                         modifier = Modifier
@@ -123,6 +131,32 @@ fun MainScreen(model: HotPreviewViewModelI) {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ErrorPanel(
+    error: Throwable,
+    modifier: Modifier = Modifier
+) {
+    val stackTrace = remember(error) {
+        error.stackTraceToString().replace("\t", "    ")
+    }
+    Box(modifier) {
+        VerticallyScrollableContainer {
+            Column {
+                Text(
+                    text = error.message ?: "",
+                    color = JewelTheme.globalColors.text.error,
+                    style = JewelTheme.editorTextStyle
+                )
+                Text(
+                    text = stackTrace,
+                    color = JewelTheme.globalColors.text.error,
+                    style = JewelTheme.editorTextStyle
+                )
             }
         }
     }

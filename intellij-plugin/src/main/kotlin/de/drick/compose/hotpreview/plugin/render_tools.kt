@@ -24,19 +24,19 @@ data class RenderedImage(
 
 fun renderPreview(
     renderClassLoader: RenderClassLoaderInstance,
-    function: HotPreviewFunction,
+    functionName: String,
     annotation: HotPreviewModel
 ): RenderState {
     val clazz = renderClassLoader.fileClass
     val functionRef = renderClassLoader.renderFunctionRef
     val renderClassInstance = renderClassLoader.renderClassInstance
     return try {
-        LOG.debug("F: $function")
+        println("F: $functionName")
         val ts = TimeSource.Monotonic
 
         val classLoadingStart = ts.markNow()
-        val method = clazz.declaredMethods.find { it.name == function.name }
-        requireNotNull(method) { "Unable to find method: ${function.name}" }
+        val method = clazz.declaredMethods.find { it.name == functionName }
+        requireNotNull(method) { "Unable to find method: $functionName" }
         val classLoadingDuration = ts.markNow() - classLoadingStart
         println("Class loading time: $classLoadingDuration")
 

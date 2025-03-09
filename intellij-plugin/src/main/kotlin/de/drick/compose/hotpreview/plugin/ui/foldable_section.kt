@@ -14,12 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
+import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.Orientation
 import org.jetbrains.jewel.ui.component.Divider
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
-import org.jetbrains.jewel.ui.component.styling.LocalGroupHeaderStyle
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
+import org.jetbrains.jewel.ui.theme.groupHeaderStyle
 
 
 @HotPreview(widthDp = 300)
@@ -52,24 +53,23 @@ fun FoldableSection(
 ) {
     var showSection by remember { mutableStateOf(isInitiallyFolded.not()) }
     val animatedRotation = animateFloatAsState(if (showSection) 0f else -90f)
-    val style = LocalGroupHeaderStyle.current
+    val style = JewelTheme.groupHeaderStyle
 
     Column(modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().clickable { showSection = showSection.not() },
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.clickable { showSection = showSection.not() },
         ) {
             Icon(
                 modifier = Modifier.rotate(animatedRotation.value),
                 key = AllIconsKeys.General.ArrowDown,
                 contentDescription = "Fold"
             )
-            //Divider(Orientation.Horizontal, Modifier.width(8.dp), thickness = 2.dp)
             Text(
                 text = label,
                 modifier = Modifier.padding(horizontal = 4.dp),
             )
-            //Divider(Orientation.Horizontal, Modifier.weight(1f), thickness = 2.dp)
         }
         AnimatedVisibility(
             visible = showSection,

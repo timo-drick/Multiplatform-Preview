@@ -1,6 +1,5 @@
 package de.drick.compose.hotpreview.plugin.ui
 
-import ai.grazie.utils.capitalize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
@@ -33,10 +32,14 @@ import org.jetbrains.jewel.ui.component.styling.TabColors
 import org.jetbrains.jewel.ui.component.styling.TabStyle
 import org.jetbrains.jewel.ui.theme.editorTabStyle
 
+@OptIn(ExperimentalResourceApi::class)
 @Composable
-fun SelfPreviewBase(data: List<UIHotPreviewData>) {
+fun SelfPreviewBase(
+    env: ResourceEnvironment,
+    data: List<UIHotPreviewData>
+) {
     val viewModel = remember {
-        mockViewModel(data)
+        mockViewModel(env, data)
     }
     SelfPreviewBase(viewModel)
 }
@@ -74,17 +77,12 @@ fun SelfPreviewTheme(content: @Composable () -> Unit) {
 }
 
 
-@OptIn(ExperimentalResourceApi::class)
 fun getMockData(
-    environment: ResourceEnvironment
-) = SamplePreviewItem.entries.chunked(2).map { items ->
-    val name = items.first().name
-    getHotPreviewDataItem(environment, name, *items.toTypedArray())
+) = SamplePreviewItem.entries.groupBy { it.functionName }.map { (functionName, items) ->
+    getHotPreviewDataItem(functionName, *items.toTypedArray())
 }
 
-@OptIn(ExperimentalResourceApi::class)
 fun getHotPreviewDataItem(
-    environment: ResourceEnvironment,
     functionName: String,
     vararg samples: SamplePreviewItem
 ): UIHotPreviewData {
@@ -94,12 +92,11 @@ fun getHotPreviewDataItem(
             annotations = samples.map { item ->
                 UIAnnotation(
                     name = "Test1",
-                    lineRange = null,
-                ).also {
-                    it.state = getPreviewItem(environment, item)
-                }
+                    lineRange = 0..1,
+                    renderCacheKey = item.toRenderCacheKey()
+                )
             },
-            lineRange = null
+            lineRange = 0..1
         )
     } catch (err: Throwable) {
         return UIHotPreviewData(
@@ -107,49 +104,53 @@ fun getHotPreviewDataItem(
             annotations = listOf(
                 UIAnnotation(
                     name = "Test1",
-                    lineRange = null,
-                ).also {
-                    it.state = RenderError(err.stackTraceToString())
-                }
+                    lineRange = 0..1,
+                    renderCacheKey = SamplePreviewItem.error_test.toRenderCacheKey()
+                )
             ),
-            lineRange = null
+            lineRange = 0..1
         )
     }
 }
 
+@OptIn(ExperimentalResourceApi::class)
+fun resolveRenderState(
+    env: ResourceEnvironment,
+    requestedKeys: Set<HotPreviewViewModel.RenderCacheKey>
+) =
+    SamplePreviewItem.entries.associate {
+        val uiState = UIRenderState()
+        try {
+            val resource = runBlocking { getDrawableResourceBytes(env, it.drawableResource) }
+            val image = resource.decodeToImageBitmap()
+            val size = DpSize((image.width / it.density).dp, (image.height / it.density).dp)
+            uiState.state = RenderedImage(image, size)
+        } catch (err: Throwable) {
+            uiState.state = RenderError(err.message ?: "Error")
+        }
+        Pair(it.toRenderCacheKey(), uiState)
+    }
+
 @OptIn(InternalResourceApi::class)
 enum class SamplePreviewItem(
+    val functionName: String,
     val drawableResource: DrawableResource,
     val density: Float
 ) {
-    countposer_dialog(Res.drawable.countposer_dialog, 2f),
-    countposer_start(Res.drawable.countposer_start, 2f),
-    login_dark(Res.drawable.login_dark, 2f),
-    login_light(Res.drawable.login_light, 4f),
-    error_test(DrawableResource("error", emptySet()), 2f)
+    countposer_dialog("countposer_dialog", Res.drawable.countposer_dialog, 2f),
+    countposer_start("countposer_start", Res.drawable.countposer_start, 2f),
+    login_dark("login", Res.drawable.login_dark, 2f),
+    login_light("login", Res.drawable.login_light, 4f),
+    error_test("error", DrawableResource("error", emptySet()), 2f)
 }
 
-val sampleImages = listOf(
-    "countposer_dialog",
-    "countposer_start",
-    "login_dark",
-    "login_light",
-    "error"
+private fun SamplePreviewItem.toRenderCacheKey() = HotPreviewViewModel.RenderCacheKey(
+    name = functionName,
+    annotation = HotPreviewModel(name = name)
 )
 
 @OptIn(ExperimentalResourceApi::class)
-private fun getPreviewItem(resource: String): RenderedImage {
-    val density = if (resource == "login_light") 4f else 2f
-    val image = runBlocking {
-        Res.readBytes(resource).decodeToImageBitmap()
-    }
-    //val image = useResource(resourcePath, ::loadImageBitmap)
-    val size = DpSize((image.width / density).dp, (image.height / density).dp)
-    return RenderedImage(image, size)
-}
-
-@OptIn(ExperimentalResourceApi::class)
-private fun getPreviewItem(
+fun getPreviewItem(
     environment: ResourceEnvironment,
     resource: SamplePreviewItem
 ): RenderedImage {
@@ -161,7 +162,9 @@ private fun getPreviewItem(
     return RenderedImage(image, size)
 }
 
+@OptIn(ExperimentalResourceApi::class)
 fun mockViewModel(
+    env: ResourceEnvironment,
     mockData: List<UIHotPreviewData>,
 ) = object : HotPreviewViewModelI {
     override var scale: Float = 1f
@@ -171,11 +174,17 @@ fun mockViewModel(
     override var previewList = mockData
     override val groups = setOf("Group 1")
     override val selectedGroup: String? = null
+    override val selectedTab: Int? = null
     override fun selectGroup(group: String?) {}
-
-    override fun changeScale(newScale: Float) { scale = newScale}
+    override fun selectTab(tabIndex: Int) {}
+    override fun changeScale(newScale: Float) {
+        scale = newScale
+    }
+    override fun toggleLayout() {}
     override fun navigateCodeLine(line: Int) {}
     override fun monitorChanges(scope: CoroutineScope) {}
     override fun refresh() {}
     override fun openSettings() {}
+    override fun requestPreviews(keys: Set<HotPreviewViewModel.RenderCacheKey>): Map<HotPreviewViewModel.RenderCacheKey, UIRenderState> =
+        resolveRenderState(env, keys)
 }

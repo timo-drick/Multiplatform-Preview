@@ -53,9 +53,8 @@ fun GutterIconAnnotationSettings(
     viewModel: GutterIconViewModel
 ) {
     Column(
-        Modifier.width(IntrinsicSize.Min).padding(8.dp)
+        Modifier.width(IntrinsicSize.Min)
     ) {
-        Text("HotPreview Settings")
         Divider(
             Orientation.Horizontal,
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -70,11 +69,6 @@ fun GutterIconAnnotationSettings(
             }
         }
         TextField(nameState)
-        ActionButton(
-            onClick = {}
-        ) {
-            Text("Ok")
-        }
     }
 }
 
@@ -127,9 +121,11 @@ class HotPreviewGutterIcon(
                 .setShowShadow(true)
                 .setCancelOnClickOutside(true)
                 .setResizable(true)
+                .setShowBorder(true)
                 .createPopup()
             component.doLayout()
-            component.preferredSize = component.size
+            component.preferredSize = Dimension(100,100)
+            println("Panel size: ${component.size}")
             popup.pack(true, true)
             val relativePoint = RelativePoint(mouseEvent.component, mousePoint)
             popup.show(relativePoint)

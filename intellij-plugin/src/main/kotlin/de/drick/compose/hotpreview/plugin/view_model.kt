@@ -17,6 +17,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import de.drick.compose.hotpreview.plugin.HotPreviewViewModel.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
 import de.drick.compose.hotpreview.plugin.tools.PluginPersistentStore
 import de.drick.compose.hotpreview.plugin.ui.HotPreviewGutterIcon
@@ -27,9 +28,9 @@ import de.drick.compose.utils.lazySuspend
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import org.jetbrains.kotlin.idea.debugger.core.stepping.getLineRange
-import java.io.File
 import kotlin.time.measureTimedValue
 
 @Suppress("UnstableApiUsage")
@@ -37,14 +38,22 @@ private val LOG = fileLogger()
 
 data class UIHotPreviewData(
     val functionName: String,
-    val lineRange: IntRange?,
+    val lineRange: IntRange,
     val annotations: List<UIAnnotation>
 )
 
-class UIAnnotation(
+data class UIAnnotation(
     val name: String,
-    val lineRange: IntRange?
-) {
+    val lineRange: IntRange,
+    val renderCacheKey: RenderCacheKey
+)
+
+data class UIFunctionAnnotation(
+    val functionName: String,
+    val annotation: UIAnnotation
+)
+
+class UIRenderState() {
     var state: RenderState by mutableStateOf(NotRenderedYet)
 }
 
@@ -56,12 +65,16 @@ interface HotPreviewViewModelI {
     val previewList: List<UIHotPreviewData>
     val groups: Set<String>
     val selectedGroup: String?
+    val selectedTab: Int? // null when in gridlayout mode
     fun selectGroup(group: String?)
+    fun selectTab(tabIndex: Int)
     fun changeScale(newScale: Float)
+    fun toggleLayout()
     fun navigateCodeLine(line: Int)
     fun monitorChanges(scope: CoroutineScope)
     fun refresh()
     fun openSettings()
+    fun requestPreviews(keys: Set<RenderCacheKey>): Map<RenderCacheKey, UIRenderState>
 }
 
 class HotPreviewViewModel(
@@ -92,16 +105,18 @@ class HotPreviewViewModel(
     override var selectedGroup by mutableStateOf(selectGroupProperty.get())
         private set
 
-    override var groups: Set<String> by mutableStateOf(emptySet())
+    private val isGridLayoutProperty = properties.boolean("is_grid_layout", true)
+    private var isGridLayout = isGridLayoutProperty.get()
+    override var selectedTab by mutableStateOf<Int?>(if (isGridLayout) null else 0)
         private set
 
+    override var groups: Set<String> by mutableStateOf(emptySet())
+        private set
 
     override var isPureTextEditor by mutableStateOf(splitEditor.isPureTextEditor)
     override var compilingInProgress by mutableStateOf(false)
     override var errorMessage: Throwable? by mutableStateOf(null)
     override var previewList: List<UIHotPreviewData> by mutableStateOf(emptyList())
-
-    private var previewFunctions: List<HotPreviewFunction> = emptyList()
 
     private var compileCounter = 0
 
@@ -116,6 +131,14 @@ class HotPreviewViewModel(
         }
     }
 
+    override fun selectTab(tabIndex: Int) {
+        selectedTab = tabIndex
+        isGridLayout = false
+        scope.launch {
+            render()
+        }
+    }
+
     private fun updateGroups(previewFunctions: List<HotPreviewFunction>) {
         groups = previewFunctions.flatMap { function ->
             function.annotation.groupBy { it.annotation.group }.keys.filter { it.isNotBlank() }
@@ -125,9 +148,42 @@ class HotPreviewViewModel(
         }
     }
 
+    private fun updatePreviewList(previewFunctions: List<HotPreviewFunction>) {
+        previewList = previewFunctions.mapNotNull { function ->
+            val annotations = function.annotation.filter {
+                selectedGroup == null || it.annotation.group == selectedGroup
+            }.mapNotNull {
+                it.lineRange?.let { lineRange ->
+                    UIAnnotation(
+                        name = it.annotation.name,
+                        lineRange = lineRange,
+                        renderCacheKey = RenderCacheKey(function.name, it.annotation)
+                    )
+                }
+            }
+            if (function.lineRange != null) {
+                UIHotPreviewData(
+                    functionName = function.name,
+                    lineRange = function.lineRange,
+                    annotations = annotations
+                )
+            } else null
+        }
+    }
+
     override fun changeScale(newScale: Float) {
         scaleProperty.set(newScale)
         scale = newScale
+    }
+
+    override fun toggleLayout() {
+        isGridLayout = isGridLayout.not()
+        isGridLayoutProperty.set(isGridLayout)
+        if (isGridLayout) {
+            selectedTab = null
+        } else {
+            selectedTab = 0
+        }
     }
 
     override fun navigateCodeLine(line: Int) {
@@ -140,6 +196,7 @@ class HotPreviewViewModel(
 
     override fun refresh() {
         scope.launch {
+            classPathService.reset()
             compilingInProgress = true
             errorHandling {
                 val functions = analyzePreviewAnnotations()
@@ -155,7 +212,7 @@ class HotPreviewViewModel(
                         compileCounter++
                     }
                 }
-                previewFunctions = functions
+                updatePreviewList(functions)
                 render()
             }
             compilingInProgress = false
@@ -170,7 +227,7 @@ class HotPreviewViewModel(
         scope.launch {
             compilingInProgress = true
             errorHandling {
-                previewFunctions = analyzePreviewAnnotations()
+                updatePreviewList(analyzePreviewAnnotations())
                 render()
             }
             compilingInProgress = false
@@ -180,7 +237,7 @@ class HotPreviewViewModel(
                 if (settings.recompileOnSave) {
                     refresh()
                 } else {
-                    previewFunctions = analyzePreviewAnnotations()
+                    updatePreviewList(analyzePreviewAnnotations())
                     render()
                 }
             }
@@ -196,7 +253,11 @@ class HotPreviewViewModel(
         val previewFunctions = findFunctionsWithHotPreviewAnnotations(project, file)
         setPureTextEditorMode(previewFunctions.isEmpty())
         updateGroups(previewFunctions)
+        updateGutterIcons()
+        return previewFunctions
+    }
 
+    private suspend fun updateGutterIcons() {
         val annotations = findHotPreviewAnnotations(project, file)
         val editor = textEditor.editor
         editor.markupModel.allHighlighters
@@ -209,7 +270,6 @@ class HotPreviewViewModel(
                 highlighter.gutterIconRenderer = HotPreviewGutterIcon(project, file, annotation)
             }
         }
-        return previewFunctions
     }
 
     private suspend fun errorHandling(block: suspend () -> Unit) {
@@ -235,53 +295,48 @@ class HotPreviewViewModel(
 
     private val renderCache = LRUCache<RenderCacheKey, RenderedImage>(20)
 
-    suspend fun render() {
-        val renderList = mutableListOf<RenderQueue>()
-        errorHandling {
-            previewList = previewFunctions.map { function ->
-                val annotations = function.annotation.filter {
-                    selectedGroup == null || it.annotation.group == selectedGroup
-                }.map {
-                    UIAnnotation(
-                        it.annotation.name,
-                        it.lineRange
-                    ).also { ui ->
-                        renderCache[RenderCacheKey(function.name, it.annotation)]?.let { image ->
-                            ui.state = image
-                        }
-                        renderList.add(RenderQueue(function, it.annotation, ui))
-                    }
-                }
-                UIHotPreviewData(
-                    functionName = function.name,
-                    lineRange = function.lineRange,
-                    annotations = annotations
-                )
-            }
+    private val renderLock = Mutex()
+    private var renderStateMap = mapOf<RenderCacheKey, UIRenderState>()
 
+    override fun requestPreviews(keys: Set<RenderCacheKey>): Map<RenderCacheKey, UIRenderState> {
+        val newMap = keys.associate { key ->
+            val value = renderStateMap[key] ?: UIRenderState().also { state ->
+                renderCache[key]?.let { state.state = it }
+            }
+            Pair(key, value)
+        }
+        renderStateMap = newMap
+        scope.launch {
+            render()
+        }
+        return newMap
+    }
+
+    suspend fun render() {
+        if (renderStateMap.isEmpty()) return
+        errorHandling { //TODO maybe handle error so that it can be displayed in the render state
             withContext(Dispatchers.Default) {
                 val (renderClassLoader, duration) = measureTimedValue {
                     classPathService.get().getRenderClassLoaderInstance(compileCounter)
                 }
                 println("Get classloader: $duration")
-                renderList.forEach { queue ->
-                    // Workaround for legacy resource loading in old compose code
-                    // See androidx.compose.ui.res.ClassLoaderResourceLoader
-                    // It uses the contextClassLoader to load the resources.
-                    val previousContextClassLoader = Thread.currentThread().contextClassLoader
-                    // For new compose.components resource system a LocalCompositionProvider is used.
-                    Thread.currentThread().contextClassLoader = renderClassLoader.classLoader
-                    val state = try {
-                        renderPreview(renderClassLoader, queue.function, queue.annotation)
-                    } finally {
-                        Thread.currentThread().contextClassLoader = previousContextClassLoader
+                renderLock.withLock {
+                    renderStateMap.forEach { (key, renderState) ->
+                        // Workaround for legacy resource loading in old compose code
+                        // See androidx.compose.ui.res.ClassLoaderResourceLoader
+                        // It uses the contextClassLoader to load the resources.
+                        val previousContextClassLoader = Thread.currentThread().contextClassLoader
+                        // For new compose.components resource system a LocalCompositionProvider is used.
+                        Thread.currentThread().contextClassLoader = renderClassLoader.classLoader
+                        val state = try {
+                            renderPreview(renderClassLoader, key.name, key.annotation)
+                        } finally {
+                            Thread.currentThread().contextClassLoader = previousContextClassLoader
+                        }
+                        renderState.state = state
+                        // Update render cache
+                        if (state is RenderedImage) renderCache[key] = state
                     }
-                    //val state = render(renderClassLoader, queue.function, queue.annotation)
-                    queue.ui.state = state
-                    if (state is RenderedImage) renderCache[RenderCacheKey(
-                        queue.function.name,
-                        queue.annotation
-                    )] = state
                 }
             }
         }

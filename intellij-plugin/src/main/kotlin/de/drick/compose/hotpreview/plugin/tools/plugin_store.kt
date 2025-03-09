@@ -15,11 +15,27 @@ class PluginPersistentStore(
 ) {
     private val properties = PropertiesComponent.getInstance(project)
 
+    private fun String.toFileUniqueKey() = "de.drick.compose.hotpreview.plugin:${file.hashCode()}_$this"
+
+    fun boolean(key: String, defaultValue: Boolean = false): PersistentValue<Boolean> =
+        PersistentBoolean(properties, key.toFileUniqueKey(), defaultValue)
+
     fun float(key: String, defaultValue: Float): PersistentValue<Float> =
-        PersistentFloat(properties, "de.drick.compose.hotpreview.plugin:${file.hashCode()}_$key", defaultValue)
+        PersistentFloat(properties, key.toFileUniqueKey(), defaultValue)
 
     fun stringNA(key: String, defaultValue: String?): PersistentValue<String?> =
-        PersistentStringNA(properties, "de.drick.compose.hotpreview.plugin:${file.hashCode()}_$key", defaultValue)
+        PersistentStringNA(properties, key.toFileUniqueKey(), defaultValue)
+}
+
+private class PersistentBoolean(
+    private val p: PropertiesComponent,
+    private val key: String,
+    private val defaultValue: Boolean
+): PersistentValue<Boolean> {
+    override fun get(): Boolean = p.getBoolean(key, defaultValue)
+    override fun set(value: Boolean) {
+        p.setValue(key, value, defaultValue)
+    }
 }
 
 private class PersistentFloat(

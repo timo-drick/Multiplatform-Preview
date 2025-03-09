@@ -22,37 +22,16 @@ import org.jetbrains.jewel.ui.component.*
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 
 @OptIn(ExperimentalResourceApi::class)
-@HotPreview(name = "dark", widthDp = 400, heightDp = 200)
-@HotPreview(name = "light", widthDp = 400, heightDp = 200, darkMode = false)
-@Composable
-fun PreviewPreviewItemError() {
-    val env = rememberResourceEnvironment()
-    val item = remember {
-        getHotPreviewDataItem(env, "error", SamplePreviewItem.error_test)
-    }
-    SelfPreviewTheme {
-        PreviewItem(
-            modifier = Modifier.padding(8.dp),
-            name = "TestItem",
-            renderState = item.annotations.first().state
-        )
-    }
-}
-
-@OptIn(ExperimentalResourceApi::class)
 @HotPreview
 @HotPreview(darkMode = false)
 @Composable
 private fun PreviewPreviewItem() {
     val env = rememberResourceEnvironment()
-    val item = remember {
-        getHotPreviewDataItem(env, "login", SamplePreviewItem.login_dark)
-    }
     SelfPreviewTheme {
         PreviewItem(
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
-            renderState = item.annotations.first().state
+            renderState = getPreviewItem(env, SamplePreviewItem.login_dark)
         )
     }
 }
@@ -63,15 +42,27 @@ private fun PreviewPreviewItem() {
 @Composable
 private fun PreviewPreviewItemFocus() {
     val env = rememberResourceEnvironment()
-    val item = remember {
-        getHotPreviewDataItem(env, "login", SamplePreviewItem.login_dark)
-    }
     SelfPreviewTheme {
         PreviewItem(
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
-            renderState = item.annotations.first().state,
+            renderState = getPreviewItem(env, SamplePreviewItem.login_dark),
             hasFocus = true
+        )
+    }
+}
+
+@OptIn(ExperimentalResourceApi::class)
+@HotPreview(name = "dark", widthDp = 400, heightDp = 200)
+@HotPreview(name = "light", widthDp = 400, heightDp = 200, darkMode = false)
+@Composable
+fun PreviewPreviewItemError() {
+    val env = rememberResourceEnvironment()
+    SelfPreviewTheme {
+        PreviewItem(
+            modifier = Modifier.padding(8.dp),
+            name = "TestItem",
+            renderState = getPreviewItem(env, SamplePreviewItem.error_test)
         )
     }
 }
