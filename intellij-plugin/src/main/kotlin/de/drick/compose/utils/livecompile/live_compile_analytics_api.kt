@@ -34,11 +34,11 @@ suspend fun compileAnalyticsAPI(
             put(JVMConfigurationKeys.ENABLE_JVM_PREVIEW, true)
             put(JVMConfigurationKeys.IR, true)*/
         }
-        val target = KaCompilerTarget.Jvm(false)
+        /*val target = KaCompilerTarget.Jvm(false)
 
         val result = useSiteSession.compile(file, config, target) {
             it.severity != KaSeverity.ERROR
         }
-        println(result)
+        println(result)*/
     }
 }
