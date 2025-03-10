@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.*
+import de.drick.compose.hotpreview.plugin.ui.jewel.Typography
 import de.drick.compose.utils.ClipboardImage
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.rememberResourceEnvironment
@@ -86,6 +87,7 @@ fun PreviewItem(
             Text(
                 modifier = Modifier.weight(1f),
                 text = name,
+                style = Typography.labelTextStyle(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

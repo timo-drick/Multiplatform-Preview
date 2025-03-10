@@ -13,6 +13,7 @@ import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.HotPreviewViewModel.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.UIHotPreviewData
 import de.drick.compose.hotpreview.plugin.UIRenderState
+import de.drick.compose.hotpreview.plugin.ui.components.FoldableSection
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.modifier.onHover
@@ -32,28 +33,35 @@ private fun PreviewPreviewGridPanel() {
         PreviewGridPanel(
             hotPreviewList = data,
             scale = 1f,
+            selectedGroup = "dark",
             requestPreviews = { resolveRenderState(env, it) },
             onNavigateCode = {}
         )
     }
 }
 
-class PreviewGridPanelState {
-    var hotPreviewList: List<UIHotPreviewData> by mutableStateOf(emptyList())
-    var scale: Float by mutableStateOf(1f)
-}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PreviewGridPanel(
     hotPreviewList: List<UIHotPreviewData>,
     scale: Float,
+    selectedGroup: String?,
     modifier: Modifier = Modifier,
     onNavigateCode: (Int) -> Unit,
     requestPreviews: (Set<RenderCacheKey>) -> Map<RenderCacheKey, UIRenderState>
 ) {
-    val previewMap = remember(hotPreviewList) {
-        val renderCacheKeys = hotPreviewList.flatMap { function ->
+    val previewList = remember(hotPreviewList, selectedGroup) {
+        hotPreviewList.map {
+            it.copy(
+                annotations = it.annotations.filter {
+                    selectedGroup == null || it.renderCacheKey.annotation.group == selectedGroup
+                }
+            )
+        }
+    }
+    val previewMap = remember(previewList) {
+        val renderCacheKeys = previewList.flatMap { function ->
             function.annotations.map { annotation ->
                 annotation.renderCacheKey
             }
@@ -68,7 +76,7 @@ fun PreviewGridPanel(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            hotPreviewList.forEach { preview ->
+            previewList.forEach { preview ->
                 if (preview.annotations.size > 1) {
                     FoldableSection(preview.functionName) {
                         PreviewSection(

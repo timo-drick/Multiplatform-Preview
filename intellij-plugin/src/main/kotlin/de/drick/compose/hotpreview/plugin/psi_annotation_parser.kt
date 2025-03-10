@@ -63,8 +63,10 @@ suspend fun findHotPreviewAnnotations(project: Project, file: VirtualFile): List
         ktFile.symbol.fileScope.getAllSymbols()
             .flatMap { it.annotations }
             .filter { it.classId == hotPreviewAnnotationClassId }
-            .map {
-                HotPreviewAnnotation(it.psi?.getLineRange(), it.toHotPreviewAnnotation())
+            .mapNotNull {
+                it.psi?.getLineRange()?.let { lineRange ->
+                    HotPreviewAnnotation(lineRange, it.toHotPreviewAnnotation())
+                }
             }
             .toList()
     } ?: emptyList()
@@ -132,7 +134,8 @@ suspend fun analyzeFunctionsInPsiFile(project: Project, psiFile: PsiFile) = smar
     })
     functionList.mapNotNull { function ->
         val annotations = checkFunctionForAnnotation(function)
-        if (annotations.isEmpty()) null
+        val lineRange = function.getLineRange()
+        if (annotations.isEmpty() || lineRange == null) null
         else {
             require(function.valueParameters.isEmpty()) {
                 "Function ${function.name} with @HotPreview annotation must not has parameters! See line: ${function.getLineRange()}"
@@ -140,7 +143,7 @@ suspend fun analyzeFunctionsInPsiFile(project: Project, psiFile: PsiFile) = smar
             HotPreviewFunction(
                 name = function.name ?: "",
                 annotation = annotations,
-                lineRange = function.getLineRange()
+                lineRange = lineRange
             )
         }
     }
@@ -153,11 +156,13 @@ fun checkFunctionForAnnotation(function: KtNamedFunction): List<HotPreviewAnnota
         LOG.debug("Function: ${function.name}")
         val hotPreviewAnnotations = mySymbol.annotations
             .filter { it.classId == hotPreviewAnnotationClassId }
-            .map {
-                HotPreviewAnnotation(
-                    lineRange = it.psi?.getLineRange(),
-                    annotation = it.toHotPreviewAnnotation()
-                )
+            .mapNotNull {
+                it.psi?.getLineRange()?.let { lineRange ->
+                    HotPreviewAnnotation(
+                        lineRange = lineRange,
+                        annotation = it.toHotPreviewAnnotation()
+                    )
+                }
             }
         val hotPreviewAnnotationClasses = mutableListOf<HotPreviewAnnotation>()
         //val module = checkNotNull(function.module)
@@ -180,12 +185,14 @@ fun checkFunctionForAnnotation(function: KtNamedFunction): List<HotPreviewAnnota
                             it.symbol.annotations
                                 .filter { it.classId == hotPreviewAnnotationClassId }
                                 .forEach {
-                                    hotPreviewAnnotationClasses.add(
-                                        HotPreviewAnnotation(
-                                            lineRange = annotation.psi?.getLineRange(),
-                                            annotation = it.toHotPreviewAnnotation()
+                                    annotation.psi?.getLineRange()?.let { lineRange ->
+                                        hotPreviewAnnotationClasses.add(
+                                            HotPreviewAnnotation(
+                                                lineRange = lineRange,
+                                                annotation = it.toHotPreviewAnnotation()
+                                            )
                                         )
-                                    )
+                                    }
                                 }
                         } catch (err: Throwable) {
                             LOG.debug(err)

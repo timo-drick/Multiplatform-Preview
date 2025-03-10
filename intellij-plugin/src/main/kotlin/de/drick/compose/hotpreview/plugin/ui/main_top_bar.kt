@@ -30,7 +30,7 @@ fun MainTopBar(
     onAction: (TopBarAction) -> Unit,
 ) {
     Row(
-        modifier = modifier.padding(horizontal = 4.dp),
+        modifier = modifier.padding(4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {

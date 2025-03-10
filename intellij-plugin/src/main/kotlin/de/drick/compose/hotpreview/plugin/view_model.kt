@@ -133,7 +133,6 @@ class HotPreviewViewModel(
 
     override fun selectTab(tabIndex: Int) {
         selectedTab = tabIndex
-        isGridLayout = false
         scope.launch {
             render()
         }
@@ -149,25 +148,20 @@ class HotPreviewViewModel(
     }
 
     private fun updatePreviewList(previewFunctions: List<HotPreviewFunction>) {
-        previewList = previewFunctions.mapNotNull { function ->
-            val annotations = function.annotation.filter {
-                selectedGroup == null || it.annotation.group == selectedGroup
-            }.mapNotNull {
-                it.lineRange?.let { lineRange ->
-                    UIAnnotation(
-                        name = it.annotation.name,
-                        lineRange = lineRange,
-                        renderCacheKey = RenderCacheKey(function.name, it.annotation)
-                    )
-                }
-            }
-            if (function.lineRange != null) {
-                UIHotPreviewData(
-                    functionName = function.name,
-                    lineRange = function.lineRange,
-                    annotations = annotations
+        previewList = previewFunctions.map { function ->
+            val annotations = function.annotation.map {
+                UIAnnotation(
+                    name = it.annotation.name,
+                    lineRange = it.lineRange,
+                    renderCacheKey = RenderCacheKey(function.name, it.annotation)
                 )
-            } else null
+
+            }
+            UIHotPreviewData(
+                functionName = function.name,
+                lineRange = function.lineRange,
+                annotations = annotations
+            )
         }
     }
 
@@ -265,10 +259,8 @@ class HotPreviewViewModel(
             .forEach { editor.markupModel.removeHighlighter(it) }
 
         annotations.forEach { annotation ->
-            annotation.lineRange?.let { lineRange ->
-                val highlighter = editor.markupModel.addLineHighlighter(lineRange.first, 0, TextAttributes())
-                highlighter.gutterIconRenderer = HotPreviewGutterIcon(project, file, annotation)
-            }
+            val highlighter = editor.markupModel.addLineHighlighter(annotation.lineRange.first, 0, TextAttributes())
+            highlighter.gutterIconRenderer = HotPreviewGutterIcon(project, file, annotation)
         }
     }
 
@@ -282,12 +274,6 @@ class HotPreviewViewModel(
         }
     }
 
-
-    data class RenderQueue(
-        val function: HotPreviewFunction,
-        val annotation: HotPreviewModel,
-        val ui: UIAnnotation
-    )
     data class RenderCacheKey(
         val name: String,
         val annotation: HotPreviewModel

@@ -93,6 +93,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
                         modifier = Modifier.fillMaxWidth(),
                         hotPreviewList = previewList,
                         scale = scale,
+                        selectedGroup = model.selectedGroup,
                         onNavigateCode = { model.navigateCodeLine(it) },
                         requestPreviews = { model.requestPreviews(it) }
                     )

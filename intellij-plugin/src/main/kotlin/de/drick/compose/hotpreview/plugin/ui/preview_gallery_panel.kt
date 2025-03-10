@@ -12,12 +12,12 @@ import de.drick.compose.hotpreview.plugin.HotPreviewViewModel.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.UIFunctionAnnotation
 import de.drick.compose.hotpreview.plugin.UIHotPreviewData
 import de.drick.compose.hotpreview.plugin.UIRenderState
+import de.drick.compose.hotpreview.plugin.ui.components.TabBar
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.Orientation
 import org.jetbrains.jewel.ui.component.*
-import org.jetbrains.jewel.ui.theme.editorTabStyle
 import org.jetbrains.jewel.ui.theme.groupHeaderStyle
 
 
@@ -62,7 +62,6 @@ fun PreviewGalleryPanel(
     onNavigateCode: (line: Int) -> Unit,
     onSelectTab: (Int) -> Unit
 ) {
-    val scrollState = rememberScrollState()
     val flatPreviewList = remember(hotPreviewList) {
         require(hotPreviewList.isNotEmpty()) { "Preview list must not be empty!" }
         hotPreviewList.flatMap { data -> data.annotations.map { UIFunctionAnnotation(data.functionName, it) } }
@@ -79,64 +78,15 @@ fun PreviewGalleryPanel(
         requireNotNull(map[key]) { "Returned map does not contain the requested key!" }
     }
     val tabs = remember(hotPreviewList, selectedItem) {
-        flatPreviewList.mapIndexed { index, data ->
-            val isSelected = index == selectedTab
-            SegmentedControlButtonData(
-                selected = isSelected,
-                onSelect = { onSelectTab(index) },
-                content = {
-                    Text(data.toName())
-                }
-            )
-            /*TabData.Default(
-                selected = index == selectedTab,
-                closable = false,
-                content = { tabState ->
-                    SimpleTabContent(
-                        state = tabState,
-                        label = { Text(data.toName()) }
-                    )
-                },
-                onClick = { onSelectTab(index) }
-            )*/
-        }
+        flatPreviewList.map { it.toName() }
     }
     Column {
         Spacer(Modifier.height(4.dp))
-        /*TabStrip(
-            modifier = Modifier.fillMaxWidth(),
-            tabs = tabs,
-            style = JewelTheme.editorTabStyle
-        )*/
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SegmentedControl(
-                modifier = Modifier.weight(1f).horizontalScroll(scrollState),
-                buttons = tabs,
-            )
-            if (scrollState.canScrollForward || scrollState.canScrollBackward) {
-                Dropdown(
-                    modifier = Modifier.width(24.dp),
-                    menuContent = {
-                        flatPreviewList.forEachIndexed { index, item ->
-                            selectableItem(
-                                selected = index == selectedTab,
-                                onClick = {
-                                    onSelectTab(index)
-                                }
-                            ) {
-                                Text(item.toName())
-                            }
-                        }
-                    },
-                ) {
-                    //Spacer(Modifier.width(8.dp))
-                }
-            }
-        }
+        TabBar(
+            selectedTab = selectedTab,
+            tabNames = tabs,
+            onSelectTab = { onSelectTab(it) }
+        )
         Spacer(Modifier.height(4.dp))
         val style = JewelTheme.groupHeaderStyle
         Divider(
@@ -147,21 +97,27 @@ fun PreviewGalleryPanel(
         )
         Spacer(Modifier.height(4.dp))
         VerticallyScrollableContainer(
-            modifier = modifier.fillMaxSize()
+            modifier = modifier.fillMaxSize(),
+
         ) {
-            PreviewItem(
-                modifier = Modifier.clickable(
-                    onClick = {
-                        onNavigateCode(selectedItem.annotation.lineRange.start)
-                    },
-                    interactionSource = null,
-                    indication = null
-                ),
-                name = selectedItem.toName(),
-                renderState = uiRenderState.state,
-                scale = scale,
-                hasFocus = false
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                PreviewItem(
+                    modifier = Modifier.clickable(
+                        onClick = {
+                            onNavigateCode(selectedItem.annotation.lineRange.start)
+                        },
+                        interactionSource = null,
+                        indication = null
+                    ),
+                    name = selectedItem.toName(),
+                    renderState = uiRenderState.state,
+                    scale = scale,
+                    hasFocus = false
+                )
+            }
         }
     }
 

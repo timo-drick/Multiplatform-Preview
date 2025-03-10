@@ -135,18 +135,19 @@ fun resolveRenderState(
 enum class SamplePreviewItem(
     val functionName: String,
     val drawableResource: DrawableResource,
-    val density: Float
+    val density: Float,
+    val group: String = ""
 ) {
-    countposer_dialog("countposer_dialog", Res.drawable.countposer_dialog, 2f),
+    countposer_dialog("countposer_dialog", Res.drawable.countposer_dialog, 2f, group = "dark"),
     countposer_start("countposer_start", Res.drawable.countposer_start, 2f),
-    login_dark("login", Res.drawable.login_dark, 2f),
+    login_dark("login", Res.drawable.login_dark, 2f, group = "dark"),
     login_light("login", Res.drawable.login_light, 4f),
     error_test("error", DrawableResource("error", emptySet()), 2f)
 }
 
 private fun SamplePreviewItem.toRenderCacheKey() = HotPreviewViewModel.RenderCacheKey(
     name = functionName,
-    annotation = HotPreviewModel(name = name)
+    annotation = HotPreviewModel(name = name, group = group)
 )
 
 @OptIn(ExperimentalResourceApi::class)
