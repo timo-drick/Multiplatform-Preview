@@ -53,8 +53,11 @@ data class UIFunctionAnnotation(
     val annotation: UIAnnotation
 )
 
-class UIRenderState() {
-    var state: RenderState by mutableStateOf(NotRenderedYet)
+class UIRenderState(
+    widthDp: Int = -1,
+    heightDp: Int = -1
+) {
+    var state: RenderState by mutableStateOf(NotRenderedYet(widthDp, heightDp))
 }
 
 interface HotPreviewViewModelI {
@@ -286,7 +289,10 @@ class HotPreviewViewModel(
 
     override fun requestPreviews(keys: Set<RenderCacheKey>): Map<RenderCacheKey, UIRenderState> {
         val newMap = keys.associate { key ->
-            val value = renderStateMap[key] ?: UIRenderState().also { state ->
+            val value = renderStateMap[key] ?: UIRenderState(
+                widthDp = key.annotation.widthDp,
+                heightDp = key.annotation.heightDp
+            ).also { state ->
                 renderCache[key]?.let { state.state = it }
             }
             Pair(key, value)

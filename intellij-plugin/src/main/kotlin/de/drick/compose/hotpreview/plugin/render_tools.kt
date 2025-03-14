@@ -15,7 +15,10 @@ private val LOG = fileLogger()
 
 sealed interface RenderState
 data class RenderError(val errorMessage: String): RenderState
-data object NotRenderedYet: RenderState
+data class NotRenderedYet(
+    val widthDp: Int,
+    val heightDp: Int
+): RenderState
 
 data class RenderedImage(
     val image: ImageBitmap,

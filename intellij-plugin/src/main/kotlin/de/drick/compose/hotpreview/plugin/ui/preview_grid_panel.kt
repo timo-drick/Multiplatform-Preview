@@ -137,7 +137,10 @@ fun PreviewSection(
                 aName.isNotBlank() -> "$fName - $aName"
                 else -> fName
             }
-            val uiRenderState = renderStateMap[annotation.renderCacheKey] ?: UIRenderState()
+            val uiRenderState = renderStateMap[annotation.renderCacheKey] ?: UIRenderState(
+                widthDp = annotation.renderCacheKey.annotation.widthDp,
+                heightDp = annotation.renderCacheKey.annotation.heightDp
+            )
             PreviewItem(
                 modifier = Modifier.onHover { isFocused = it }.clickable(
                     onClick = {

@@ -92,7 +92,7 @@ fun PreviewItem(
                 overflow = TextOverflow.Ellipsis
             )
             when (renderState) {
-                NotRenderedYet -> {}
+                is NotRenderedYet -> {}
                 is RenderError -> {
                     var showDialog by remember { mutableStateOf(false) }
                     Tooltip(tooltip = { Text("Copy image to clipboard") }) {
@@ -123,8 +123,15 @@ fun PreviewItem(
         }
         Spacer(Modifier.height(8.dp))
         when (renderState) {
-            NotRenderedYet -> {
-                CircularProgressIndicator()
+            is NotRenderedYet -> {
+                val width = if (renderState.widthDp < 0) 50 else renderState.widthDp
+                val height = if (renderState.heightDp <0) 50 else renderState.heightDp
+                Box(
+                    modifier = Modifier.requiredSize(width.dp * scale, height.dp * scale),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
             is RenderedImage -> {
                 Image(
