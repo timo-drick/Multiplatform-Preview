@@ -13,6 +13,7 @@ import de.drick.compose.hotpreview.plugin.UIFunctionAnnotation
 import de.drick.compose.hotpreview.plugin.UIHotPreviewData
 import de.drick.compose.hotpreview.plugin.UIRenderState
 import de.drick.compose.hotpreview.plugin.ui.components.TabBar
+import de.drick.compose.hotpreview.plugin.ui.jewel.ScrollableContainer
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.theme.JewelTheme
@@ -23,7 +24,7 @@ import org.jetbrains.jewel.ui.theme.groupHeaderStyle
 
 @OptIn(ExperimentalResourceApi::class)
 @HotPreview(widthDp = 500, heightDp = 500)
-@HotPreview(widthDp = 650, heightDp = 1400, darkMode = false)
+@HotPreview(widthDp = 500, heightDp = 500, darkMode = false)
 @Composable
 private fun PreviewPreviewGalleryPanel() {
     val env = rememberResourceEnvironment()
@@ -80,7 +81,7 @@ fun PreviewGalleryPanel(
     val tabs = remember(hotPreviewList, selectedItem) {
         flatPreviewList.map { it.toName() }
     }
-    Column {
+    Column(modifier) {
         Spacer(Modifier.height(4.dp))
         TabBar(
             selectedTab = selectedTab,
@@ -96,29 +97,20 @@ fun PreviewGalleryPanel(
             thickness = style.metrics.dividerThickness,
         )
         Spacer(Modifier.height(4.dp))
-        VerticallyScrollableContainer(
-            modifier = modifier.fillMaxSize(),
-
-        ) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                PreviewItem(
-                    modifier = Modifier.clickable(
-                        onClick = {
-                            onNavigateCode(selectedItem.annotation.lineRange.start)
-                        },
-                        interactionSource = null,
-                        indication = null
-                    ),
-                    name = selectedItem.toName(),
-                    renderState = uiRenderState.state,
-                    scale = scale,
-                    hasFocus = false
-                )
-            }
+        ScrollableContainer(Modifier.fillMaxWidth().weight(1f)) {
+            PreviewItem(
+                modifier = Modifier.align(Alignment.Center).clickable(
+                    onClick = {
+                        onNavigateCode(selectedItem.annotation.lineRange.first)
+                    },
+                    interactionSource = null,
+                    indication = null
+                ),
+                name = selectedItem.toName(),
+                renderState = uiRenderState.state,
+                scale = scale,
+                hasFocus = false
+            )
         }
     }
-
 }

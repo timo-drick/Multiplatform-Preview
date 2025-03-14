@@ -14,15 +14,18 @@ import de.drick.compose.hotpreview.plugin.HotPreviewViewModel.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.UIHotPreviewData
 import de.drick.compose.hotpreview.plugin.UIRenderState
 import de.drick.compose.hotpreview.plugin.ui.components.FoldableSection
+import de.drick.compose.hotpreview.plugin.ui.jewel.ScrollbarContainer
+import de.drick.compose.hotpreview.plugin.ui.jewel.forwardMinIntrinsicWidth
+import de.drick.compose.hotpreview.plugin.ui.jewel.intrinsicScrollModifier
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.modifier.onHover
-import org.jetbrains.jewel.ui.component.*
+import kotlin.collections.toSet
 
 
 @OptIn(ExperimentalResourceApi::class)
-@HotPreview(widthDp = 900, heightDp = 1400)
-@HotPreview(widthDp = 650, heightDp = 1400, darkMode = false)
+@HotPreview(widthDp = 900, heightDp = 1000)
+@HotPreview(widthDp = 650, heightDp = 1000, darkMode = false)
 @Composable
 private fun PreviewPreviewGridPanel() {
     val env = rememberResourceEnvironment()
@@ -68,11 +71,18 @@ fun PreviewGridPanel(
         }.toSet()
         requestPreviews(renderCacheKeys)
     }
-    VerticallyScrollableContainer(
-        modifier = modifier.fillMaxSize()
+    val horizontalScrollState = rememberScrollState()
+    val verticalScrollState = rememberScrollState()
+    ScrollbarContainer(
+        modifier = modifier.fillMaxSize(),
+        verticalScrollState = verticalScrollState,
+        horizontalScrollState = horizontalScrollState
     ) {
         FlowRow(
-            modifier = Modifier.padding(8.dp),
+            modifier = Modifier.padding(8.dp)
+                .fillMaxWidth()
+                .verticalScroll(verticalScrollState)
+                .intrinsicScrollModifier(horizontalScrollState),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -80,6 +90,7 @@ fun PreviewGridPanel(
                 if (preview.annotations.size > 1) {
                     FoldableSection(preview.functionName) {
                         PreviewSection(
+                            modifier = Modifier.forwardMinIntrinsicWidth(),
                             hasHeader = true,
                             scale = scale,
                             preview = preview,
@@ -108,10 +119,11 @@ fun PreviewSection(
     scale: Float,
     preview: UIHotPreviewData,
     renderStateMap: Map<RenderCacheKey, UIRenderState>,
+    modifier: Modifier = Modifier,
     onNavigateCode: (Int) -> Unit
 ) {
     FlowRow(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -129,7 +141,7 @@ fun PreviewSection(
             PreviewItem(
                 modifier = Modifier.onHover { isFocused = it }.clickable(
                     onClick = {
-                        annotation.lineRange?.let { onNavigateCode(it.start) }
+                        onNavigateCode(annotation.lineRange.start)
                     },
                     interactionSource = null,
                     indication = null
