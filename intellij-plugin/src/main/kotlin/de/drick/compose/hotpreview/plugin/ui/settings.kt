@@ -24,7 +24,8 @@ data class SettingsData(
     var gradleParameters: String = "--build-cache --configuration-cache --configuration-cache-problems=warn",
     var recompileOnSave: Boolean = false,
     var recompileOnChange: Boolean = false, //Not supported yet
-    var recompileOnChangeThresholdMilliseconds: Int = 2000 //Not supported yet
+    var recompileOnChangeThresholdMilliseconds: Int = 2000, //Not supported yet
+    var showGutterIcon: Boolean = true
 )
 
 class HotPreviewSettingsConfigurable : Configurable {
@@ -62,6 +63,13 @@ class HotPreviewSettingsConfigurable : Configurable {
                 .bindIntText(settings::recompileOnChangeThresholdMilliseconds)
             label("milliseconds")
         }*/
+
+        row {
+            checkBox("Show gutter icon on @HotPreview annotation")
+                .bindSelected(settings::showGutterIcon)
+        }.rowComment(
+            "Show or hide the custom gutter icon in the editor."
+        )
 
         group("Gradle Parameters") {
             lateinit var enabled: Cell<JBCheckBox>

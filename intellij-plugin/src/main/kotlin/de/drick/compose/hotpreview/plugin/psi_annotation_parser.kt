@@ -26,6 +26,8 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
+import org.jetbrains.kotlin.psi.KtValueArgument
+import org.jetbrains.kotlin.psi.psiUtil.argumentIndex
 import kotlin.collections.plus
 
 @Suppress("UnstableApiUsage")
@@ -71,43 +73,91 @@ suspend fun findHotPreviewAnnotations(project: Project, file: VirtualFile): List
             .toList()
     } ?: emptyList()
 
-suspend fun updateAnnotationParameter(
+private fun findAnnotationArgument(
+    argumentNameList: List<String>,
+    annotationEntry: KtAnnotationEntry,
+    argumentName: String,
+): KtValueArgument? {
+    //call?.symbol?.valueParameters?.getOrNull(1)?.name?.asString()
+    return annotationEntry.valueArgumentList?.arguments?.find {
+        val name = it.getArgumentName()?.asName?.asString() ?: argumentNameList[it.argumentIndex]
+        argumentName == name
+    }
+}
+
+suspend fun checkAnnotationParameter(
     project: Project,
     file: VirtualFile,
     line: Int,  // Line number where the Annotation starts
     argumentName: String,
-    newValue: String?
+): Boolean = getPsiFileSafely(project, file)?.let { psiFile ->
+    smartReadAction(project) {
+        analyze(psiFile as KtFile) {
+            val found = psiFile.symbol.fileScope.getAllSymbols()
+                .flatMap { it.annotations }
+                .filter { it.classId == hotPreviewAnnotationClassId }
+                .firstOrNull { it.psi?.getLineRange()?.first == line }
+                ?.let {
+                    val argumentList = it.arguments.map { it.name.toString() }
+                    findAnnotationArgument(argumentList, it.psi as KtAnnotationEntry, argumentName)
+                }
+            found != null
+        }
+    }
+} == true
+
+
+interface UpdatePsiAnnotationDsl {
+    fun string(key: String, value: String) {
+        parameter(key, if (value.isNotBlank()) "\"$value\"" else null)
+    }
+    fun parameter(key: String, value: String?)
+}
+
+class AnnotationUpdate(
+    val project: Project,
+    val file: VirtualFile,
+    val line: Int,  // Line number where the Annotation starts
 ) {
-    getPsiFileSafely(project, file)?.let { psiFile ->
-        readAndWriteAction {
-            val annotation: KtAnnotationEntry? = analyze(psiFile as KtFile) {
-                val found = psiFile.symbol.fileScope.getAllSymbols()
-                    .flatMap { it.annotations }
-                    .filter { it.classId == hotPreviewAnnotationClassId }
-                    .firstOrNull { it.psi?.getLineRange()?.first == line }
-                found?.psi as? KtAnnotationEntry
-            }
-            val factory = KtPsiFactory(project)
-            println("Found: $annotation")
-            writeAction {
-                WriteCommandAction.runWriteCommandAction(project) { //TODO This look a bit wrong. Maybe cleanup later?
-                    if (annotation != null) {
-                        val argument =
-                            annotation.valueArgumentList?.arguments?.find { it.getArgumentName()?.asName?.asString() == argumentName }
-                        if (newValue != null) {
-                            val newExpression = factory.createExpression(newValue)
-                            if (argument != null) {
-                                argument.getArgumentExpression()?.replace(newExpression)
+    suspend fun updateDsl(block: UpdatePsiAnnotationDsl.() -> Unit) {
+        getPsiFileSafely(project, file)?.let { psiFile ->
+            readAndWriteAction {
+                val (annotation: KtAnnotationEntry?, argumentList: List<String>) = analyze(psiFile as KtFile) {
+                    val found = psiFile.symbol.fileScope.getAllSymbols()
+                        .flatMap { it.annotations }
+                        .filter { it.classId == hotPreviewAnnotationClassId }
+                        .firstOrNull { it.psi?.getLineRange()?.first == line }
+                    val entry = found?.psi as? KtAnnotationEntry
+                    val argumentList = found?.arguments?.map { it.name.toString() } ?: emptyList()
+                    Pair(entry, argumentList)
+                }
+                val factory = KtPsiFactory(project)
+                println("Found: $annotation")
+                val dsl = object : UpdatePsiAnnotationDsl {
+                    override fun parameter(argumentName: String, newValue: String?) {
+                        if (annotation != null) {
+                            val argument = findAnnotationArgument(argumentList, annotation, argumentName)
+                                //annotation.valueArgumentList?.arguments?.find { it.getArgumentName()?.asName?.asString() == argumentName }
+                            if (newValue != null) {
+                                val newExpression = factory.createExpression(newValue)
+                                if (argument != null) {
+                                    argument.getArgumentExpression()?.replace(newExpression)
+                                } else {
+                                    val newArgument = factory.createArgument(
+                                        newExpression,
+                                        Name.identifier(argumentName)
+                                    )
+                                    annotation.valueArgumentList?.addArgument(newArgument)
+                                }
                             } else {
-                                val newArgument = factory.createArgument(
-                                    newExpression,
-                                    Name.identifier(argumentName)
-                                )
-                                annotation.valueArgumentList?.addArgument(newArgument)
+                                argument?.let { annotation.valueArgumentList?.removeArgument(it) }
                             }
-                        } else {
-                            argument?.let { annotation.valueArgumentList?.removeArgument(it) }
                         }
+                    }
+                }
+                writeAction {
+                    WriteCommandAction.runWriteCommandAction(project) {
+                        block(dsl)
                     }
                 }
             }

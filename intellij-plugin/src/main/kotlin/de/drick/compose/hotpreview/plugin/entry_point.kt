@@ -1,6 +1,5 @@
 package de.drick.compose.hotpreview.plugin
 
-import androidx.compose.ui.awt.ComposePanel
 import com.intellij.codeInspection.reference.EntryPoint
 import com.intellij.codeInspection.reference.RefElement
 import com.intellij.configurationStore.deserializeInto
@@ -23,7 +22,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.withContext
 import org.jdom.Element
 import org.jetbrains.jewel.bridge.JewelComposePanel
-import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
 import org.jetbrains.jewel.foundation.enableNewSwingCompositing
 import org.jetbrains.kotlin.idea.testIntegration.framework.KotlinPsiBasedTestFramework.Companion.asKtNamedFunction

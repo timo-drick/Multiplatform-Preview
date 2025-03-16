@@ -28,10 +28,18 @@ repositories {
 val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.4")
 val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("243")
 
-val versionName = "0.4.0-$ijPlatform"
+val versionName = "0.4.1-$ijPlatform"
 
 @Language("HTML")
 val changeNotesText = """
+<h3>V 0.5.0</h3>
+<ul>
+    <li>Added gutter icon to HotPreview annotations with a graphical editor</li>
+    <li>Added Horizontal scrolling when single preview is too wide</li>
+    <li>Added gallery preview mode</li>
+    <li>Fixed stability issues when rendering previews</li>
+</ul>
+    
 <h3>V 0.4.0</h3>
 <ul>
     <li>Added shortcut key to recompile</li>
@@ -82,9 +90,9 @@ dependencies {
 
     intellijPlatform {
         //See this list for available versions: https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html
-        //androidStudio("2024.3.1.13") //Meerkat
+        androidStudio("2024.3.1.13") //Meerkat
         //androidStudio("2024.2.2.13") //Ladybug
-        intellijIdeaCommunity(ijPlatform)
+        //intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
         zipSigner()
         bundledPlugins("org.jetbrains.kotlin", "com.intellij.gradle") // Plugins must be also provided in plugin.xml!!!

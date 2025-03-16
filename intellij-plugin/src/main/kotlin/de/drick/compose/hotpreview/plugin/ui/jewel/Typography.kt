@@ -35,11 +35,11 @@ import org.jetbrains.jewel.ui.component.Typography.DefaultLineHeightMultiplier
  */
 object Typography {
     /** The text style to use for labels. Identical to [JewelTheme.defaultTextStyle]. */
-    @Composable public fun labelTextStyle(): TextStyle = JewelTheme.defaultTextStyle
-        .copyWithSize(fontSize = labelTextSize() - 2.sp)
+    @Composable fun labelTextStyle(): TextStyle = JewelTheme.defaultTextStyle
+        .copyWithSize(fontSize = labelTextSize())
 
     /** The text size to use for labels. Identical to the size set in [JewelTheme.defaultTextStyle]. */
-    @Composable public fun labelTextSize(): TextUnit = JewelTheme.defaultTextStyle.fontSize
+    @Composable fun labelTextSize(): TextUnit = JewelTheme.defaultTextStyle.fontSize - 2.sp
 
     @Suppress("ktlint:standard:property-naming", "ConstPropertyName")
     /**

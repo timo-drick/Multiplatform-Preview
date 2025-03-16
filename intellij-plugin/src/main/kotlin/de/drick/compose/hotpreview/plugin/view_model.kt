@@ -20,7 +20,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import de.drick.compose.hotpreview.plugin.HotPreviewViewModel.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
 import de.drick.compose.hotpreview.plugin.tools.PluginPersistentStore
-import de.drick.compose.hotpreview.plugin.ui.HotPreviewGutterIcon
+import de.drick.compose.hotpreview.plugin.ui.guttericon.HotPreviewGutterIcon
 import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettings
 import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettingsConfigurable
 import de.drick.compose.utils.LRUCache
@@ -254,16 +254,28 @@ class HotPreviewViewModel(
         return previewFunctions
     }
 
+    private val updatePreviewAnnotations: () -> Unit = {
+        scope.launch {
+            updatePreviewList(analyzePreviewAnnotations())
+            render()
+        }
+    }
+
     private suspend fun updateGutterIcons() {
         val annotations = findHotPreviewAnnotations(project, file)
-        val editor = textEditor.editor
-        editor.markupModel.allHighlighters
-            .filter { it.gutterIconRenderer is HotPreviewGutterIcon }
-            .forEach { editor.markupModel.removeHighlighter(it) }
-
-        annotations.forEach { annotation ->
-            val highlighter = editor.markupModel.addLineHighlighter(annotation.lineRange.first, 0, TextAttributes())
-            highlighter.gutterIconRenderer = HotPreviewGutterIcon(project, file, annotation)
+        withContext(Dispatchers.Main) {
+            val editor = textEditor.editor
+            editor.markupModel.allHighlighters
+                .filter { it.gutterIconRenderer is HotPreviewGutterIcon }
+                .forEach { editor.markupModel.removeHighlighter(it) }
+            if (settings.showGutterIcon) {
+                annotations.forEach { annotation ->
+                    val highlighter =
+                        editor.markupModel.addLineHighlighter(annotation.lineRange.first, 0, TextAttributes())
+                    highlighter.gutterIconRenderer =
+                        HotPreviewGutterIcon(project, file, annotation, requestRender = updatePreviewAnnotations)
+                }
+            }
         }
     }
 
