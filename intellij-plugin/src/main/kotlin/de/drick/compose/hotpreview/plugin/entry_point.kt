@@ -15,8 +15,10 @@ import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
+import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
-import de.drick.compose.hotpreview.plugin.ui.MainScreen
+import de.drick.compose.hotpreview.plugin.ui.preview_window.HotPreviewViewModel
+import de.drick.compose.hotpreview.plugin.ui.preview_window.MainScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.withContext

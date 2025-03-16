@@ -17,8 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.ui.SelfPreviewTheme
-import de.drick.compose.hotpreview.plugin.ui.jewel.Typography
+import de.drick.compose.hotpreview.plugin.ui.preview_window.SelfPreviewTheme
+import de.drick.compose.hotpreview.plugin.ui.Typography
 import kotlinx.coroutines.launch
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.component.ActionButton

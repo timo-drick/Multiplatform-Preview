@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin.ui.jewel
+package de.drick.compose.hotpreview.plugin.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Brush

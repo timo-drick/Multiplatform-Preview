@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin.ui
+package de.drick.compose.hotpreview.plugin.ui.preview_window
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.intellij.openapi.diagnostic.fileLogger
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.HotPreviewViewModelI
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.modifier.onHover

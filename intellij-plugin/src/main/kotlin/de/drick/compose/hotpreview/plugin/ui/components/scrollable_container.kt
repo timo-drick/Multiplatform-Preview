@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin.ui.jewel
+package de.drick.compose.hotpreview.plugin.ui.components
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.ui.SelfPreviewTheme
+import de.drick.compose.hotpreview.plugin.ui.preview_window.SelfPreviewTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin.ui
+package de.drick.compose.hotpreview.plugin.ui.preview_window
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -8,12 +8,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.*
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.HotPreviewViewModel.RenderCacheKey
-import de.drick.compose.hotpreview.plugin.UIFunctionAnnotation
-import de.drick.compose.hotpreview.plugin.UIHotPreviewData
-import de.drick.compose.hotpreview.plugin.UIRenderState
+import de.drick.compose.hotpreview.plugin.ui.preview_window.HotPreviewViewModel.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.ui.components.TabBar
-import de.drick.compose.hotpreview.plugin.ui.jewel.ScrollableContainer
+import de.drick.compose.hotpreview.plugin.ui.components.ScrollableContainer
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.theme.JewelTheme

@@ -132,7 +132,7 @@ class AnnotationUpdate(
                     Pair(entry, argumentList)
                 }
                 val factory = KtPsiFactory(project)
-                println("Found: $annotation")
+                //println("Found: $annotation")
                 val dsl = object : UpdatePsiAnnotationDsl {
                     override fun parameter(argumentName: String, newValue: String?) {
                         if (annotation != null) {
@@ -223,9 +223,9 @@ fun checkFunctionForAnnotation(function: KtNamedFunction): List<HotPreviewAnnota
             .filter { it.classId != composableClassId }
             .filter { it.classId != hotPreviewAnnotationClassId }
             .forEach { annotation ->
-                println("   Check: ${annotation.classId}")
+                //println("   Check: ${annotation.classId}")
                 val fqn = annotation.classId?.asSingleFqName()
-                println("      Annotation: $fqn")
+                //println("      Annotation: $fqn")
                 fqn?.let {
                     val clazz = KotlinFullClassNameIndex[fqn.toString(), project, searchScope]
                     clazz.find {
@@ -250,8 +250,8 @@ fun checkFunctionForAnnotation(function: KtNamedFunction): List<HotPreviewAnnota
                     }
                 }
             }
-        println("---")
-        println()
+        //println("---")
+        //println()
         return hotPreviewAnnotations + hotPreviewAnnotationClasses
     }
 }

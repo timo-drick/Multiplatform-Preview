@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin.ui.jewel
+package de.drick.compose.hotpreview.plugin.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,7 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.ui.SelfPreviewTheme
+import de.drick.compose.hotpreview.plugin.ui.preview_window.SelfPreviewTheme
 import de.drick.compose.hotpreview.plugin.ui.guttericon.fontScaleTemplates
 import kotlinx.coroutines.launch
 import org.jetbrains.jewel.foundation.lazy.SelectableLazyColumn

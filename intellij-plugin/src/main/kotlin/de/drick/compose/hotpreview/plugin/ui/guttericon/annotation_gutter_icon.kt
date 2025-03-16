@@ -16,9 +16,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.HotPreviewModel
-import de.drick.compose.hotpreview.plugin.ui.SelfPreviewTheme
-import de.drick.compose.hotpreview.plugin.ui.jewel.GenericComboBox
-import de.drick.compose.hotpreview.plugin.ui.jewel.Typography
+import de.drick.compose.hotpreview.plugin.ui.preview_window.SelfPreviewTheme
+import de.drick.compose.hotpreview.plugin.ui.components.GenericComboBox
+import de.drick.compose.hotpreview.plugin.ui.Typography
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.Orientation
 import org.jetbrains.jewel.ui.component.Divider

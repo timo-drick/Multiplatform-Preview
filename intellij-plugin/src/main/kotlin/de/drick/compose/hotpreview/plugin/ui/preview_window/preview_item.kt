@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin.ui
+package de.drick.compose.hotpreview.plugin.ui.preview_window
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -14,7 +14,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.*
-import de.drick.compose.hotpreview.plugin.ui.jewel.Typography
+import de.drick.compose.hotpreview.plugin.ui.Typography
 import de.drick.compose.utils.ClipboardImage
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.rememberResourceEnvironment

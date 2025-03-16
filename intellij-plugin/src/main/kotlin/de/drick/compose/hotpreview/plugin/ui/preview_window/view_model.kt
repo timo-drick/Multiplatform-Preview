@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin
+package de.drick.compose.hotpreview.plugin.ui.preview_window
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,12 +17,25 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
-import de.drick.compose.hotpreview.plugin.HotPreviewViewModel.RenderCacheKey
+import de.drick.compose.hotpreview.plugin.ClassPathService
+import de.drick.compose.hotpreview.plugin.HotPreviewFunction
+import de.drick.compose.hotpreview.plugin.HotPreviewModel
+import de.drick.compose.hotpreview.plugin.HotPreviewView
+import de.drick.compose.hotpreview.plugin.NotRenderedYet
+import de.drick.compose.hotpreview.plugin.RenderState
+import de.drick.compose.hotpreview.plugin.RenderedImage
+import de.drick.compose.hotpreview.plugin.executeGradleTask
+import de.drick.compose.hotpreview.plugin.findFunctionsWithHotPreviewAnnotations
+import de.drick.compose.hotpreview.plugin.findHotPreviewAnnotations
+import de.drick.compose.hotpreview.plugin.renderPreview
+import de.drick.compose.hotpreview.plugin.runCatchingCancellationAware
+import de.drick.compose.hotpreview.plugin.ui.preview_window.HotPreviewViewModel.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
 import de.drick.compose.hotpreview.plugin.tools.PluginPersistentStore
 import de.drick.compose.hotpreview.plugin.ui.guttericon.HotPreviewGutterIcon
 import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettings
 import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettingsConfigurable
+import de.drick.compose.hotpreview.plugin.useSuspendWorkspace
 import de.drick.compose.utils.LRUCache
 import de.drick.compose.utils.lazySuspend
 import kotlinx.coroutines.CoroutineScope
@@ -95,7 +108,7 @@ class HotPreviewViewModel(
     val settings = HotPreviewSettings.getInstance().state
 
     private val classPathService by lazySuspend {
-        ClassPathService.getInstance(project, file)
+        ClassPathService.Companion.getInstance(project, file)
     }
 
     private val properties = PluginPersistentStore(project, file)

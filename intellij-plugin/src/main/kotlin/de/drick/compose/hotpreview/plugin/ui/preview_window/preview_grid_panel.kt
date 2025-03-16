@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin.ui
+package de.drick.compose.hotpreview.plugin.ui.preview_window
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -10,13 +10,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.*
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.HotPreviewViewModel.RenderCacheKey
-import de.drick.compose.hotpreview.plugin.UIHotPreviewData
-import de.drick.compose.hotpreview.plugin.UIRenderState
+import de.drick.compose.hotpreview.plugin.ui.preview_window.HotPreviewViewModel.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.ui.components.FoldableSection
-import de.drick.compose.hotpreview.plugin.ui.jewel.ScrollbarContainer
-import de.drick.compose.hotpreview.plugin.ui.jewel.forwardMinIntrinsicWidth
-import de.drick.compose.hotpreview.plugin.ui.jewel.intrinsicScrollModifier
+import de.drick.compose.hotpreview.plugin.ui.components.ScrollbarContainer
+import de.drick.compose.hotpreview.plugin.ui.components.forwardMinIntrinsicWidth
+import de.drick.compose.hotpreview.plugin.ui.components.intrinsicScrollModifier
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.modifier.onHover

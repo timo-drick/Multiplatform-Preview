@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.ui.SelfPreviewTheme
+import de.drick.compose.hotpreview.plugin.ui.preview_window.SelfPreviewTheme
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.Orientation
 import org.jetbrains.jewel.ui.component.Divider

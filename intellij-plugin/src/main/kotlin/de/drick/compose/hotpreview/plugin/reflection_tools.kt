@@ -7,19 +7,6 @@ import org.jetbrains.kotlin.name.FqName
 
 val fqNameHotPreview = requireNotNull(HotPreview::class.qualifiedName)
 
-data class ComposableFunctionInfo(
-    val name: String,
-    val sourceFileName: String,
-    val className: String,
-    val lineNumber: Int
-)
-
-fun kotlinFileHasHotPreview(kotlinFile: VirtualFile): Boolean = kotlinFile.inputStream
-    .bufferedReader()
-    .useLines { lines ->
-        lines.any { it.contains(fqNameHotPreview) }
-    }
-
 private val packageMatcher = Regex("""package\s+([a-z][a-z0-9_]*(\.[a-z0-9_]+)*[a-z0-9_]*)""")
 fun kotlinFileClassName(kotlinFile: VirtualFile): String {
     //TODO use PsiFile to analyze the file

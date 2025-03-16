@@ -1,4 +1,4 @@
-package de.drick.compose.hotpreview.plugin.ui
+package de.drick.compose.hotpreview.plugin.ui.preview_window
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
