@@ -14,12 +14,6 @@ import de.drick.compose.hotpreview.HotPreview
 import org.jetbrains.jewel.ui.component.*
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 
-interface TopBarAction {
-    data object Refresh: TopBarAction
-    data object OpenSettings: TopBarAction
-    data object ToggleLayout: TopBarAction
-    data class SelectGroup(val group: String?): TopBarAction
-}
 
 @Composable
 fun MainTopBar(
@@ -27,7 +21,7 @@ fun MainTopBar(
     groups: Set<String>,
     selectedGroup: String?,
     modifier: Modifier = Modifier,
-    onAction: (TopBarAction) -> Unit,
+    onAction: (HotPreviewAction) -> Unit,
 ) {
     Row(
         modifier = modifier.padding(4.dp),
@@ -40,7 +34,7 @@ fun MainTopBar(
                     selectableItem(
                         selected = selectedGroup == null,
                         onClick = {
-                            onAction(TopBarAction.SelectGroup(null))
+                            onAction(HotPreviewAction.SelectGroup(null))
                         }
                     ) {
                         Text("All")
@@ -50,7 +44,7 @@ fun MainTopBar(
                         selectableItem(
                             selected = group == selectedGroup,
                             onClick = {
-                                onAction(TopBarAction.SelectGroup(group))
+                                onAction(HotPreviewAction.SelectGroup(group))
                             }
                         ) {
                             Text(group)
@@ -62,14 +56,14 @@ fun MainTopBar(
             }
         }
         ActionButton(
-            onClick = { onAction(TopBarAction.ToggleLayout) }
+            onClick = { onAction(HotPreviewAction.ToggleLayout) }
         ) {
             Icon(AllIconsKeys.Debugger.RestoreLayout, contentDescription = "Layout switch")
         }
 
         Spacer(Modifier.weight(1f))
         ActionButton(
-            onClick = { onAction(TopBarAction.Refresh) },
+            onClick = { onAction(HotPreviewAction.Refresh) },
             enabled = compilingInProgress.not(),
         ) {
             if (compilingInProgress) {
@@ -79,7 +73,7 @@ fun MainTopBar(
             }
         }
         ActionButton(
-            onClick = { onAction(TopBarAction.OpenSettings) }
+            onClick = { onAction(HotPreviewAction.OpenSettings) }
         ) {
             Icon(AllIconsKeys.General.Settings, contentDescription = "Settings")
         }

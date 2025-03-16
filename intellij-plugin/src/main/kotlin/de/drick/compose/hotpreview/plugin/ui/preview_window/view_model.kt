@@ -18,6 +18,7 @@ import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import de.drick.compose.hotpreview.plugin.ClassPathService
+import de.drick.compose.hotpreview.plugin.HotPreviewAnnotation
 import de.drick.compose.hotpreview.plugin.HotPreviewFunction
 import de.drick.compose.hotpreview.plugin.HotPreviewModel
 import de.drick.compose.hotpreview.plugin.HotPreviewView
@@ -35,6 +36,8 @@ import de.drick.compose.hotpreview.plugin.tools.PluginPersistentStore
 import de.drick.compose.hotpreview.plugin.ui.guttericon.HotPreviewGutterIcon
 import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettings
 import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettingsConfigurable
+import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModel
+import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModelI
 import de.drick.compose.hotpreview.plugin.useSuspendWorkspace
 import de.drick.compose.utils.LRUCache
 import de.drick.compose.utils.lazySuspend
@@ -73,6 +76,18 @@ class UIRenderState(
     var state: RenderState by mutableStateOf(NotRenderedYet(widthDp, heightDp))
 }
 
+sealed interface HotPreviewAction {
+    data object OpenSettings : HotPreviewAction
+    data object ToggleLayout : HotPreviewAction
+    data object Refresh : HotPreviewAction
+    data class SelectGroup(val group: String?) : HotPreviewAction
+    data class SelectTab(val tabIndex: Int) : HotPreviewAction
+    data class ChangeScale(val newScale: Float) : HotPreviewAction
+    data class NavigateCodeLine(val line: Int) : HotPreviewAction
+    data class MonitorChanges(val scope: CoroutineScope) : HotPreviewAction
+
+}
+
 interface HotPreviewViewModelI {
     val scale: Float
     val isPureTextEditor: Boolean
@@ -82,15 +97,9 @@ interface HotPreviewViewModelI {
     val groups: Set<String>
     val selectedGroup: String?
     val selectedTab: Int? // null when in gridlayout mode
-    fun selectGroup(group: String?)
-    fun selectTab(tabIndex: Int)
-    fun changeScale(newScale: Float)
-    fun toggleLayout()
-    fun navigateCodeLine(line: Int)
-    fun monitorChanges(scope: CoroutineScope)
-    fun refresh()
-    fun openSettings()
+    fun onAction(action: HotPreviewAction)
     fun requestPreviews(keys: Set<RenderCacheKey>): Map<RenderCacheKey, UIRenderState>
+    fun getGutterIconViewMode(annotation: UIAnnotation): GutterIconViewModelI
 }
 
 class HotPreviewViewModel(
@@ -136,7 +145,20 @@ class HotPreviewViewModel(
 
     private var compileCounter = 0
 
-    override fun selectGroup(group: String?) {
+    override fun onAction(action: HotPreviewAction) {
+        when (action) {
+            HotPreviewAction.OpenSettings -> openSettings()
+            HotPreviewAction.Refresh -> refresh()
+            HotPreviewAction.ToggleLayout -> toggleLayout()
+            is HotPreviewAction.ChangeScale -> changeScale(action.newScale)
+            is HotPreviewAction.MonitorChanges -> monitorChanges(action.scope)
+            is HotPreviewAction.NavigateCodeLine -> navigateCodeLine(action.line)
+            is HotPreviewAction.SelectGroup -> selectGroup(action.group)
+            is HotPreviewAction.SelectTab -> selectTab(action.tabIndex)
+        }
+    }
+
+    private fun selectGroup(group: String?) {
         selectGroupProperty.set(group)
         val previousSelected = selectedGroup
         selectedGroup = group
@@ -147,7 +169,7 @@ class HotPreviewViewModel(
         }
     }
 
-    override fun selectTab(tabIndex: Int) {
+    private fun selectTab(tabIndex: Int) {
         selectedTab = tabIndex
         scope.launch {
             render()
@@ -181,12 +203,12 @@ class HotPreviewViewModel(
         }
     }
 
-    override fun changeScale(newScale: Float) {
+    private fun changeScale(newScale: Float) {
         scaleProperty.set(newScale)
         scale = newScale
     }
 
-    override fun toggleLayout() {
+    private fun toggleLayout() {
         isGridLayout = isGridLayout.not()
         isGridLayoutProperty.set(isGridLayout)
         if (isGridLayout) {
@@ -196,7 +218,7 @@ class HotPreviewViewModel(
         }
     }
 
-    override fun navigateCodeLine(line: Int) {
+    private fun navigateCodeLine(line: Int) {
         val pos = LogicalPosition(line, 0)
         textEditor.editor.apply {
             caretModel.moveToLogicalPosition(pos)
@@ -204,7 +226,7 @@ class HotPreviewViewModel(
         }
     }
 
-    override fun refresh() {
+    private fun refresh() {
         scope.launch {
             classPathService.reset()
             compilingInProgress = true
@@ -229,11 +251,11 @@ class HotPreviewViewModel(
         }
     }
 
-    override fun openSettings() {
+    private fun openSettings() {
         ShowSettingsUtil.getInstance().showSettingsDialog(project, HotPreviewSettingsConfigurable::class.java)
     }
 
-    override fun monitorChanges(scope: CoroutineScope) {
+    private fun monitorChanges(scope: CoroutineScope) {
         scope.launch {
             compilingInProgress = true
             errorHandling {
@@ -290,6 +312,19 @@ class HotPreviewViewModel(
                 }
             }
         }
+    }
+
+    override fun getGutterIconViewMode(annotation: UIAnnotation): GutterIconViewModelI {
+        val annotation = HotPreviewAnnotation(
+            lineRange = annotation.lineRange,
+            annotation = annotation.renderCacheKey.annotation
+        )
+        return GutterIconViewModel(
+            project = project,
+            file = file,
+            annotation = annotation,
+            requestRender = updatePreviewAnnotations
+        )
     }
 
     private suspend fun errorHandling(block: suspend () -> Unit) {

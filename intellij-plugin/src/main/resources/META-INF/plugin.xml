@@ -8,6 +8,7 @@
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="HotPreviewNotification" displayType="BALLOON" />
         <fileEditorProvider implementation="de.drick.compose.hotpreview.plugin.HotPreviewSplitEditorProvider" />
         <deadCode implementation="de.drick.compose.hotpreview.plugin.HotPreviewEntryPoint" />
         <applicationService serviceImplementation="de.drick.compose.hotpreview.plugin.ui.HotPreviewSettings"/>

@@ -87,29 +87,30 @@ private fun createMockArgumentField(value: String) = ArgumentField(
     useUpdateDsl = {}
 )
 
+val mockGutterIconViewModel = object: GutterIconViewModelI {
+    override val baseModel = HotPreviewModel(
+        name = "Test name"
+    )
+    override val name = createMockArgumentField(baseModel.name)
+    override val group = createMockArgumentField(baseModel.group)
+    override val widthDp = createMockArgumentField(baseModel.widthDp.toString())
+    override val heightDp = createMockArgumentField(baseModel.heightDp.toString())
+    override val density = createMockArgumentField("${baseModel.density}f")
+    override val locale = createMockArgumentField("de")
+    override val fontScale = createMockArgumentField("1f")
+
+    override fun update(dsl: UpdateAnnotationDsl.() -> Unit) {}
+    override fun render() {}
+    override suspend fun checkParameterExists(parameterName: String) = false
+}
+
 @HotPreview(density = 2f, name = "")
 @HotPreview(density = 2f, darkMode = false)
 @HotPreview(density = 2f, fontScale = 2.00f)
 @Composable
 fun GutterIconAnnotationSettingsPreview() {
-    val model = object: GutterIconViewModelI {
-        override val baseModel = HotPreviewModel(
-            name = "Test name"
-        )
-        override val name = createMockArgumentField(baseModel.name)
-        override val group = createMockArgumentField(baseModel.group)
-        override val widthDp = createMockArgumentField(baseModel.widthDp.toString())
-        override val heightDp = createMockArgumentField(baseModel.heightDp.toString())
-        override val density = createMockArgumentField("${baseModel.density}f")
-        override val locale = createMockArgumentField("de")
-        override val fontScale = createMockArgumentField("1f")
-
-        override fun update(dsl: UpdateAnnotationDsl.() -> Unit) {}
-        override fun render() {}
-        override suspend fun checkParameterExists(parameterName: String) = false
-    }
     SelfPreviewTheme {
-        GutterIconAnnotationSettings(model)
+        GutterIconAnnotationSettings(mockGutterIconViewModel)
     }
 }
 

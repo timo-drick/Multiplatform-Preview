@@ -15,8 +15,8 @@ import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
-import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
+import de.drick.compose.hotpreview.plugin.ui.preview_window.HotPreviewAction
 import de.drick.compose.hotpreview.plugin.ui.preview_window.HotPreviewViewModel
 import de.drick.compose.hotpreview.plugin.ui.preview_window.MainScreen
 import kotlinx.coroutines.CoroutineScope
@@ -102,7 +102,7 @@ class ReCompileShortcutAction: AnAction() {
         val fileEditor = FileEditorManager.getInstance(project).getSelectedEditor(file) ?: return
         (fileEditor as? SeamlessEditorWithPreview)?.let {
             val previewEditor = it.previewEditor
-            if (previewEditor is HotPreviewView) previewEditor.model.refresh()
+            if (previewEditor is HotPreviewView) previewEditor.model.onAction(HotPreviewAction.Refresh)
         }
     }
 }

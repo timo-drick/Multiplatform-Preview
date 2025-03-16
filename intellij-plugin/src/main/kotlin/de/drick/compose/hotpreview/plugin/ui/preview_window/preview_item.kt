@@ -12,6 +12,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationType
+import com.intellij.notification.Notifications
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.*
 import de.drick.compose.hotpreview.plugin.ui.Typography
@@ -32,7 +35,8 @@ private fun PreviewPreviewItem() {
         PreviewItem(
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
-            renderState = getPreviewItem(env, SamplePreviewItem.login_dark)
+            renderState = getPreviewItem(env, SamplePreviewItem.login_dark),
+            onAction = {}
         )
     }
 }
@@ -48,7 +52,8 @@ private fun PreviewPreviewItemFocus() {
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
             renderState = getPreviewItem(env, SamplePreviewItem.login_dark),
-            hasFocus = true
+            hasFocus = true,
+            onAction = {}
         )
     }
 }
@@ -63,9 +68,14 @@ fun PreviewPreviewItemError() {
         PreviewItem(
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
-            renderState = getPreviewItem(env, SamplePreviewItem.error_test)
+            renderState = getPreviewItem(env, SamplePreviewItem.error_test),
+            onAction = {}
         )
     }
+}
+
+enum class PreviewItemAction {
+    Settings
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -76,6 +86,7 @@ fun PreviewItem(
     modifier: Modifier = Modifier,
     scale: Float = 1f,
     hasFocus: Boolean = false,
+    onAction: (PreviewItemAction) -> Unit
 ) {
     val focusStroke = BorderStroke(2.dp, JewelTheme.globalColors.outlines.focused)
     val borderModifier = if (hasFocus) Modifier.border(focusStroke) else Modifier
@@ -95,11 +106,11 @@ fun PreviewItem(
                 is NotRenderedYet -> {}
                 is RenderError -> {
                     var showDialog by remember { mutableStateOf(false) }
-                    Tooltip(tooltip = { Text("Copy image to clipboard") }) {
+                    Tooltip(tooltip = { Text("Show error dialog") }) {
                         IconButton(onClick = {
                             showDialog = true
                         }) {
-                            Icon(AllIconsKeys.General.ErrorDialog, contentDescription = "Copy")
+                            Icon(AllIconsKeys.General.ErrorDialog, contentDescription = "Show error dialog")
                         }
                     }
                     if (showDialog) {
@@ -114,10 +125,22 @@ fun PreviewItem(
                     Tooltip(tooltip = { Text("Copy image to clipboard") }) {
                         IconButton(onClick = {
                             ClipboardImage.write(renderState.image)
+                            val message = Notification(
+                                "HotPreviewNotification", "Preview copied", "The preview image copied to clipboard",
+                                NotificationType.INFORMATION
+                            )
+                            Notifications.Bus.notify(message)
                         }) {
                             Icon(AllIconsKeys.General.Copy, contentDescription = "Copy")
                         }
                     }
+                }
+            }
+            Tooltip(tooltip = { Text("Configure Annotation") }) {
+                IconButton(onClick = {
+                    onAction(PreviewItemAction.Settings)
+                }) {
+                    Icon(AllIconsKeys.General.Settings, contentDescription = "Configure Annotation")
                 }
             }
         }

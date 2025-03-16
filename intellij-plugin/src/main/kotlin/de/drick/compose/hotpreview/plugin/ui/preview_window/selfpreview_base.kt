@@ -12,12 +12,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.plugin.*
+import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModelI
+import de.drick.compose.hotpreview.plugin.ui.guttericon.mockGutterIconViewModel
 import hotpreviewplugin.generated.resources.*
 import hotpreviewplugin.generated.resources.Res
 import hotpreviewplugin.generated.resources.countposer_dialog
 import hotpreviewplugin.generated.resources.countposer_start
 import hotpreviewplugin.generated.resources.login_dark
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.*
 import org.jetbrains.jewel.foundation.theme.JewelTheme
@@ -176,16 +177,10 @@ fun mockViewModel(
     override val groups = setOf("Group 1")
     override val selectedGroup: String? = null
     override val selectedTab: Int? = null
-    override fun selectGroup(group: String?) {}
-    override fun selectTab(tabIndex: Int) {}
-    override fun changeScale(newScale: Float) {
-        scale = newScale
-    }
-    override fun toggleLayout() {}
-    override fun navigateCodeLine(line: Int) {}
-    override fun monitorChanges(scope: CoroutineScope) {}
-    override fun refresh() {}
-    override fun openSettings() {}
     override fun requestPreviews(keys: Set<HotPreviewViewModel.RenderCacheKey>): Map<HotPreviewViewModel.RenderCacheKey, UIRenderState> =
         resolveRenderState(env, keys)
+    override fun onAction(action: HotPreviewAction) {
+        if (action is HotPreviewAction.ChangeScale) scale = action.newScale
+    }
+    override fun getGutterIconViewMode(annotation: UIAnnotation): GutterIconViewModelI = mockGutterIconViewModel
 }

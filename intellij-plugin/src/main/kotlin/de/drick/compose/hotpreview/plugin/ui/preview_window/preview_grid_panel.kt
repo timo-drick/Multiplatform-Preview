@@ -15,6 +15,9 @@ import de.drick.compose.hotpreview.plugin.ui.components.FoldableSection
 import de.drick.compose.hotpreview.plugin.ui.components.ScrollbarContainer
 import de.drick.compose.hotpreview.plugin.ui.components.forwardMinIntrinsicWidth
 import de.drick.compose.hotpreview.plugin.ui.components.intrinsicScrollModifier
+import de.drick.compose.hotpreview.plugin.ui.guttericon.DialogGutterIconSettings
+import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModelI
+import de.drick.compose.hotpreview.plugin.ui.guttericon.mockGutterIconViewModel
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.modifier.onHover
@@ -36,7 +39,8 @@ private fun PreviewPreviewGridPanel() {
             scale = 1f,
             selectedGroup = "dark",
             requestPreviews = { resolveRenderState(env, it) },
-            onNavigateCode = {}
+            onNavigateCode = {},
+            onGetGutterIconViewModel = { mockGutterIconViewModel }
         )
     }
 }
@@ -50,7 +54,8 @@ fun PreviewGridPanel(
     selectedGroup: String?,
     modifier: Modifier = Modifier,
     onNavigateCode: (Int) -> Unit,
-    requestPreviews: (Set<RenderCacheKey>) -> Map<RenderCacheKey, UIRenderState>
+    requestPreviews: (Set<RenderCacheKey>) -> Map<RenderCacheKey, UIRenderState>,
+    onGetGutterIconViewModel: (UIAnnotation) -> GutterIconViewModelI
 ) {
     val previewList = remember(hotPreviewList, selectedGroup) {
         hotPreviewList.map {
@@ -93,7 +98,8 @@ fun PreviewGridPanel(
                             scale = scale,
                             preview = preview,
                             renderStateMap = previewMap,
-                            onNavigateCode = onNavigateCode
+                            onNavigateCode = onNavigateCode,
+                            onGetGutterIconViewModel = onGetGutterIconViewModel
                         )
                     }
                 } else {
@@ -102,7 +108,8 @@ fun PreviewGridPanel(
                         scale = scale,
                         preview = preview,
                         renderStateMap = previewMap,
-                        onNavigateCode = onNavigateCode
+                        onNavigateCode = onNavigateCode,
+                        onGetGutterIconViewModel = onGetGutterIconViewModel
                     )
                 }
             }
@@ -118,8 +125,11 @@ fun PreviewSection(
     preview: UIHotPreviewData,
     renderStateMap: Map<RenderCacheKey, UIRenderState>,
     modifier: Modifier = Modifier,
-    onNavigateCode: (Int) -> Unit
+    onNavigateCode: (Int) -> Unit,
+    onGetGutterIconViewModel: (UIAnnotation) -> GutterIconViewModelI
 ) {
+    var gutterIconViewModel: GutterIconViewModelI? by remember { mutableStateOf(null) }
+
     FlowRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -150,8 +160,20 @@ fun PreviewSection(
                 name = name,
                 renderState = uiRenderState.state,
                 scale = scale,
-                hasFocus = isFocused
+                hasFocus = isFocused,
+                onAction = {
+                    when (it) {
+                        PreviewItemAction.Settings -> {
+                            val viewModel = onGetGutterIconViewModel(annotation)
+                            gutterIconViewModel = viewModel
+                        }
+                    }
+                }
             )
         }
     }
+    DialogGutterIconSettings(
+        viewModel = gutterIconViewModel,
+        onClose = { gutterIconViewModel = null }
+    )
 }

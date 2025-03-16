@@ -55,7 +55,7 @@ class HotPreviewGutterIcon(
 class MyCustomDialog(
     project: Project,
     private val viewModel: GutterIconViewModelI,
-    private val relativePoint: RelativePoint,
+    private val relativePoint: RelativePoint?,
     requestRender: () -> Unit
 ) : DialogWrapper(project, true, IdeModalityType.MODELESS) {
     init {
@@ -71,7 +71,7 @@ class MyCustomDialog(
         })
     }
 
-    override fun getInitialLocation(): Point? = relativePoint.screenPoint
+    override fun getInitialLocation(): Point? = relativePoint?.screenPoint
 
     override fun createActions(): Array<out Action?> = emptyArray()
 

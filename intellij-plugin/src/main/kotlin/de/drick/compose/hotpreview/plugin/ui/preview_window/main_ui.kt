@@ -34,7 +34,7 @@ private fun PreviewMainScreen() {
     val env = rememberResourceEnvironment()
     val viewModel = remember {
         mockViewModel(env, getMockData()).apply {
-            changeScale(1f)
+            onAction(HotPreviewAction.ChangeScale(1f))
         }
     }
     SelfPreviewBase(viewModel)
@@ -50,7 +50,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
     val error: Throwable? = model.errorMessage
 
     LaunchedEffect(Unit) {
-        model.monitorChanges(scope)
+        model.onAction(HotPreviewAction.MonitorChanges(scope))
     }
 
     Column(Modifier.fillMaxSize().background(JewelTheme.editorTabStyle.colors.background)) {
@@ -59,14 +59,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
             compilingInProgress = compilingInProgress,
             groups = if (model.selectedTab == null) model.groups else emptySet(),
             selectedGroup = model.selectedGroup,
-            onAction = { action ->
-                when (action) {
-                    TopBarAction.Refresh -> model.refresh()
-                    TopBarAction.OpenSettings -> model.openSettings()
-                    is TopBarAction.SelectGroup -> model.selectGroup(action.group)
-                    TopBarAction.ToggleLayout -> model.toggleLayout()
-                }
-            }
+            onAction = model::onAction
         )
         val style = JewelTheme.groupHeaderStyle
         Divider(
@@ -93,8 +86,9 @@ fun MainScreen(model: HotPreviewViewModelI) {
                         hotPreviewList = previewList,
                         scale = scale,
                         selectedGroup = model.selectedGroup,
-                        onNavigateCode = { model.navigateCodeLine(it) },
-                        requestPreviews = { model.requestPreviews(it) }
+                        onNavigateCode = { model.onAction(HotPreviewAction.NavigateCodeLine(it)) },
+                        requestPreviews = model::requestPreviews,
+                        onGetGutterIconViewModel = { model.getGutterIconViewMode(it) }
                     )
                 } else {
                     if (previewList.isEmpty()) {
@@ -106,8 +100,9 @@ fun MainScreen(model: HotPreviewViewModelI) {
                             selectedTab = selectedTab,
                             scale = scale,
                             requestPreviews = { model.requestPreviews(it) },
-                            onNavigateCode = { model.navigateCodeLine(it) },
-                            onSelectTab = { model.selectTab(it) }
+                            onNavigateCode = { model.onAction(HotPreviewAction.NavigateCodeLine(it)) },
+                            onSelectTab = { model.onAction(HotPreviewAction.SelectTab(it)) },
+                            onGetGutterIconViewModel = { model.getGutterIconViewMode(it) }
                         )
                     }
                 }
@@ -120,13 +115,13 @@ fun MainScreen(model: HotPreviewViewModelI) {
                             .padding(4.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        IconButton(onClick = { model.changeScale(scale + .2f) }) {
+                        IconButton(onClick = { model.onAction(HotPreviewAction.ChangeScale(scale + .2f)) }) {
                             Icon(AllIconsKeys.General.Add, contentDescription = "ZoomIn")
                         }
-                        IconButton(onClick = { model.changeScale(scale - .2f) }) {
+                        IconButton(onClick = { model.onAction(HotPreviewAction.ChangeScale(scale - .2f)) }) {
                             Icon(AllIconsKeys.General.Remove, contentDescription = "ZoomOut")
                         }
-                        IconButton(onClick = { model.changeScale(1f) }) {
+                        IconButton(onClick = { model.onAction(HotPreviewAction.ChangeScale(1f)) }) {
                             Icon(AllIconsKeys.General.ActualZoom, contentDescription = "100%")
                         }
                     }

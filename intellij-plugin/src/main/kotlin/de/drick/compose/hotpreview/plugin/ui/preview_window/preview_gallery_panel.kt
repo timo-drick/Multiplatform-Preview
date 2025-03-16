@@ -3,7 +3,10 @@ package de.drick.compose.hotpreview.plugin.ui.preview_window
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.*
@@ -11,6 +14,9 @@ import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.ui.preview_window.HotPreviewViewModel.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.ui.components.TabBar
 import de.drick.compose.hotpreview.plugin.ui.components.ScrollableContainer
+import de.drick.compose.hotpreview.plugin.ui.guttericon.DialogGutterIconSettings
+import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModelI
+import de.drick.compose.hotpreview.plugin.ui.guttericon.mockGutterIconViewModel
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.rememberResourceEnvironment
 import org.jetbrains.jewel.foundation.theme.JewelTheme
@@ -35,7 +41,8 @@ private fun PreviewPreviewGalleryPanel() {
             selectedTab = 0,
             requestPreviews = { resolveRenderState(env, it) },
             onNavigateCode = {},
-            onSelectTab = {}
+            onSelectTab = {},
+            onGetGutterIconViewModel = { mockGutterIconViewModel }
         )
     }
 }
@@ -58,7 +65,8 @@ fun PreviewGalleryPanel(
     modifier: Modifier = Modifier,
     requestPreviews: (Set<RenderCacheKey>) -> Map<RenderCacheKey, UIRenderState>,
     onNavigateCode: (line: Int) -> Unit,
-    onSelectTab: (Int) -> Unit
+    onSelectTab: (Int) -> Unit,
+    onGetGutterIconViewModel: (UIAnnotation) -> GutterIconViewModelI
 ) {
     val flatPreviewList = remember(hotPreviewList) {
         require(hotPreviewList.isNotEmpty()) { "Preview list must not be empty!" }
@@ -78,6 +86,8 @@ fun PreviewGalleryPanel(
     val tabs = remember(hotPreviewList, selectedItem) {
         flatPreviewList.map { it.toName() }
     }
+    var gutterIconViewModel: GutterIconViewModelI? by remember { mutableStateOf(null) }
+
     Column(modifier) {
         Spacer(Modifier.height(4.dp))
         TabBar(
@@ -106,8 +116,20 @@ fun PreviewGalleryPanel(
                 name = selectedItem.toName(),
                 renderState = uiRenderState.state,
                 scale = scale,
-                hasFocus = false
+                hasFocus = false,
+                onAction = {
+                    when (it) {
+                        PreviewItemAction.Settings -> {
+                            val viewModel = onGetGutterIconViewModel(selectedItem.annotation)
+                            gutterIconViewModel = viewModel
+                        }
+                    }
+                }
             )
         }
+        DialogGutterIconSettings(
+            viewModel = gutterIconViewModel,
+            onClose = { gutterIconViewModel = null }
+        )
     }
 }
