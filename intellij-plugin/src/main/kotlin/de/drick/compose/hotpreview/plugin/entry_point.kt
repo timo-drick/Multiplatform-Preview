@@ -26,6 +26,7 @@ import org.jdom.Element
 import org.jetbrains.jewel.bridge.JewelComposePanel
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
 import org.jetbrains.jewel.foundation.enableNewSwingCompositing
+import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.idea.testIntegration.framework.KotlinPsiBasedTestFramework.Companion.asKtNamedFunction
 import org.jetbrains.kotlin.idea.util.projectStructure.getModule
 import java.beans.PropertyChangeListener
@@ -133,7 +134,7 @@ class HotPreviewEntryPoint : EntryPoint() {
     private fun checkForAnnotationClass(psiMethod: PsiMethod): Boolean {
         if (psiMethod.hasAnnotation(fqNameHotPreview)) return true
         psiMethod.asKtNamedFunction()?.let {
-            return checkFunctionForAnnotation(it).isNotEmpty()
+            return analyze(it) { checkFunctionForAnnotation(psiMethod.project, it.symbol).isNotEmpty() }
         }
         return false
     }

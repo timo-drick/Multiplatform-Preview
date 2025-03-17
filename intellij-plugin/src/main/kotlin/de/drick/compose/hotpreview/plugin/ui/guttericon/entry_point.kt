@@ -5,6 +5,8 @@ import androidx.compose.ui.Modifier
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.EDT
+import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -12,6 +14,8 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.awt.RelativePoint
 import de.drick.compose.hotpreview.plugin.HotPreviewAnnotation
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.jetbrains.jewel.bridge.JewelComposePanel
 import org.jetbrains.jewel.foundation.ExperimentalJewelApi
 import org.jetbrains.jewel.foundation.enableNewSwingCompositing
@@ -27,6 +31,7 @@ class HotPreviewGutterIcon(
     private val project: Project,
     private val file: VirtualFile,
     private val annotation: HotPreviewAnnotation,
+    private val groups: Set<String>,
     private val requestRender: () -> Unit
 ) : GutterIconRenderer() {
     override fun getIcon() = AllIcons.General.Settings
@@ -38,9 +43,12 @@ class HotPreviewGutterIcon(
             val mouseEvent: MouseEvent = event.inputEvent as? MouseEvent ?: return
             val relativePoint = RelativePoint(mouseEvent.component, mouseEvent.point)
 
-            val viewModel = GutterIconViewModel(project, file, annotation, requestRender)
-            val dialog = MyCustomDialog(project, viewModel, relativePoint, requestRender)
-            dialog.show()
+            val scope = project.service<ProjectScopeProviderService>().scope
+            scope.launch(Dispatchers.EDT) {
+                val viewModel = GutterIconViewModel(project, file, annotation, groups, requestRender)
+                val dialog = MyCustomDialog(project, viewModel, relativePoint, requestRender)
+                dialog.show()
+            }
             /*createJBDialog(
                 viewModel = viewModel,
                 mouseEvent = mouseEvent,
@@ -85,8 +93,8 @@ class MyCustomDialog(
     }
 }
 
-const val preferredWidth = 300
-const val preferredHeight = 400
+private const val preferredWidth = 300
+private const val preferredHeight = 400
 
 @OptIn(ExperimentalJewelApi::class)
 fun createJBDialog(

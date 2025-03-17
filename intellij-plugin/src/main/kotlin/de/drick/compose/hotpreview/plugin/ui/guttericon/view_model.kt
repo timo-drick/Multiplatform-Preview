@@ -15,7 +15,7 @@ import de.drick.compose.hotpreview.plugin.checkAnnotationParameter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@Service(Service.Level.PROJECT) private class ProjectScopeProviderService(val scope: CoroutineScope)
+@Service(Service.Level.PROJECT) class ProjectScopeProviderService(val scope: CoroutineScope)
 
 interface UpdateAnnotationDsl : UpdatePsiAnnotationDsl {
     fun render()
@@ -40,6 +40,7 @@ class GutterIconViewModel(
     val project: Project,
     private val file: VirtualFile,
     private val annotation: HotPreviewAnnotation,
+    private val groups: Set<String>,
     private val requestRender: () -> Unit
 ): GutterIconViewModelI {
     private val scope = project.service<ProjectScopeProviderService>().scope

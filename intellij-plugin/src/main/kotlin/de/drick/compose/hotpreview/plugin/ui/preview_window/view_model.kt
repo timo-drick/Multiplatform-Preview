@@ -308,7 +308,7 @@ class HotPreviewViewModel(
                     val highlighter =
                         editor.markupModel.addLineHighlighter(annotation.lineRange.first, 0, TextAttributes())
                     highlighter.gutterIconRenderer =
-                        HotPreviewGutterIcon(project, file, annotation, requestRender = updatePreviewAnnotations)
+                        HotPreviewGutterIcon(project, file, annotation, groups, requestRender = updatePreviewAnnotations)
                 }
             }
         }
@@ -323,6 +323,7 @@ class HotPreviewViewModel(
             project = project,
             file = file,
             annotation = annotation,
+            groups = groups,
             requestRender = updatePreviewAnnotations
         )
     }

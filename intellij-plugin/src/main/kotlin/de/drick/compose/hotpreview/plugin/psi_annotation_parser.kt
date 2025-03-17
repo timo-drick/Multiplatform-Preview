@@ -13,9 +13,12 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotation
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationValue
+import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.name
 import org.jetbrains.kotlin.idea.debugger.core.stepping.getLineRange
 import org.jetbrains.kotlin.idea.stubindex.KotlinFullClassNameIndex
 import org.jetbrains.kotlin.name.ClassId
@@ -62,7 +65,7 @@ private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
 
 suspend fun findHotPreviewAnnotations(project: Project, file: VirtualFile): List<HotPreviewAnnotation> =
     project.analyzeFile(file) { ktFile ->
-        ktFile.symbol.fileScope.getAllSymbols()
+        ktFile.symbol.fileScope.declarations
             .flatMap { it.annotations }
             .filter { it.classId == hotPreviewAnnotationClassId }
             .mapNotNull {
@@ -93,7 +96,7 @@ suspend fun checkAnnotationParameter(
 ): Boolean = getPsiFileSafely(project, file)?.let { psiFile ->
     smartReadAction(project) {
         analyze(psiFile as KtFile) {
-            val found = psiFile.symbol.fileScope.getAllSymbols()
+            val found = psiFile.symbol.fileScope.declarations
                 .flatMap { it.annotations }
                 .filter { it.classId == hotPreviewAnnotationClassId }
                 .firstOrNull { it.psi?.getLineRange()?.first == line }
@@ -167,6 +170,27 @@ class AnnotationUpdate(
 
 
 suspend fun findFunctionsWithHotPreviewAnnotations(project: Project, file: VirtualFile): List<HotPreviewFunction> =
+    project.analyzeFile(file) {  ktFile ->
+        ktFile.symbol.fileScope.getAllSymbols()
+            .filterIsInstance<KaFunctionSymbol>()
+            .mapNotNull { function ->
+                val annotations = checkFunctionForAnnotation(project, function)
+                val lineRange = function.psi?.getLineRange()
+                if (annotations.isEmpty() || lineRange == null) null
+                else {
+                    require(function.valueParameters.isEmpty()) {
+                        "Function ${function.name} with @HotPreview annotation must not has parameters! See line: $lineRange"
+                    }
+                    HotPreviewFunction(
+                        name = function.name.toString(),
+                        annotation = annotations,
+                        lineRange = lineRange
+                    )
+                }
+            }.toList()
+    } ?: emptyList()
+
+suspend fun findFunctionsWithHotPreviewAnnotationsOld(project: Project, file: VirtualFile): List<HotPreviewFunction> =
     withContext(Dispatchers.Default) {
         getPsiFileSafely(project, file)?.let { psiFile ->
             LOG.debug("Find preview annotations for: $file")
@@ -183,7 +207,7 @@ suspend fun analyzeFunctionsInPsiFile(project: Project, psiFile: PsiFile) = smar
         }
     })
     functionList.mapNotNull { function ->
-        val annotations = checkFunctionForAnnotation(function)
+        val annotations = analyze(function) { checkFunctionForAnnotation(project, function.symbol) }
         val lineRange = function.getLineRange()
         if (annotations.isEmpty() || lineRange == null) null
         else {
@@ -199,61 +223,57 @@ suspend fun analyzeFunctionsInPsiFile(project: Project, psiFile: PsiFile) = smar
     }
 }
 
-fun checkFunctionForAnnotation(function: KtNamedFunction): List<HotPreviewAnnotation> {
+fun KaSession.checkFunctionForAnnotation(project: Project, function: KaFunctionSymbol): List<HotPreviewAnnotation> {
     //TODO Find a solution which is also working in dumb mode.
-    analyze(function) {
-        val mySymbol = function.symbol
-        LOG.debug("Function: ${function.name}")
-        val hotPreviewAnnotations = mySymbol.annotations
-            .filter { it.classId == hotPreviewAnnotationClassId }
-            .mapNotNull {
-                it.psi?.getLineRange()?.let { lineRange ->
-                    HotPreviewAnnotation(
-                        lineRange = lineRange,
-                        annotation = it.toHotPreviewAnnotation()
-                    )
-                }
+    LOG.debug("Function: ${function.name}")
+    val hotPreviewAnnotations = function.annotations
+        .filter { it.classId == hotPreviewAnnotationClassId }
+        .mapNotNull {
+            it.psi?.getLineRange()?.let { lineRange ->
+                HotPreviewAnnotation(
+                    lineRange = lineRange,
+                    annotation = it.toHotPreviewAnnotation()
+                )
             }
-        val hotPreviewAnnotationClasses = mutableListOf<HotPreviewAnnotation>()
-        //val module = checkNotNull(function.module)
-        //val searchScope = GlobalSearchScope.moduleScope(module)
-        val project = function.project
-        val searchScope = GlobalSearchScope.everythingScope(project)
-        mySymbol.annotations // Find Annotation classes which contain HotPreview annotation
-            .filter { it.classId != composableClassId }
-            .filter { it.classId != hotPreviewAnnotationClassId }
-            .forEach { annotation ->
-                //println("   Check: ${annotation.classId}")
-                val fqn = annotation.classId?.asSingleFqName()
-                //println("      Annotation: $fqn")
-                fqn?.let {
-                    val clazz = KotlinFullClassNameIndex[fqn.toString(), project, searchScope]
-                    clazz.find {
-                        it.symbol.psi?.containingFile?.name?.endsWith(".kt") == true
-                    }?.let {
-                        try {
-                            it.symbol.annotations
-                                .filter { it.classId == hotPreviewAnnotationClassId }
-                                .forEach {
-                                    annotation.psi?.getLineRange()?.let { lineRange ->
-                                        hotPreviewAnnotationClasses.add(
-                                            HotPreviewAnnotation(
-                                                lineRange = lineRange,
-                                                annotation = it.toHotPreviewAnnotation()
-                                            )
+        }
+    val hotPreviewAnnotationClasses = mutableListOf<HotPreviewAnnotation>()
+    //val module = checkNotNull(function.module)
+    //val searchScope = GlobalSearchScope.moduleScope(module)
+    val searchScope = GlobalSearchScope.everythingScope(project)
+    function.annotations // Find Annotation classes which contain HotPreview annotation
+        .filter { it.classId != composableClassId }
+        .filter { it.classId != hotPreviewAnnotationClassId }
+        .forEach { annotation ->
+            //println("   Check: ${annotation.classId}")
+            val fqn = annotation.classId?.asSingleFqName()
+            //println("      Annotation: $fqn")
+            fqn?.let {
+                val clazz = KotlinFullClassNameIndex[fqn.toString(), project, searchScope]
+                clazz.find {
+                    it.symbol.psi?.containingFile?.name?.endsWith(".kt") == true
+                }?.let {
+                    try {
+                        it.symbol.annotations
+                            .filter { it.classId == hotPreviewAnnotationClassId }
+                            .forEach {
+                                annotation.psi?.getLineRange()?.let { lineRange ->
+                                    hotPreviewAnnotationClasses.add(
+                                        HotPreviewAnnotation(
+                                            lineRange = lineRange,
+                                            annotation = it.toHotPreviewAnnotation()
                                         )
-                                    }
+                                    )
                                 }
-                        } catch (err: Throwable) {
-                            LOG.debug(err)
-                        }
+                            }
+                    } catch (err: Throwable) {
+                        LOG.debug(err)
                     }
                 }
             }
-        //println("---")
-        //println()
-        return hotPreviewAnnotations + hotPreviewAnnotationClasses
-    }
+        }
+    //println("---")
+    //println()
+    return hotPreviewAnnotations + hotPreviewAnnotationClasses
 }
 
 suspend fun getPsiFileSafely(project: Project, virtualFile: VirtualFile): PsiFile? = readAction {

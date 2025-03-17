@@ -34,8 +34,8 @@ fun DialogGutterIconSettings(
             onDismissRequest = onClose
         ) {
             Box(Modifier
-                .background(JewelTheme.globalColors.panelBackground)
                 .shadow(16.dp)
+                .background(JewelTheme.globalColors.panelBackground)
             ) {
                 GutterIconAnnotationSettings(viewModel)
             }
