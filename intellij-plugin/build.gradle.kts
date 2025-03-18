@@ -28,7 +28,7 @@ repositories {
 val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.4")
 val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("243")
 
-val versionName = "0.4.1-$ijPlatform"
+val versionName = "0.5.0-$ijPlatform"
 
 @Language("HTML")
 val changeNotesText = """
