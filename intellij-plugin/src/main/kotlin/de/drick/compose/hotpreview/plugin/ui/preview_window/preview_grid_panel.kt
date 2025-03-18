@@ -161,14 +161,9 @@ fun PreviewSection(
                 renderState = uiRenderState.state,
                 scale = scale,
                 hasFocus = isFocused,
-                onAction = {
-                    when (it) {
-                        PreviewItemAction.Settings -> {
-                            val viewModel = onGetGutterIconViewModel(annotation)
-                            gutterIconViewModel = viewModel
-                        }
-                    }
-                }
+                onSettings = if (annotation.isAnnotationClass.not()) {
+                    { gutterIconViewModel = onGetGutterIconViewModel(annotation) }
+                } else null
             )
         }
     }

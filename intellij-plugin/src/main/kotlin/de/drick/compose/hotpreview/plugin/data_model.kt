@@ -8,7 +8,8 @@ data class HotPreviewFunction(
 
 data class HotPreviewAnnotation(
     val lineRange: IntRange,
-    val annotation: HotPreviewModel
+    val annotation: HotPreviewModel,
+    val isAnnotationClass: Boolean
 )
 
 /**

@@ -36,7 +36,7 @@ private fun PreviewPreviewItem() {
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
             renderState = getPreviewItem(env, SamplePreviewItem.login_dark),
-            onAction = {}
+            onSettings = null
         )
     }
 }
@@ -53,7 +53,7 @@ private fun PreviewPreviewItemFocus() {
             name = "TestItem",
             renderState = getPreviewItem(env, SamplePreviewItem.login_dark),
             hasFocus = true,
-            onAction = {}
+            onSettings = {}
         )
     }
 }
@@ -69,13 +69,9 @@ fun PreviewPreviewItemError() {
             modifier = Modifier.padding(8.dp),
             name = "TestItem",
             renderState = getPreviewItem(env, SamplePreviewItem.error_test),
-            onAction = {}
+            onSettings = null
         )
     }
-}
-
-enum class PreviewItemAction {
-    Settings
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -86,7 +82,7 @@ fun PreviewItem(
     modifier: Modifier = Modifier,
     scale: Float = 1f,
     hasFocus: Boolean = false,
-    onAction: (PreviewItemAction) -> Unit
+    onSettings: (() -> Unit)? = null
 ) {
     val focusStroke = BorderStroke(2.dp, JewelTheme.globalColors.outlines.focused)
     val borderModifier = if (hasFocus) Modifier.border(focusStroke) else Modifier
@@ -136,11 +132,13 @@ fun PreviewItem(
                     }
                 }
             }
-            Tooltip(tooltip = { Text("Configure Annotation") }) {
-                IconButton(onClick = {
-                    onAction(PreviewItemAction.Settings)
-                }) {
-                    Icon(AllIconsKeys.General.Settings, contentDescription = "Configure Annotation")
+            if (onSettings != null) {
+                Tooltip(tooltip = { Text("Configure Annotation") }) {
+                    IconButton(onClick = {
+                        onSettings()
+                    }) {
+                        Icon(AllIconsKeys.General.Settings, contentDescription = "Configure Annotation")
+                    }
                 }
             }
         }

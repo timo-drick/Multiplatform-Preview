@@ -94,7 +94,8 @@ fun getHotPreviewDataItem(
                 UIAnnotation(
                     name = "Test1",
                     lineRange = 0..1,
-                    renderCacheKey = item.toRenderCacheKey()
+                    renderCacheKey = item.toRenderCacheKey(),
+                    isAnnotationClass = true
                 )
             },
             lineRange = 0..1
@@ -106,7 +107,8 @@ fun getHotPreviewDataItem(
                 UIAnnotation(
                     name = "Test1",
                     lineRange = 0..1,
-                    renderCacheKey = SamplePreviewItem.error_test.toRenderCacheKey()
+                    renderCacheKey = SamplePreviewItem.error_test.toRenderCacheKey(),
+                    isAnnotationClass = false
                 )
             ),
             lineRange = 0..1
@@ -182,5 +184,5 @@ fun mockViewModel(
     override fun onAction(action: HotPreviewAction) {
         if (action is HotPreviewAction.ChangeScale) scale = action.newScale
     }
-    override fun getGutterIconViewMode(annotation: UIAnnotation): GutterIconViewModelI = mockGutterIconViewModel
+    override fun getGutterIconViewModel(annotation: UIAnnotation): GutterIconViewModelI = mockGutterIconViewModel
 }

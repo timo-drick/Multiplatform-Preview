@@ -16,6 +16,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.ui.preview_window.SelfPreviewTheme
 import de.drick.compose.hotpreview.plugin.ui.guttericon.fontScaleTemplates
@@ -65,7 +66,6 @@ fun <T: Any>GenericComboBox(
     onSelectItem: (T) -> Unit = {},
     modifier: Modifier = Modifier,
     isEnabled: Boolean = true,
-    maxPopupHeight: Dp = Dp.Unspecified,
     onHoverItemChange: (T) -> Unit = {},
     onListHoverChange: (Boolean) -> Unit = {},
     onPopupStateChange: (Boolean) -> Unit = {},
@@ -86,12 +86,6 @@ fun <T: Any>GenericComboBox(
         scrollState.selectedKeys = items.getOrNull(selectedItem)?.let { setOf(it) } ?: emptySet()
     }
     val contentPadding = JewelTheme.comboBoxStyle.metrics.popupContentPadding
-    val popupMaxHeight =
-        if (maxPopupHeight == Dp.Unspecified) {
-            JewelTheme.comboBoxStyle.metrics.maxPopupHeight
-        } else {
-            maxPopupHeight
-        }
     fun selectItem(index: Int) {
         onSelectItem(items[index])
     }
@@ -183,7 +177,7 @@ fun <T: Any>GenericComboBox(
         isEnabled = isEnabled,
         labelText = labelText,
         outline = Outline.None,
-        maxPopupHeight = popupMaxHeight,
+        maxPopupHeight = 300.dp, // Unfortunately currently it will fill max height so we limit height to 300.dp
         style = JewelTheme.comboBoxStyle,
         textStyle = JewelTheme.defaultTextStyle,
         onArrowDownPress = onArrowDownPress,

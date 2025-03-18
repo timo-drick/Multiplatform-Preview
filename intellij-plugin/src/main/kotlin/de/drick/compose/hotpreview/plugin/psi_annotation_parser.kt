@@ -11,6 +11,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.util.concurrency.annotations.RequiresReadLock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.analysis.api.KaSession
@@ -65,12 +66,12 @@ private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
 
 suspend fun findHotPreviewAnnotations(project: Project, file: VirtualFile): List<HotPreviewAnnotation> =
     project.analyzeFile(file) { ktFile ->
-        ktFile.symbol.fileScope.declarations
+        ktFile.symbol.fileScope.callables
             .flatMap { it.annotations }
             .filter { it.classId == hotPreviewAnnotationClassId }
             .mapNotNull {
                 it.psi?.getLineRange()?.let { lineRange ->
-                    HotPreviewAnnotation(lineRange, it.toHotPreviewAnnotation())
+                    HotPreviewAnnotation(lineRange, it.toHotPreviewAnnotation(), false)
                 }
             }
             .toList()
@@ -93,20 +94,16 @@ suspend fun checkAnnotationParameter(
     file: VirtualFile,
     line: Int,  // Line number where the Annotation starts
     argumentName: String,
-): Boolean = getPsiFileSafely(project, file)?.let { psiFile ->
-    smartReadAction(project) {
-        analyze(psiFile as KtFile) {
-            val found = psiFile.symbol.fileScope.declarations
-                .flatMap { it.annotations }
-                .filter { it.classId == hotPreviewAnnotationClassId }
-                .firstOrNull { it.psi?.getLineRange()?.first == line }
-                ?.let {
-                    val argumentList = it.arguments.map { it.name.toString() }
-                    findAnnotationArgument(argumentList, it.psi as KtAnnotationEntry, argumentName)
-                }
-            found != null
+): Boolean = project.analyzeFile(file) { psiFile ->
+    val found = psiFile.symbol.fileScope.callables
+        .flatMap { it.annotations }
+        .filter { it.classId == hotPreviewAnnotationClassId }
+        .firstOrNull { it.psi?.getLineRange()?.first == line }
+        ?.let {
+            val argumentList = it.arguments.map { it.name.toString() }
+            findAnnotationArgument(argumentList, it.psi as KtAnnotationEntry, argumentName)
         }
-    }
+    found != null
 } == true
 
 
@@ -126,7 +123,7 @@ class AnnotationUpdate(
         getPsiFileSafely(project, file)?.let { psiFile ->
             readAndWriteAction {
                 val (annotation: KtAnnotationEntry?, argumentList: List<String>) = analyze(psiFile as KtFile) {
-                    val found = psiFile.symbol.fileScope.getAllSymbols()
+                    val found = psiFile.symbol.fileScope.callables
                         .flatMap { it.annotations }
                         .filter { it.classId == hotPreviewAnnotationClassId }
                         .firstOrNull { it.psi?.getLineRange()?.first == line }
@@ -168,11 +165,16 @@ class AnnotationUpdate(
     }
 }
 
-
-suspend fun findFunctionsWithHotPreviewAnnotations(project: Project, file: VirtualFile): List<HotPreviewFunction> =
+/**
+ * Unfortunately this approach is unreliable. Sometimes returns no symbols for a file.
+ * Not sure why. But can not be used for now!
+ */
+suspend fun findFunctionsWithHotPreviewAnnotationsNew(project: Project, file: VirtualFile): List<HotPreviewFunction>? =
     project.analyzeFile(file) {  ktFile ->
-        ktFile.symbol.fileScope.getAllSymbols()
-            .filterIsInstance<KaFunctionSymbol>()
+        println("Analyzing file: ${ktFile.name} valid: ${ktFile.isValid}")
+        val symbols = ktFile.symbol.fileScope.callables.toList()
+        println("Symbols: ${symbols.size}")
+        symbols.filterIsInstance<KaFunctionSymbol>()
             .mapNotNull { function ->
                 val annotations = checkFunctionForAnnotation(project, function)
                 val lineRange = function.psi?.getLineRange()
@@ -188,41 +190,37 @@ suspend fun findFunctionsWithHotPreviewAnnotations(project: Project, file: Virtu
                     )
                 }
             }.toList()
-    } ?: emptyList()
+    }
 
-suspend fun findFunctionsWithHotPreviewAnnotationsOld(project: Project, file: VirtualFile): List<HotPreviewFunction> =
+suspend fun findFunctionsWithHotPreviewAnnotations(project: Project, file: VirtualFile): List<HotPreviewFunction> =
     withContext(Dispatchers.Default) {
-        getPsiFileSafely(project, file)?.let { psiFile ->
+        project.smartReadActionPsiFile(file) { psiFile ->
             LOG.debug("Find preview annotations for: $file")
-            return@withContext analyzeFunctionsInPsiFile(project, psiFile)
-        }
-        emptyList()
-    }
-
-suspend fun analyzeFunctionsInPsiFile(project: Project, psiFile: PsiFile) = smartReadAction(project) {
-    val functionList = mutableListOf<KtNamedFunction>()
-    psiFile.accept(object : KtTreeVisitorVoid() {
-        override fun visitNamedFunction(function: KtNamedFunction) {
-            functionList.add(function)
-        }
-    })
-    functionList.mapNotNull { function ->
-        val annotations = analyze(function) { checkFunctionForAnnotation(project, function.symbol) }
-        val lineRange = function.getLineRange()
-        if (annotations.isEmpty() || lineRange == null) null
-        else {
-            require(function.valueParameters.isEmpty()) {
-                "Function ${function.name} with @HotPreview annotation must not has parameters! See line: ${function.getLineRange()}"
+            val functionList = mutableListOf<KtNamedFunction>()
+            psiFile.accept(object : KtTreeVisitorVoid() {
+                override fun visitNamedFunction(function: KtNamedFunction) {
+                    functionList.add(function)
+                }
+            })
+            functionList.mapNotNull { function ->
+                val annotations = analyze(function) { checkFunctionForAnnotation(project, function.symbol) }
+                val lineRange = function.getLineRange()
+                if (annotations.isEmpty() || lineRange == null) null
+                else {
+                    require(function.valueParameters.isEmpty()) { //TODO maybe just ignore it here and check this in an analysis run.
+                        "Function ${function.name} with @HotPreview annotation must not has parameters! See line: ${function.getLineRange()}"
+                    }
+                    HotPreviewFunction(
+                        name = function.name ?: "",
+                        annotation = annotations,
+                        lineRange = lineRange
+                    )
+                }
             }
-            HotPreviewFunction(
-                name = function.name ?: "",
-                annotation = annotations,
-                lineRange = lineRange
-            )
-        }
+        } ?: emptyList()
     }
-}
 
+@RequiresReadLock
 fun KaSession.checkFunctionForAnnotation(project: Project, function: KaFunctionSymbol): List<HotPreviewAnnotation> {
     //TODO Find a solution which is also working in dumb mode.
     LOG.debug("Function: ${function.name}")
@@ -232,7 +230,8 @@ fun KaSession.checkFunctionForAnnotation(project: Project, function: KaFunctionS
             it.psi?.getLineRange()?.let { lineRange ->
                 HotPreviewAnnotation(
                     lineRange = lineRange,
-                    annotation = it.toHotPreviewAnnotation()
+                    annotation = it.toHotPreviewAnnotation(),
+                    isAnnotationClass = false
                 )
             }
         }
@@ -260,7 +259,8 @@ fun KaSession.checkFunctionForAnnotation(project: Project, function: KaFunctionS
                                     hotPreviewAnnotationClasses.add(
                                         HotPreviewAnnotation(
                                             lineRange = lineRange,
-                                            annotation = it.toHotPreviewAnnotation()
+                                            annotation = it.toHotPreviewAnnotation(),
+                                            isAnnotationClass = true
                                         )
                                     )
                                 }
@@ -292,7 +292,7 @@ suspend fun <R>Project.smartReadActionPsiFile(
 
 suspend fun <R>Project.analyzeFile(
     virtualFile: VirtualFile,
-    action: org.jetbrains.kotlin.analysis.api.KaSession.(KtFile) -> R
+    action: KaSession.(KtFile) -> R
 ) = withContext(Dispatchers.Default) {
     smartReadActionPsiFile(virtualFile) { psiFile ->
         analyze(psiFile as KtFile) {

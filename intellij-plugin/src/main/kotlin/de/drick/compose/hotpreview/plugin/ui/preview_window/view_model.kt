@@ -61,7 +61,8 @@ data class UIHotPreviewData(
 data class UIAnnotation(
     val name: String,
     val lineRange: IntRange,
-    val renderCacheKey: RenderCacheKey
+    val renderCacheKey: RenderCacheKey,
+    val isAnnotationClass: Boolean
 )
 
 data class UIFunctionAnnotation(
@@ -99,7 +100,7 @@ interface HotPreviewViewModelI {
     val selectedTab: Int? // null when in gridlayout mode
     fun onAction(action: HotPreviewAction)
     fun requestPreviews(keys: Set<RenderCacheKey>): Map<RenderCacheKey, UIRenderState>
-    fun getGutterIconViewMode(annotation: UIAnnotation): GutterIconViewModelI
+    fun getGutterIconViewModel(annotation: UIAnnotation): GutterIconViewModelI
 }
 
 class HotPreviewViewModel(
@@ -191,7 +192,8 @@ class HotPreviewViewModel(
                 UIAnnotation(
                     name = it.annotation.name,
                     lineRange = it.lineRange,
-                    renderCacheKey = RenderCacheKey(function.name, it.annotation)
+                    renderCacheKey = RenderCacheKey(function.name, it.annotation),
+                    isAnnotationClass = it.isAnnotationClass
                 )
 
             }
@@ -283,6 +285,7 @@ class HotPreviewViewModel(
 
     private suspend fun analyzePreviewAnnotations(): List<HotPreviewFunction> {
         val previewFunctions = findFunctionsWithHotPreviewAnnotations(project, file)
+        //println("Preview functions found: ${previewFunctions.size}")
         setPureTextEditorMode(previewFunctions.isEmpty())
         updateGroups(previewFunctions)
         updateGutterIcons()
@@ -314,10 +317,11 @@ class HotPreviewViewModel(
         }
     }
 
-    override fun getGutterIconViewMode(annotation: UIAnnotation): GutterIconViewModelI {
+    override fun getGutterIconViewModel(annotation: UIAnnotation): GutterIconViewModelI {
         val annotation = HotPreviewAnnotation(
             lineRange = annotation.lineRange,
-            annotation = annotation.renderCacheKey.annotation
+            annotation = annotation.renderCacheKey.annotation,
+            isAnnotationClass = annotation.isAnnotationClass
         )
         return GutterIconViewModel(
             project = project,

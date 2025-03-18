@@ -117,14 +117,9 @@ fun PreviewGalleryPanel(
                 renderState = uiRenderState.state,
                 scale = scale,
                 hasFocus = false,
-                onAction = {
-                    when (it) {
-                        PreviewItemAction.Settings -> {
-                            val viewModel = onGetGutterIconViewModel(selectedItem.annotation)
-                            gutterIconViewModel = viewModel
-                        }
-                    }
-                }
+                onSettings = if (selectedItem.annotation.isAnnotationClass.not()) {
+                    { gutterIconViewModel = onGetGutterIconViewModel(selectedItem.annotation) }
+                } else null
             )
         }
         DialogGutterIconSettings(

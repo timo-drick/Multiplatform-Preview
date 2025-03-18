@@ -88,7 +88,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
                         selectedGroup = model.selectedGroup,
                         onNavigateCode = { model.onAction(HotPreviewAction.NavigateCodeLine(it)) },
                         requestPreviews = model::requestPreviews,
-                        onGetGutterIconViewModel = { model.getGutterIconViewMode(it) }
+                        onGetGutterIconViewModel = { model.getGutterIconViewModel(it) }
                     )
                 } else {
                     if (previewList.isEmpty()) {
@@ -102,7 +102,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
                             requestPreviews = { model.requestPreviews(it) },
                             onNavigateCode = { model.onAction(HotPreviewAction.NavigateCodeLine(it)) },
                             onSelectTab = { model.onAction(HotPreviewAction.SelectTab(it)) },
-                            onGetGutterIconViewModel = { model.getGutterIconViewMode(it) }
+                            onGetGutterIconViewModel = { model.getGutterIconViewModel(it) }
                         )
                     }
                 }
