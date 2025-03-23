@@ -10,7 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.*
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.ui.preview_window.HotPreviewViewModel.RenderCacheKey
+import de.drick.compose.hotpreview.plugin.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.ui.components.FoldableSection
 import de.drick.compose.hotpreview.plugin.ui.components.ScrollbarContainer
 import de.drick.compose.hotpreview.plugin.ui.components.forwardMinIntrinsicWidth

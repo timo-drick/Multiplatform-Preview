@@ -8,7 +8,6 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
-import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Surface
 import java.lang.reflect.Method
@@ -27,6 +26,7 @@ class RenderPreviewImpl {
     @OptIn(InternalComposeUiApi::class, ExperimentalComposeUiApi::class)
     fun render(
         method: Method,
+        parameter: Any?,
         widthDp: Float,
         heightDp: Float,
         density: Float,
@@ -48,11 +48,6 @@ class RenderPreviewImpl {
         val ts = TimeSource.Monotonic
         val beginComposeScene = ts.markNow()
         try {
-            /*val clazz = classLoader.loadClass(clazzFqn)
-            requireNotNull(clazz) { "Unable to find class: $clazzFqn" }
-            val method = clazz.declaredMethods.find { it.name == methodName }
-            requireNotNull(method) { "Unable to find method: $methodName" }
-*/
             method.isAccessible = true
             var calculatedSize = IntSize.Zero
             var image: Image = ImageComposeScene(
@@ -65,7 +60,11 @@ class RenderPreviewImpl {
                         LocalInspectionMode provides isInspectionMode
                     ) {
                         OverrideEnv(locale = locale) {
-                            method.invoke(null, currentComposer, 0)
+                            if (parameter != null) {
+                                method.invoke(null, parameter, currentComposer, 0)
+                            } else {
+                                method.invoke(null, currentComposer, 0)
+                            }
                         }
                     }
                 }

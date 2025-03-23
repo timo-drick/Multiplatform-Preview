@@ -38,6 +38,7 @@ import kotlin.collections.plus
 private val LOG = fileLogger()
 
 val hotPreviewAnnotationClassId = ClassId.topLevel(FqName(fqNameHotPreview))
+val hotPreviewParameterClassId = ClassId.topLevel(FqName(fqNameHotPreviewParameter))
 private val composableClassId = ClassId.topLevel(FqName(Composable::class.qualifiedName!!))
 
 private val hotPreviewDefaultValues = HotPreviewModel()
@@ -66,7 +67,7 @@ private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
 
 suspend fun findHotPreviewAnnotations(project: Project, file: VirtualFile): List<HotPreviewAnnotation> =
     project.analyzeFile(file) { ktFile ->
-        ktFile.symbol.fileScope.callables
+        ktFile.symbol.fileScope.declarations
             .flatMap { it.annotations }
             .filter { it.classId == hotPreviewAnnotationClassId }
             .mapNotNull {
@@ -123,7 +124,7 @@ class AnnotationUpdate(
         getPsiFileSafely(project, file)?.let { psiFile ->
             readAndWriteAction {
                 val (annotation: KtAnnotationEntry?, argumentList: List<String>) = analyze(psiFile as KtFile) {
-                    val found = psiFile.symbol.fileScope.callables
+                    val found = psiFile.symbol.fileScope.declarations
                         .flatMap { it.annotations }
                         .filter { it.classId == hotPreviewAnnotationClassId }
                         .firstOrNull { it.psi?.getLineRange()?.first == line }
@@ -165,6 +166,45 @@ class AnnotationUpdate(
     }
 }
 
+private fun KaAnnotation.toHotPreviewParameter(name: String): HotPreviewParameterModel {
+    val map = arguments.associateBy { it.name.toString() }
+        .mapValues { (it.value.expression as? KaAnnotationValue.ConstantValue)?.value?.value }
+    val clazz = arguments
+        .find { it.name.toString() == "provider" }
+        ?.let { it.expression as KaAnnotationValue.ClassLiteralValue }
+    val provider = checkNotNull(clazz?.classId)
+    return HotPreviewParameterModel(
+        name = name,
+        providerClassName = provider.asFqNameString(),
+        limit = map.withDefault("limit", Int.MAX_VALUE)
+    )
+}
+
+fun KaSession.analyzeFunction(project: Project, function: KaFunctionSymbol): HotPreviewFunction? {
+    val annotations = checkFunctionForAnnotation(project, function)
+    val lineRange = function.psi?.getLineRange()
+    return if (annotations.isEmpty() || lineRange == null) null
+    else {
+        val parameter = function.valueParameters.firstOrNull()?.let { valueParameterSymbol ->
+            valueParameterSymbol.annotations.find { it.classId == hotPreviewParameterClassId }?.let { parameterAnnotation ->
+                val parameter = parameterAnnotation.toHotPreviewParameter(valueParameterSymbol.name.toString())
+                println("Parameter 1 name: ${valueParameterSymbol.name} parameter annotation: $parameter")
+                parameter
+            }
+        }
+        //TODO
+        /*require(function.valueParameters.isEmpty()) {
+            "Function ${function.name} with @HotPreview annotation must not has parameters! See line: $lineRange"
+        }*/
+        HotPreviewFunction(
+            name = function.name.toString(),
+            parameter = parameter,
+            annotation = annotations,
+            lineRange = lineRange
+        )
+    }
+}
+
 /**
  * Unfortunately this approach is unreliable. Sometimes returns no symbols for a file.
  * Not sure why. But can not be used for now!
@@ -176,19 +216,7 @@ suspend fun findFunctionsWithHotPreviewAnnotationsNew(project: Project, file: Vi
         println("Symbols: ${symbols.size}")
         symbols.filterIsInstance<KaFunctionSymbol>()
             .mapNotNull { function ->
-                val annotations = checkFunctionForAnnotation(project, function)
-                val lineRange = function.psi?.getLineRange()
-                if (annotations.isEmpty() || lineRange == null) null
-                else {
-                    require(function.valueParameters.isEmpty()) {
-                        "Function ${function.name} with @HotPreview annotation must not has parameters! See line: $lineRange"
-                    }
-                    HotPreviewFunction(
-                        name = function.name.toString(),
-                        annotation = annotations,
-                        lineRange = lineRange
-                    )
-                }
+                analyzeFunction(project, function)
             }.toList()
     }
 
@@ -203,19 +231,7 @@ suspend fun findFunctionsWithHotPreviewAnnotations(project: Project, file: Virtu
                 }
             })
             functionList.mapNotNull { function ->
-                val annotations = analyze(function) { checkFunctionForAnnotation(project, function.symbol) }
-                val lineRange = function.getLineRange()
-                if (annotations.isEmpty() || lineRange == null) null
-                else {
-                    require(function.valueParameters.isEmpty()) { //TODO maybe just ignore it here and check this in an analysis run.
-                        "Function ${function.name} with @HotPreview annotation must not has parameters! See line: ${function.getLineRange()}"
-                    }
-                    HotPreviewFunction(
-                        name = function.name ?: "",
-                        annotation = annotations,
-                        lineRange = lineRange
-                    )
-                }
+                analyze(function) { analyzeFunction(project, function.symbol) }
             }
         } ?: emptyList()
     }

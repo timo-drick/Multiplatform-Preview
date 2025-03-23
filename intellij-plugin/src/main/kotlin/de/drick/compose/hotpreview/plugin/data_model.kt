@@ -1,7 +1,14 @@
 package de.drick.compose.hotpreview.plugin
 
+data class HotPreviewParameterModel(
+    val name: String,
+    val providerClassName: String,
+    val limit: Int
+)
+
 data class HotPreviewFunction(
     val name: String,
+    val parameter: HotPreviewParameterModel?,
     val annotation: List<HotPreviewAnnotation>,
     val lineRange: IntRange
 )

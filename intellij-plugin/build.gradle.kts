@@ -141,7 +141,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx")
     }*/
 
-    implementation("de.drick.compose:hotpreview:0.1.4") {
+    implementation("de.drick.compose:hotpreview:0.1.6") {
         exclude(group = "org.jetbrains.kotlinx")
     }
 
