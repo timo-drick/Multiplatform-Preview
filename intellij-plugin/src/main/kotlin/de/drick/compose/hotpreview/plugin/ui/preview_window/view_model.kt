@@ -276,8 +276,10 @@ class HotPreviewViewModel(
                 if (settings.recompileOnSave) {
                     refresh()
                 } else {
-                    updatePreviewList(analyzePreviewAnnotations())
-                    render()
+                    errorHandling {
+                        updatePreviewList(analyzePreviewAnnotations())
+                        render()
+                    }
                 }
             }
         }
@@ -299,8 +301,10 @@ class HotPreviewViewModel(
 
     private val updatePreviewAnnotations: () -> Unit = {
         scope.launch {
-            updatePreviewList(analyzePreviewAnnotations())
-            render()
+            errorHandling {
+                updatePreviewList(analyzePreviewAnnotations())
+                render()
+            }
         }
     }
 
