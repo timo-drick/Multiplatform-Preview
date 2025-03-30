@@ -88,6 +88,13 @@ The plugin will use the values provided by your `HotPreviewParameterProvider` to
 
 ![](screenshots/hotpreview_parameter_provider_sample.png)
 
+## Coil image preview
+
+If you are using Coil 3 for multiplatform image loading and want to provide a preview image just have a look at the official documentation of coil here: https://coil-kt.github.io/coil/compose/#previews
+Of course, it depends on you code how to integrate this into previews. You could also use this approach: https://coil-kt.github.io/coil/compose/#compose-multiplatform-resources
+
+But both ways do work in HotPreview previews.
+
 
 ## Known limitations
 
@@ -98,18 +105,8 @@ The plugin will use the values provided by your `HotPreviewParameterProvider` to
   - ~~Res.getUri()~~ (Does work since 0.2.0)
   - ~~Res.readBytes()~~ (Does work since 0.2.0)
 
-## Coil image preview
+## TODO list
 
-If you are using Coil 3 for multiplatform image loading and want to provide a preview image just have a look at the official documentation of coil here: https://coil-kt.github.io/coil/compose/#previews
-Of course, it depends on you code how to integrate this into previews. You could also use this approach: https://coil-kt.github.io/coil/compose/#compose-multiplatform-resources
-
-But both ways do work in HotPreview previews.
-
-##
-
-TODO list
-
-- Implement PreviewParameterProvider like in android
 - Improve rendering performance
   - increase code analysing performance
   - only render previews which are visible
@@ -117,4 +114,5 @@ TODO list
 - Implement animation preview.
 - Implement interactive mode.
 - Maybe support also Android platform for previews using the layoutlib for rendering.
+- ~~Implement PreviewParameterProvider like in android~~
 - ~~Add support for Annotation classes. Make it possible to create Annotation class with HotPreview annotations.~~
