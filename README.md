@@ -53,6 +53,40 @@ If you want to compile it yourself please see documentation in the intellij proj
 Here is a sample project using the @HotPreview annotation:
 https://github.com/timo-drick/compose_desktop_dev_challenge
 
+### Using HotPreviewParameterProvider
+
+You can use `HotPreviewParameterProvider` to provide mock data for your previews. This allows you to test your composable with different data sets without creating multiple preview functions.
+
+To use this feature:
+
+1. Create a class that implements `HotPreviewParameterProvider<T>` where `T` is the type of data you want to provide:
+
+```kotlin
+class WeatherProvider : HotPreviewParameterProvider<Weather> {
+    override val values: Sequence<Weather> = weatherForecast.asSequence()
+}
+```
+
+2. Use the `@HotPreviewParameter` annotation on a parameter in your preview function:
+
+```kotlin
+@HotPreview(widthDp = 200, heightDp = 200)
+@Composable
+private fun PreviewWeatherCanvas(
+    @HotPreviewParameter(WeatherProvider::class) weather: Weather
+) {
+    WeatherCanvas(
+        modifier = Modifier.fillMaxSize(),
+        seconds = 20.0,
+        weather = weather,
+    )
+}
+```
+
+The plugin will use the values provided by your `HotPreviewParameterProvider` to generate previews with different data.
+
+![](screenshots/hotpreview_parameter_provider_sample.png)
+
 
 ## Known limitations
 
