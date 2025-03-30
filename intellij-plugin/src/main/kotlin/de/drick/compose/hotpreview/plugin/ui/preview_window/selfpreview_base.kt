@@ -119,7 +119,7 @@ fun getHotPreviewDataItem(
 @OptIn(ExperimentalResourceApi::class)
 fun resolveRenderState(
     env: ResourceEnvironment,
-    requestedKeys: Set<HotPreviewViewModel.RenderCacheKey>
+    requestedKeys: Set<RenderCacheKey>
 ) =
     SamplePreviewItem.entries.associate {
         val uiState = UIRenderState()
@@ -148,8 +148,9 @@ enum class SamplePreviewItem(
     error_test("error", DrawableResource("error", emptySet()), 2f)
 }
 
-private fun SamplePreviewItem.toRenderCacheKey() = HotPreviewViewModel.RenderCacheKey(
+private fun SamplePreviewItem.toRenderCacheKey() = RenderCacheKey(
     name = functionName,
+    parameter = null,
     annotation = HotPreviewModel(name = name, group = group)
 )
 
@@ -179,7 +180,7 @@ fun mockViewModel(
     override val groups = setOf("Group 1")
     override val selectedGroup: String? = null
     override val selectedTab: Int? = null
-    override fun requestPreviews(keys: Set<HotPreviewViewModel.RenderCacheKey>): Map<HotPreviewViewModel.RenderCacheKey, UIRenderState> =
+    override fun requestPreviews(keys: Set<RenderCacheKey>): Map<RenderCacheKey, UIRenderState> =
         resolveRenderState(env, keys)
     override fun onAction(action: HotPreviewAction) {
         if (action is HotPreviewAction.ChangeScale) scale = action.newScale

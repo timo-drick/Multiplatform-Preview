@@ -27,12 +27,14 @@ data class RenderedImage(
 
 fun renderPreview(
     renderClassLoader: RenderClassLoaderInstance,
-    functionName: String,
-    annotation: HotPreviewModel
+    renderKey: RenderCacheKey
 ): RenderState {
+    val functionName = renderKey.name
+    val annotation = renderKey.annotation
     val clazz = renderClassLoader.fileClass
     val functionRef = renderClassLoader.renderFunctionRef
     val renderClassInstance = renderClassLoader.renderClassInstance
+    val parameter: Any? = renderKey.parameter
     return try {
         println("F: $functionName")
         val ts = TimeSource.Monotonic
@@ -46,6 +48,7 @@ fun renderPreview(
         val result = functionRef.call(
             renderClassInstance,
             method,
+            parameter,
             annotation.widthDp.toFloat(),
             annotation.heightDp.toFloat(),
             annotation.density,

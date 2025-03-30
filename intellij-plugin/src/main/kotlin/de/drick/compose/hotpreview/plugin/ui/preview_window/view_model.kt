@@ -20,17 +20,16 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import de.drick.compose.hotpreview.plugin.ClassPathService
 import de.drick.compose.hotpreview.plugin.HotPreviewAnnotation
 import de.drick.compose.hotpreview.plugin.HotPreviewFunction
-import de.drick.compose.hotpreview.plugin.HotPreviewModel
 import de.drick.compose.hotpreview.plugin.HotPreviewView
 import de.drick.compose.hotpreview.plugin.NotRenderedYet
+import de.drick.compose.hotpreview.plugin.RenderCacheKey
+import de.drick.compose.hotpreview.plugin.RenderService
 import de.drick.compose.hotpreview.plugin.RenderState
-import de.drick.compose.hotpreview.plugin.RenderedImage
 import de.drick.compose.hotpreview.plugin.executeGradleTask
 import de.drick.compose.hotpreview.plugin.findFunctionsWithHotPreviewAnnotations
 import de.drick.compose.hotpreview.plugin.findHotPreviewAnnotations
-import de.drick.compose.hotpreview.plugin.renderPreview
+import de.drick.compose.hotpreview.plugin.getParameterList
 import de.drick.compose.hotpreview.plugin.runCatchingCancellationAware
-import de.drick.compose.hotpreview.plugin.ui.preview_window.HotPreviewViewModel.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
 import de.drick.compose.hotpreview.plugin.tools.PluginPersistentStore
 import de.drick.compose.hotpreview.plugin.ui.guttericon.HotPreviewGutterIcon
@@ -39,15 +38,12 @@ import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettingsConfigurable
 import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModel
 import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModelI
 import de.drick.compose.hotpreview.plugin.useSuspendWorkspace
-import de.drick.compose.utils.LRUCache
 import de.drick.compose.utils.lazySuspend
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlin.time.measureTimedValue
+
 
 @Suppress("UnstableApiUsage")
 private val LOG = fileLogger()
@@ -120,6 +116,7 @@ class HotPreviewViewModel(
     private val classPathService by lazySuspend {
         ClassPathService.Companion.getInstance(project, file)
     }
+    private val renderService = RenderService()
 
     private val properties = PluginPersistentStore(project, file)
 
@@ -186,16 +183,23 @@ class HotPreviewViewModel(
         }
     }
 
-    private fun updatePreviewList(previewFunctions: List<HotPreviewFunction>) {
+    private suspend fun updatePreviewList(previewFunctions: List<HotPreviewFunction>) {
+        val classLoader = classPathService.get().getRenderClassLoaderInstance(compileCounter)
         previewList = previewFunctions.map { function ->
-            val annotations = function.annotation.map {
-                UIAnnotation(
-                    name = it.annotation.name,
-                    lineRange = it.lineRange,
-                    renderCacheKey = RenderCacheKey(function.name, it.annotation),
-                    isAnnotationClass = it.isAnnotationClass
-                )
-
+            println("Update function: $function")
+            val annotations = function.annotation.flatMap {
+                val parameterList: List<*> = function.parameter?.let { classLoader.getParameterList(it) } ?: listOf(null)
+                parameterList.mapIndexed { index, parameter ->
+                    val pName = function.parameter?.let { " ${function.parameter.name}: $index" } ?: ""
+                    val name = "${it.annotation.name}$pName"
+                    val key = RenderCacheKey(function.name, parameter, it.annotation)
+                    UIAnnotation(
+                        name = name,
+                        lineRange = it.lineRange,
+                        renderCacheKey = key,
+                        isAnnotationClass = it.isAnnotationClass
+                    )
+                }
             }
             UIHotPreviewData(
                 functionName = function.name,
@@ -245,6 +249,7 @@ class HotPreviewViewModel(
                         executeGradleTask(project, gradleTask, parameters, path)
                         compileCounter++
                     }
+                    classPathService.reset()
                 }
                 updatePreviewList(functions)
                 render()
@@ -271,8 +276,10 @@ class HotPreviewViewModel(
                 if (settings.recompileOnSave) {
                     refresh()
                 } else {
-                    updatePreviewList(analyzePreviewAnnotations())
-                    render()
+                    errorHandling {
+                        updatePreviewList(analyzePreviewAnnotations())
+                        render()
+                    }
                 }
             }
         }
@@ -294,8 +301,10 @@ class HotPreviewViewModel(
 
     private val updatePreviewAnnotations: () -> Unit = {
         scope.launch {
-            updatePreviewList(analyzePreviewAnnotations())
-            render()
+            errorHandling {
+                updatePreviewList(analyzePreviewAnnotations())
+                render()
+            }
         }
     }
 
@@ -342,63 +351,19 @@ class HotPreviewViewModel(
         }
     }
 
-    data class RenderCacheKey(
-        val name: String,
-        val annotation: HotPreviewModel
-    )
-
-    private val renderCache = LRUCache<RenderCacheKey, RenderedImage>(20)
-
-    private val renderLock = Mutex()
-    private var renderStateMap = mapOf<RenderCacheKey, UIRenderState>()
 
     override fun requestPreviews(keys: Set<RenderCacheKey>): Map<RenderCacheKey, UIRenderState> {
-        val newMap = keys.associate { key ->
-            val value = renderStateMap[key] ?: UIRenderState(
-                widthDp = key.annotation.widthDp,
-                heightDp = key.annotation.heightDp
-            ).also { state ->
-                renderCache[key]?.let { state.state = it }
-            }
-            Pair(key, value)
-        }
-        renderStateMap = newMap
+        val previews = renderService.requestPreviews(keys)
         scope.launch {
             render()
         }
-        return newMap
+        return previews
     }
-
     suspend fun render() {
-        if (renderStateMap.isEmpty()) return
         errorHandling { //TODO maybe handle error so that it can be displayed in the render state
-            withContext(Dispatchers.Default) {
-                val (renderClassLoader, duration) = measureTimedValue {
-                    classPathService.get().getRenderClassLoaderInstance(compileCounter)
-                }
-                println("Get classloader: $duration")
-                renderLock.withLock {
-                    renderStateMap.forEach { (key, renderState) ->
-                        // Workaround for legacy resource loading in old compose code
-                        // See androidx.compose.ui.res.ClassLoaderResourceLoader
-                        // It uses the contextClassLoader to load the resources.
-                        val previousContextClassLoader = Thread.currentThread().contextClassLoader
-                        // For new compose.components resource system a LocalCompositionProvider is used.
-                        Thread.currentThread().contextClassLoader = renderClassLoader.classLoader
-                        val state = try {
-                            renderPreview(renderClassLoader, key.name, key.annotation)
-                        } finally {
-                            Thread.currentThread().contextClassLoader = previousContextClassLoader
-                        }
-                        renderState.state = state
-                        // Update render cache
-                        if (state is RenderedImage) renderCache[key] = state
-                    }
-                }
-            }
+            renderService.render(classPathService.get().getRenderClassLoaderInstance(compileCounter))
         }
     }
-
     private fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit) {
         project.messageBus.connect(scope).subscribe(
             VirtualFileManager.VFS_CHANGES,

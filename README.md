@@ -18,10 +18,8 @@ This is because the previews are rendered using CFD itself.
 
 Supported IDEs:
 
-- IntelliJ 2024.3 or later
-- Android Studio Meerkat RC1 or later
-
-(Android Studio Meerkat limitation exists only because of problems with Jewel that does not work correctly in older IDEs)
+- IntelliJ 2024.2.5, 2024.3.2
+- Android Studio Ladybug, Meerkat
 
 ## Usage
 
@@ -29,7 +27,7 @@ Supported IDEs:
 
 ```kotlin
 dependencies {
-    implementation("de.drick.compose:hotpreview:0.1.4")
+    implementation("de.drick.compose:hotpreview:<current version>")
 }
 ```
 
@@ -47,11 +45,53 @@ fun PreviewHomeScreen() {
 ```
 
 You also need the plugin. It is published already to the  marketplace so just search for HotPreview.
+
 If you want to compile it yourself please see documentation in the intellij project:
 [intellij-plugin](intellij-plugin/README.md)
 
 Here is a sample project using the @HotPreview annotation:
 https://github.com/timo-drick/compose_desktop_dev_challenge
+
+### Using HotPreviewParameterProvider
+
+You can use `HotPreviewParameterProvider` to provide mock data for your previews. This allows you to test your composable with different data sets without creating multiple preview functions.
+
+To use this feature:
+
+1. Create a class that implements `HotPreviewParameterProvider<T>` where `T` is the type of data you want to provide:
+
+```kotlin
+class WeatherProvider : HotPreviewParameterProvider<Weather> {
+    override val values: Sequence<Weather> = weatherForecast.asSequence()
+}
+```
+
+2. Use the `@HotPreviewParameter` annotation on a parameter in your preview function:
+
+```kotlin
+@HotPreview(widthDp = 200, heightDp = 200)
+@Composable
+private fun PreviewWeatherCanvas(
+    @HotPreviewParameter(WeatherProvider::class) weather: Weather
+) {
+    WeatherCanvas(
+        modifier = Modifier.fillMaxSize(),
+        seconds = 20.0,
+        weather = weather,
+    )
+}
+```
+
+The plugin will use the values provided by your `HotPreviewParameterProvider` to generate previews with different data.
+
+![](screenshots/hotpreview_parameter_provider_sample.png)
+
+## Coil image preview
+
+If you are using Coil 3 for multiplatform image loading and want to provide a preview image just have a look at the official documentation of coil here: https://coil-kt.github.io/coil/compose/#previews
+Of course, it depends on you code how to integrate this into previews. You could also use this approach: https://coil-kt.github.io/coil/compose/#compose-multiplatform-resources
+
+But both ways do work in HotPreview previews.
 
 
 ## Known limitations
@@ -63,19 +103,8 @@ https://github.com/timo-drick/compose_desktop_dev_challenge
   - ~~Res.getUri()~~ (Does work since 0.2.0)
   - ~~Res.readBytes()~~ (Does work since 0.2.0)
 
-## Coil image preview
+## TODO list
 
-If you are using Coil 3 for multiplatform image loading and want to provide a preview image just have a look at the official documentation of coil here: https://coil-kt.github.io/coil/compose/#compose-multiplatform-resources
-
-Of course, it depends on you code how to integrate this into previews. You could also use this approach: https://coil-kt.github.io/coil/compose/#compose-multiplatform-resources
-
-But both ways do work in HotPreview previews.
-
-##
-
-TODO list
-
-- Implement PreviewParameterProvider like in android
 - Improve rendering performance
   - increase code analysing performance
   - only render previews which are visible
@@ -83,4 +112,5 @@ TODO list
 - Implement animation preview.
 - Implement interactive mode.
 - Maybe support also Android platform for previews using the layoutlib for rendering.
+- ~~Implement PreviewParameterProvider like in android~~
 - ~~Add support for Annotation classes. Make it possible to create Annotation class with HotPreview annotations.~~
