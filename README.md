@@ -23,6 +23,8 @@ Supported IDEs:
 
 ## Usage
 
+### Add dependency to your project
+
 [![Maven Central](https://img.shields.io/maven-central/v/de.drick.compose/hotpreview.svg)](https://mvnrepository.com/artifact/de.drick.compose/hotpreview)
 
 ```kotlin
@@ -31,11 +33,19 @@ dependencies {
 }
 ```
 
+### Install IDE plugin
+
+You also need the plugin. It is published already to the  marketplace so just search for HotPreview.
+
+If you want to compile it yourself please see documentation in the intellij project:
+[intellij-plugin](intellij-plugin/README.md)
+
+### Use the @HotPreview annotation
+
+In your code use the `@HotPreview` annotation to create previews.
+
 ```kotlin
-@HotPreview(name = "phone dark", widthDp = 400, heightDp = 800, fontScale = 1f, darkMode = true)
-@HotPreview(name = "phone", widthDp = 400, heightDp = 800, fontScale = 1.5f, darkMode = false, density = 1f)
-@HotPreview(name = "dark", widthDp = 1000, heightDp = 800, fontScale = 1f, density = 1f)
-@HotPreview(widthDp = 1000, heightDp = 800, fontScale = 1.5f, darkMode = false)
+@HotPreview
 @Composable
 fun PreviewHomeScreen() {
   MyTheme {
@@ -44,13 +54,69 @@ fun PreviewHomeScreen() {
 }
 ```
 
-You also need the plugin. It is published already to the  marketplace so just search for HotPreview.
+Device configuration can also be set and you can provide multiple annotations:
 
-If you want to compile it yourself please see documentation in the intellij project:
-[intellij-plugin](intellij-plugin/README.md)
+```kotlin
+@HotPreview(
+  name = "phone", group = "light", widthDp = 400, heightDp = 800, 
+  fontScale = 1.5f, darkMode = false, density = 1f
+)
+@HotPreview(
+  name = "phone dark", group = "dark", widthDp = 1000, heightDp = 800,
+  fontScale = 1f, density = 1f
+)
+@Composable
+fun PreviewHomeScreen() {
+  MyTheme {
+    HomeScreen()
+  }
+}
+```
 
-Here is a sample project using the @HotPreview annotation:
-https://github.com/timo-drick/compose_desktop_dev_challenge
+Or use the gutter icon to change the parameters:
+
+![](screenshots/gutter_icon_sample_a.png)
+
+![](screenshots/gutter_icon_sample_b.png)
+
+### Annotation classes
+
+HotPreview provides several built-in annotation classes that combine multiple `@HotPreview` annotations for common use cases:
+
+- **HotPreviewScreenSizes**: Previews for different screen sizes (Phone, Phone-Landscape, Foldable, Tablet, Desktop)
+- **HotPreviewFontScale**: Previews with different font scales (85% to 200%)
+- **HotPreviewLightDark**: Previews in both light and dark modes
+
+#### Using Annotation Classes
+
+```kotlin
+// Use any of the built-in annotation classes
+@HotPreviewScreenSizes
+@Composable
+fun PreviewHomeScreen() {
+    MyTheme {
+        HomeScreen()
+    }
+}
+
+// Create your own custom annotation class
+@Retention(AnnotationRetention.BINARY)
+@Target(AnnotationTarget.FUNCTION)
+@HotPreview(name = "Phone", widthDp = 411, heightDp = 891, group = "custom")
+@HotPreview(name = "Tablet", widthDp = 1280, heightDp = 800, group = "custom")
+annotation class MyCustomPreviews
+
+// Usage
+@MyCustomPreviews
+@Composable
+fun PreviewWithCustomSettings() {
+    MyTheme {
+        HomeScreen()
+    }
+}
+```
+
+
 
 ### Using HotPreviewParameterProvider
 
@@ -92,6 +158,12 @@ If you are using Coil 3 for multiplatform image loading and want to provide a pr
 Of course, it depends on you code how to integrate this into previews. You could also use this approach: https://coil-kt.github.io/coil/compose/#compose-multiplatform-resources
 
 But both ways do work in HotPreview previews.
+
+
+## Sample code
+
+Here is a sample project using the @HotPreview annotation:
+https://github.com/timo-drick/compose_desktop_dev_challenge
 
 
 ## Known limitations
