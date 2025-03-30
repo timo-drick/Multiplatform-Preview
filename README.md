@@ -29,7 +29,7 @@ Supported IDEs:
 
 ```kotlin
 dependencies {
-    implementation("de.drick.compose:hotpreview:0.1.4")
+    implementation("de.drick.compose:hotpreview:<current version>")
 }
 ```
 
@@ -47,6 +47,7 @@ fun PreviewHomeScreen() {
 ```
 
 You also need the plugin. It is published already to the  marketplace so just search for HotPreview.
+
 If you want to compile it yourself please see documentation in the intellij project:
 [intellij-plugin](intellij-plugin/README.md)
 
@@ -99,8 +100,7 @@ The plugin will use the values provided by your `HotPreviewParameterProvider` to
 
 ## Coil image preview
 
-If you are using Coil 3 for multiplatform image loading and want to provide a preview image just have a look at the official documentation of coil here: https://coil-kt.github.io/coil/compose/#compose-multiplatform-resources
-
+If you are using Coil 3 for multiplatform image loading and want to provide a preview image just have a look at the official documentation of coil here: https://coil-kt.github.io/coil/compose/#previews
 Of course, it depends on you code how to integrate this into previews. You could also use this approach: https://coil-kt.github.io/coil/compose/#compose-multiplatform-resources
 
 But both ways do work in HotPreview previews.
