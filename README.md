@@ -18,10 +18,8 @@ This is because the previews are rendered using CFD itself.
 
 Supported IDEs:
 
-- IntelliJ 2024.3 or later
-- Android Studio Meerkat RC1 or later
-
-(Android Studio Meerkat limitation exists only because of problems with Jewel that does not work correctly in older IDEs)
+- IntelliJ 2024.2.5, 2024.3.2
+- Android Studio Ladybug, Meerkat
 
 ## Usage
 
