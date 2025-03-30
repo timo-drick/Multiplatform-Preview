@@ -100,7 +100,7 @@ dependencies {
         intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
         zipSigner()
-        bundledPlugins("org.jetbrains.kotlin", "com.intellij.gradle") // Plugins must be also provided in plugin.xml!!!
+        bundledPlugins("com.intellij.java", "org.jetbrains.kotlin", "com.intellij.gradle") // Plugins must be also provided in plugin.xml!!!
     }
 
     implementation(compose.desktop.linux_x64) {

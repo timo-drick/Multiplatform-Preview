@@ -1,6 +1,7 @@
 <idea-plugin>
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.gradle</depends>
+    <depends>com.intellij.java</depends>
     <depends>org.jetbrains.kotlin</depends>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
