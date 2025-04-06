@@ -65,6 +65,9 @@ private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
     )
 }
 
+/**
+ * This will just find all annotations. It will not search for functions.
+ */
 suspend fun findHotPreviewAnnotations(project: Project, file: VirtualFile): List<HotPreviewAnnotation> =
     project.analyzeFile(file) { ktFile ->
         ktFile.symbol.fileScope.declarations
@@ -96,7 +99,7 @@ suspend fun checkAnnotationParameter(
     line: Int,  // Line number where the Annotation starts
     argumentName: String,
 ): Boolean = project.analyzeFile(file) { psiFile ->
-    val found = psiFile.symbol.fileScope.callables
+    val found = psiFile.symbol.fileScope.declarations
         .flatMap { it.annotations }
         .filter { it.classId == hotPreviewAnnotationClassId }
         .firstOrNull { it.psi?.getLineRange()?.first == line }

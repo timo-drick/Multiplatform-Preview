@@ -3,6 +3,7 @@ package de.drick.compose.hotpreview.plugin
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.backend.workspace.WorkspaceModel
@@ -18,6 +19,7 @@ import kotlin.collections.find
 private val LOG = logger<WorkspaceAnalyzer>()
 
 interface WorkspaceDsl {
+    fun getModule(module: Module): ModuleEntity?
     fun getModule(file: VirtualFile): ModuleEntity?
     fun getJvmTargetModule(module: ModuleEntity): ModuleEntity
     fun getGradleTaskName(module: ModuleEntity): String
@@ -47,9 +49,10 @@ private class WorkspaceAnalyzer(
 
     override fun getModule(file: VirtualFile): ModuleEntity? {
         return file.getModule(project)?.let { module ->
-            currentSnapshot.resolve(ModuleId(module.name))
+            getModule(module)
         }
     }
+    override fun getModule(module: Module): ModuleEntity? = currentSnapshot.resolve(ModuleId(module.name))
 
     override fun getJvmTargetModule(module: ModuleEntity): ModuleEntity {
         val baseModuleName = module.name.substringBeforeLast(".")

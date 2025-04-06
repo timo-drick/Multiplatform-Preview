@@ -1,5 +1,6 @@
 package de.drick.compose.hotpreview.plugin
 
+import de.drick.compose.hotpreview.plugin.service.RenderClassLoaderInstance
 import de.drick.compose.hotpreview.plugin.ui.preview_window.UIRenderState
 import de.drick.compose.utils.LRUCache
 import kotlinx.coroutines.Dispatchers
