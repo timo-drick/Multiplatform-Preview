@@ -1,32 +1,22 @@
 package de.drick.compose.hotpreview.plugin
 
-import com.intellij.execution.executors.DefaultRunExecutor
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings
-import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
-import com.intellij.openapi.externalSystem.task.TaskCallback
 import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
-import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.modules
 import com.intellij.openapi.roots.CompilerModuleExtension
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
 import de.drick.compose.utils.livecompile.SourceSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.base.facet.isMultiPlatformModule
 import org.jetbrains.kotlin.idea.util.projectStructure.getModule
-import org.jetbrains.plugins.gradle.settings.GradleSettings
-import org.jetbrains.plugins.gradle.util.GradleConstants
 import java.io.File
 import java.net.URL
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.text.contains
 
 
@@ -68,50 +58,6 @@ class ProjectAnalyzer(
         )
     }
 
-    suspend fun executeGradleTask(file: VirtualFile) {
-        val module = getModule(file)
-        val modulePath = requireNotNull(getModulePath(module))
-        val desktopModule = getJvmTargetModule(module)
-        /*
-        val gradleData = GradleUtil.findGradleModuleData(desktopModule)
-        gradleData?.let { gradle ->
-            println("Gradle data: ${gradle.data.moduleName} ${gradle.data.gradlePath}")
-        }
-        */
-        val tokens = desktopModule.name.split(".")
-        val moduleName = tokens.drop(1).joinToString(":")
-        val taskName = ":${moduleName}Classes"
-        val gradleSettings = GradleSettings.getInstance(project)
-        val gradleVmOptions = gradleSettings.gradleVmOptions
-        val settings = ExternalSystemTaskExecutionSettings()
-        settings.executionName = "HotPreview recompile"
-        settings.externalProjectPath = modulePath
-        settings.taskNames = listOf(taskName)
-        settings.vmOptions = gradleVmOptions
-        settings.externalSystemIdString = GradleConstants.SYSTEM_ID.id
-
-        suspendCoroutine { cont ->
-            ExternalSystemUtil.runTask(
-                settings,
-                DefaultRunExecutor.EXECUTOR_ID,
-                project,
-                GradleConstants.SYSTEM_ID,
-                object : TaskCallback {
-                    override fun onSuccess() {
-                        cont.resume(true)
-                    }
-
-                    override fun onFailure() {
-                        cont.resume(false)
-                    }
-                },
-                ProgressExecutionMode.IN_BACKGROUND_ASYNC,
-                false,
-                UserDataHolderBase()
-            )
-        }
-    }
-
     suspend fun getClassPath(file: VirtualFile): List<URL> = withContext(Dispatchers.Default) {
         val desktopModule = getJvmTargetModule(file)
         getClassPath(desktopModule).distinct()
@@ -125,14 +71,20 @@ class ProjectAnalyzer(
         // TODO not sure if the name is always desktop for jvm modules
         return smartReadAction(project) {
             if (module.isMultiPlatformModule) {
-                val desktopModule = project.modules.filter { it.name.startsWith(baseModuleName) }
+                val desktopModule = project.modules
+                    .filter { it.name.startsWith(baseModuleName) && it.name != baseModuleName }
                     //.filter { it.isTestModule.not() }
-                    .find { it.name.contains("jvmMain") || it.name.contains("desktopMain") }
+                    .find {
+                        it.name.contains("jvmMain") || it.name.contains("desktopMain")
+                        //it.platform.size == 1 && it.platform.first().platformName == "JVM"
+                    }
+                //println("Found module: ${desktopModule?.name} base: $baseModuleName")
                 requireNotNull(desktopModule) { "No desktop module found!" }
             } else {
                 val desktopModule = project.modules.filter { it.name.startsWith(baseModuleName) }
                     //.filter { it.isTestModule.not() }
                     .find { it.name.substringAfterLast(".") == "main" }
+                //println("Found module: ${desktopModule?.name} base: $baseModuleName")
                 requireNotNull(desktopModule) { "No desktop module found!" }
             }
         }
@@ -150,10 +102,26 @@ class ProjectAnalyzer(
 
     suspend fun getClassPath(module: Module, mode: ClassPathMode = ClassPathMode.ALL): List<URL> = smartReadAction(project) {
         val moduleClassPath = getClassPathArray(module, mode)
-        val dependencyClassPath = ModuleRootManager.getInstance(module)
-            .dependencies
-            .flatMap { getClassPathArray(it, mode) }
+        val processedModules = mutableSetOf<Module>()
+        processedModules.add(module)
+        val dependencyClassPath = collectDependenciesClassPath(module, mode, processedModules)
         moduleClassPath + dependencyClassPath
+    }
+
+    private fun collectDependenciesClassPath(module: Module, mode: ClassPathMode, processedModules: MutableSet<Module>): List<URL> {
+        val dependencies = ModuleRootManager.getInstance(module).dependencies
+        val result = mutableListOf<URL>()
+
+        for (dependency in dependencies) {
+            if (processedModules.add(dependency)) {
+                // Add this dependency's classpath
+                result.addAll(getClassPathArray(dependency, mode))
+                // Recursively add transitive dependencies
+                result.addAll(collectDependenciesClassPath(dependency, mode, processedModules))
+            }
+        }
+
+        return result
     }
 
     private fun getClassPathArray(module: Module, mode: ClassPathMode): List<URL> {
@@ -186,7 +154,6 @@ class ProjectAnalyzer(
             requireNotNull(file.getModule(project)) { "Module for file: $file not found!" }
         }
 
-    private suspend fun getModulePath(module: Module) =
+    suspend fun getModulePath(module: Module) =
         smartReadAction(project) { ExternalSystemApiUtil.getExternalProjectPath(module) }
 }
-

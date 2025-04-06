@@ -15,6 +15,15 @@ import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 
+/**
+ * A specialized editor component that provides seamless integration between a text editor and preview panel.
+ * 
+ * This class extends the standard TextEditorWithPreview to provide enhanced functionality:
+ * - Ability to toggle between editor-only, preview-only, and split view modes
+ * - Support for hiding/showing toolbar actions dynamically
+ * - Special "pure text editor" mode that completely hides the preview and related UI elements
+ * - Maintains layout state when switching between modes
+ */
 class SeamlessEditorWithPreview(
     myEditor: TextEditor,
     myPreview: FileEditor,
@@ -82,6 +91,12 @@ class SeamlessEditorWithPreview(
         }
 }
 
+/**
+ * A helper class that manages the visibility of actions in the editor's toolbar.
+ * 
+ * This class allows dynamically showing or hiding all actions at once without
+ * removing them from the action group structure.
+ */
 private class HideAbleActionGroup(
     private val actions: Array<AnAction>
 ) : ActionGroup(), DynamicActionGroup {

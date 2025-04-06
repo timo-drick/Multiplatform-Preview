@@ -3,6 +3,7 @@ package de.drick.compose.hotpreview.plugin.ui.preview_window
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.fileLogger
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ScrollType
@@ -17,7 +18,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
-import de.drick.compose.hotpreview.plugin.ClassPathService
 import de.drick.compose.hotpreview.plugin.HotPreviewAnnotation
 import de.drick.compose.hotpreview.plugin.HotPreviewFunction
 import de.drick.compose.hotpreview.plugin.HotPreviewView
@@ -25,11 +25,12 @@ import de.drick.compose.hotpreview.plugin.NotRenderedYet
 import de.drick.compose.hotpreview.plugin.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.RenderService
 import de.drick.compose.hotpreview.plugin.RenderState
-import de.drick.compose.hotpreview.plugin.executeGradleTask
 import de.drick.compose.hotpreview.plugin.findFunctionsWithHotPreviewAnnotations
 import de.drick.compose.hotpreview.plugin.findHotPreviewAnnotations
 import de.drick.compose.hotpreview.plugin.getParameterList
+import de.drick.compose.hotpreview.plugin.kotlinFileClassName
 import de.drick.compose.hotpreview.plugin.runCatchingCancellationAware
+import de.drick.compose.hotpreview.plugin.service.ProjectPreviewProviderService
 import de.drick.compose.hotpreview.plugin.spliteditor.SeamlessEditorWithPreview
 import de.drick.compose.hotpreview.plugin.tools.PluginPersistentStore
 import de.drick.compose.hotpreview.plugin.ui.guttericon.HotPreviewGutterIcon
@@ -37,10 +38,9 @@ import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettings
 import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettingsConfigurable
 import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModel
 import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModelI
-import de.drick.compose.hotpreview.plugin.useSuspendWorkspace
-import de.drick.compose.utils.lazySuspend
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -113,10 +113,19 @@ class HotPreviewViewModel(
 
     val settings = HotPreviewSettings.getInstance().state
 
-    private val classPathService by lazySuspend {
-        ClassPathService.Companion.getInstance(project, file)
-    }
+    private val projectService = project.service<ProjectPreviewProviderService>()
+    private val moduleService = projectService.getModulePreviewService(file)
     private val renderService = RenderService()
+
+    init {
+        scope.launch {
+            moduleService.classPathServiceFlow.filterNotNull().collect {
+                rerender()
+            }
+        }
+    }
+
+    private val fileClassName = kotlinFileClassName(file)
 
     private val properties = PluginPersistentStore(project, file)
 
@@ -141,12 +150,10 @@ class HotPreviewViewModel(
     override var errorMessage: Throwable? by mutableStateOf(null)
     override var previewList: List<UIHotPreviewData> by mutableStateOf(emptyList())
 
-    private var compileCounter = 0
-
     override fun onAction(action: HotPreviewAction) {
         when (action) {
             HotPreviewAction.OpenSettings -> openSettings()
-            HotPreviewAction.Refresh -> refresh()
+            HotPreviewAction.Refresh -> recompile()
             HotPreviewAction.ToggleLayout -> toggleLayout()
             is HotPreviewAction.ChangeScale -> changeScale(action.newScale)
             is HotPreviewAction.MonitorChanges -> monitorChanges(action.scope)
@@ -161,17 +168,13 @@ class HotPreviewViewModel(
         val previousSelected = selectedGroup
         selectedGroup = group
         if (previousSelected != group) {
-            scope.launch {
-                render()
-            }
+            rerender()
         }
     }
 
     private fun selectTab(tabIndex: Int) {
         selectedTab = tabIndex
-        scope.launch {
-            render()
-        }
+        rerender()
     }
 
     private fun updateGroups(previewFunctions: List<HotPreviewFunction>) {
@@ -183,8 +186,34 @@ class HotPreviewViewModel(
         }
     }
 
-    private suspend fun updatePreviewList(previewFunctions: List<HotPreviewFunction>) {
-        val classLoader = classPathService.get().getRenderClassLoaderInstance(compileCounter)
+    private fun recompile() {
+        scope.launch {
+            compilingInProgress = true
+            errorHandling {
+                val functions = analyzePreviewAnnotations()
+                if (functions.isNotEmpty()) {
+                    moduleService.recompile()
+                }
+            }
+            compilingInProgress = false
+        }
+    }
+
+    private fun rerender() {
+        val renderClassLoader =
+            moduleService.classPathServiceFlow.value?.getRenderClassLoaderInstance(fileClassName) ?: return
+        scope.launch {
+            compilingInProgress = true
+            errorHandling {
+                updatePreviewList(analyzePreviewAnnotations())
+                renderService.render(renderClassLoader)
+            }
+            compilingInProgress = false
+        }
+    }
+
+    private fun updatePreviewList(previewFunctions: List<HotPreviewFunction>) {
+        val classLoader = moduleService.classPathServiceFlow.value?.getRenderClassLoaderInstance(fileClassName) ?: return
         previewList = previewFunctions.map { function ->
             println("Update function: $function")
             val annotations = function.annotation.flatMap {
@@ -232,32 +261,6 @@ class HotPreviewViewModel(
         }
     }
 
-    private fun refresh() {
-        scope.launch {
-            classPathService.reset()
-            compilingInProgress = true
-            errorHandling {
-                val functions = analyzePreviewAnnotations()
-                if (functions.isNotEmpty()) {
-                    project.useSuspendWorkspace {
-                        val module = requireNotNull(getModule(file)) { "No module found for file: ${file.name}" }
-                        val desktopModule = getJvmTargetModule(module)
-                        val gradleTask = getGradleTaskName(desktopModule)
-                        val path = requireNotNull(getModulePath(module)) { "No module path found!" }
-                        println("task: $gradleTask path: $path")
-                        val parameters = if (settings.gradleParametersEnabled) settings.gradleParameters else ""
-                        executeGradleTask(project, gradleTask, parameters, path)
-                        compileCounter++
-                    }
-                    classPathService.reset()
-                }
-                updatePreviewList(functions)
-                render()
-            }
-            compilingInProgress = false
-        }
-    }
-
     private fun openSettings() {
         ShowSettingsUtil.getInstance().showSettingsDialog(project, HotPreviewSettingsConfigurable::class.java)
     }
@@ -266,19 +269,17 @@ class HotPreviewViewModel(
         scope.launch {
             compilingInProgress = true
             errorHandling {
-                updatePreviewList(analyzePreviewAnnotations())
-                render()
+                rerender()
             }
             compilingInProgress = false
         }
         subscribeForFileChanges(scope) {
             scope.launch {
                 if (settings.recompileOnSave) {
-                    refresh()
+                    recompile()
                 } else {
                     errorHandling {
-                        updatePreviewList(analyzePreviewAnnotations())
-                        render()
+                        rerender()
                     }
                 }
             }
@@ -300,12 +301,7 @@ class HotPreviewViewModel(
     }
 
     private val updatePreviewAnnotations: () -> Unit = {
-        scope.launch {
-            errorHandling {
-                updatePreviewList(analyzePreviewAnnotations())
-                render()
-            }
-        }
+        rerender()
     }
 
     private suspend fun updateGutterIcons() {
@@ -341,29 +337,12 @@ class HotPreviewViewModel(
         )
     }
 
-    private suspend fun errorHandling(block: suspend () -> Unit) {
-        runCatchingCancellationAware {
-            block()
-            errorMessage = null
-        }.onFailure { err ->
-            errorMessage = err
-            LOG.warn(err)
-        }
-    }
-
-
     override fun requestPreviews(keys: Set<RenderCacheKey>): Map<RenderCacheKey, UIRenderState> {
         val previews = renderService.requestPreviews(keys)
-        scope.launch {
-            render()
-        }
+        rerender()
         return previews
     }
-    suspend fun render() {
-        errorHandling { //TODO maybe handle error so that it can be displayed in the render state
-            renderService.render(classPathService.get().getRenderClassLoaderInstance(compileCounter))
-        }
-    }
+
     private fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit) {
         project.messageBus.connect(scope).subscribe(
             VirtualFileManager.VFS_CHANGES,
@@ -393,5 +372,15 @@ class HotPreviewViewModel(
                 LOG.debug("Document event: $event")
             }
         })
+    }
+
+    private suspend fun errorHandling(block: suspend () -> Unit) {
+        runCatchingCancellationAware {
+            block()
+            errorMessage = null
+        }.onFailure { err ->
+            errorMessage = err
+            LOG.debug(err)
+        }
     }
 }

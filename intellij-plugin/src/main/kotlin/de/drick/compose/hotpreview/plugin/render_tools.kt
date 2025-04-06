@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.intellij.openapi.diagnostic.fileLogger
+import de.drick.compose.hotpreview.plugin.service.RenderClassLoaderInstance
 import org.jetbrains.skia.Image
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
