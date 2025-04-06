@@ -34,6 +34,7 @@ val versionName = "0.6.0-$ijPlatform"
 val changeNotesText = """
 <h3>V 0.6.0</h3>
 <ul>
+    <li>Fixed a problem with transitive dependencies. Now classpath is collected from gradle task</li>
     <li>Added HotPreviewParameterProvider to provide mock data for previews</li>
 </ul>
 
