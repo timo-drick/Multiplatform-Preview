@@ -151,7 +151,14 @@ class AnnotationUpdate(
                                         newExpression,
                                         Name.identifier(argumentName)
                                     )
-                                    annotation.valueArgumentList?.addArgument(newArgument)
+                                    val argumentList = annotation.valueArgumentList
+                                    if (argumentList != null) {
+                                        argumentList.addArgument(newArgument)
+                                    } else {
+                                        // Create a new value argument list and add it to the annotation
+                                        val valueArgumentList = factory.createCallArguments("(${argumentName} = ${newValue})")
+                                        annotation.add(valueArgumentList)
+                                    }
                                 }
                             } else {
                                 argument?.let { annotation.valueArgumentList?.removeArgument(it) }

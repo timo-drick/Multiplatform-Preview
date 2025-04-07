@@ -127,6 +127,7 @@ class ArgumentField(
         private set
 
     fun update(dsl: UpdateAnnotationDsl, newValue: String) {
+        if (value == newValue) return
         value = newValue
         if (isString) {
             dsl.string(name, newValue)
