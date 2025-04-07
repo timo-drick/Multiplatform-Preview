@@ -7,6 +7,7 @@ import com.intellij.openapi.externalSystem.task.TaskCallback
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.UserDataHolderBase
+import com.intellij.openapi.util.io.FileUtil
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import java.io.File
@@ -62,7 +63,7 @@ suspend fun getClassPathFromGradleTask(project: Project, configurationName: Stri
     val taskName = "printClasspath${System.currentTimeMillis()}"
 
     // Create a temporary file for output
-    val outputFile = File.createTempFile("hotpreview-classpath-", ".txt")
+    val outputFile = FileUtil.createTempFile("hotpreview-classpath-", ".txt")
     val outputFilePath = outputFile.absolutePath
 
     // Create the init script
@@ -119,8 +120,7 @@ private fun createInitScript(taskName: String, configurationName: String, output
             }
         }
     """.trimIndent()
-
-    val initScriptFile = File.createTempFile("hotpreview-init-", ".gradle.kts")
+    val initScriptFile = FileUtil.createTempFile("hotpreview-init-", ".gradle.kts")
     initScriptFile.writeText(initScript)
     return initScriptFile
 }

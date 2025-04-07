@@ -11,7 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.*
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.RenderCacheKey
+import de.drick.compose.hotpreview.plugin.service.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.ui.components.TabBar
 import de.drick.compose.hotpreview.plugin.ui.components.ScrollableContainer
 import de.drick.compose.hotpreview.plugin.ui.guttericon.DialogGutterIconSettings

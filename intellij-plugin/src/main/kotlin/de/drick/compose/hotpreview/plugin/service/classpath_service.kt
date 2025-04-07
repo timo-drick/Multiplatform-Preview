@@ -17,6 +17,8 @@ import kotlin.collections.plus
 import kotlin.collections.toTypedArray
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.declaredFunctions
+import kotlin.time.TimeSource
+import kotlin.time.measureTimedValue
 
 
 data class RenderClassLoaderInstance(
@@ -41,17 +43,20 @@ class ClassPathService private constructor(
             getInstance(project, module)
         }
         suspend fun getInstance(project: Project, module: Module) = withContext(Dispatchers.Default) {
+            val ts = TimeSource.Monotonic
+            val start = ts.markNow()
             val projectAnalyzer = ProjectAnalyzer(project)
             val jvmModule = projectAnalyzer.getJvmTargetModule(module)
             val skikoLibs = RuntimeLibrariesManager.getRuntimeLibs()
 
             // Get classpath using Gradle task
             val path = requireNotNull(projectAnalyzer.getModulePath(module)) { "Module path $module not found!" }
-
-            // Try to get classpath using Gradle task first
-            println("Getting classpath using Gradle task. Path: $path")
-            val gradleTaskClassPath = getClassPathFromGradleTask(project, "jvmRuntimeClasspath", path)
-
+            val preparation = ts.markNow() - start
+            println("ClassPathService preparation time: $preparation")
+            val (gradleTaskClassPath, duration) = measureTimedValue {
+                getClassPathFromGradleTask(project, "jvmRuntimeClasspath", path)
+            }
+            println("Class path jvmRuntimeClasspath execution time: $duration")
             // Fall back to the old method if the task method fails
             val gradleClassPath = if (gradleTaskClassPath.isNotEmpty()) {
                 println("Successfully retrieved classpath using Gradle task")
@@ -69,8 +74,8 @@ class ClassPathService private constructor(
                 .distinct()
             //val fileClassName = kotlinFileClassName(file)
 
-            println("Libs by Gradle analysis:")
-            classPathLibs.forEach { println("Gradle: ${it.path}") }
+            //println("Libs by Gradle analysis:")
+            //classPathLibs.forEach { println("Gradle: ${it.path}") }
 
             ClassPathService(classPathLibs.toTypedArray(), classPathLocal.toTypedArray())
         }

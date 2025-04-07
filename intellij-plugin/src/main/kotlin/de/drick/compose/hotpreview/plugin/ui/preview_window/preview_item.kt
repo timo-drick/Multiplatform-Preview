@@ -16,7 +16,10 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.*
+import de.drick.compose.hotpreview.plugin.service.NotRenderedYet
+import de.drick.compose.hotpreview.plugin.service.RenderError
+import de.drick.compose.hotpreview.plugin.service.RenderState
+import de.drick.compose.hotpreview.plugin.service.RenderedImage
 import de.drick.compose.hotpreview.plugin.ui.Typography
 import de.drick.compose.utils.ClipboardImage
 import org.jetbrains.compose.resources.ExperimentalResourceApi

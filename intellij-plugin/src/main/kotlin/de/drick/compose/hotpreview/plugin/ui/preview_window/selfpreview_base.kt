@@ -12,6 +12,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.plugin.*
+import de.drick.compose.hotpreview.plugin.service.RenderCacheKey
+import de.drick.compose.hotpreview.plugin.service.RenderError
+import de.drick.compose.hotpreview.plugin.service.RenderedImage
 import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModelI
 import de.drick.compose.hotpreview.plugin.ui.guttericon.mockGutterIconViewModel
 import hotpreviewplugin.generated.resources.*

@@ -1,6 +1,6 @@
-package de.drick.compose.hotpreview.plugin
+package de.drick.compose.hotpreview.plugin.service
 
-import de.drick.compose.hotpreview.plugin.service.RenderClassLoaderInstance
+import de.drick.compose.hotpreview.plugin.HotPreviewModel
 import de.drick.compose.hotpreview.plugin.ui.preview_window.UIRenderState
 import de.drick.compose.utils.LRUCache
 import kotlinx.coroutines.Dispatchers
@@ -14,10 +14,10 @@ data class RenderCacheKey(
     val annotation: HotPreviewModel
 )
 
-class RenderService {
-
+class RenderService(
+    private val compileMutex: Mutex
+) {
     private val renderCache = LRUCache<RenderCacheKey, RenderedImage>(20)
-    private val renderLock = Mutex()
     private var renderStateMap = mapOf<RenderCacheKey, UIRenderState>()
 
     fun requestPreviews(keys: Set<RenderCacheKey>): Map<RenderCacheKey, UIRenderState> {
@@ -37,7 +37,7 @@ class RenderService {
     suspend fun render(renderClassLoader: RenderClassLoaderInstance) {
         if (renderStateMap.isEmpty()) return
         withContext(Dispatchers.Default) {
-            renderLock.withLock {
+            compileMutex.withLock {
                 renderStateMap.forEach { (key, renderState) ->
                     // Workaround for legacy resource loading in old compose code
                     // See androidx.compose.ui.res.ClassLoaderResourceLoader

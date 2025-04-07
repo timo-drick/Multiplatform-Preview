@@ -21,10 +21,9 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import de.drick.compose.hotpreview.plugin.HotPreviewAnnotation
 import de.drick.compose.hotpreview.plugin.HotPreviewFunction
 import de.drick.compose.hotpreview.plugin.HotPreviewView
-import de.drick.compose.hotpreview.plugin.NotRenderedYet
-import de.drick.compose.hotpreview.plugin.RenderCacheKey
-import de.drick.compose.hotpreview.plugin.RenderService
-import de.drick.compose.hotpreview.plugin.RenderState
+import de.drick.compose.hotpreview.plugin.service.NotRenderedYet
+import de.drick.compose.hotpreview.plugin.service.RenderCacheKey
+import de.drick.compose.hotpreview.plugin.service.RenderState
 import de.drick.compose.hotpreview.plugin.findFunctionsWithHotPreviewAnnotations
 import de.drick.compose.hotpreview.plugin.findHotPreviewAnnotations
 import de.drick.compose.hotpreview.plugin.getParameterList
@@ -38,6 +37,7 @@ import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettings
 import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettingsConfigurable
 import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModel
 import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModelI
+import de.drick.compose.utils.lazySuspend
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterNotNull
@@ -114,12 +114,14 @@ class HotPreviewViewModel(
     val settings = HotPreviewSettings.getInstance().state
 
     private val projectService = project.service<ProjectPreviewProviderService>()
-    private val moduleService = projectService.getModulePreviewService(file)
-    private val renderService = RenderService()
+    private val moduleService by lazySuspend {
+        projectService.getModulePreviewService(file)
+    }
+    private val renderService = projectService.createRenderService()
 
     init {
         scope.launch {
-            moduleService.classPathServiceFlow.filterNotNull().collect {
+            moduleService.get().classPathServiceFlow.filterNotNull().collect {
                 rerender()
             }
         }
@@ -192,7 +194,7 @@ class HotPreviewViewModel(
             errorHandling {
                 val functions = analyzePreviewAnnotations()
                 if (functions.isNotEmpty()) {
-                    moduleService.recompile()
+                    moduleService.get().recompile()
                 }
             }
             compilingInProgress = false
@@ -200,21 +202,26 @@ class HotPreviewViewModel(
     }
 
     private fun rerender() {
-        val renderClassLoader =
-            moduleService.classPathServiceFlow.value?.getRenderClassLoaderInstance(fileClassName) ?: return
         scope.launch {
             compilingInProgress = true
             errorHandling {
                 updatePreviewList(analyzePreviewAnnotations())
-                renderService.render(renderClassLoader)
+                if (previewList.isNotEmpty()) {
+                    val renderClassLoader = moduleService.get()
+                        .getClassPathService()
+                        .getRenderClassLoaderInstance(fileClassName)
+                    renderService.render(renderClassLoader)
+                }
             }
             compilingInProgress = false
         }
     }
 
-    private fun updatePreviewList(previewFunctions: List<HotPreviewFunction>) {
-        val classLoader = moduleService.classPathServiceFlow.value?.getRenderClassLoaderInstance(fileClassName) ?: return
+    private suspend fun updatePreviewList(previewFunctions: List<HotPreviewFunction>) {
         previewList = previewFunctions.map { function ->
+            val classLoader = moduleService.get()
+                .getClassPathService()
+                .getRenderClassLoaderInstance(fileClassName)
             println("Update function: $function")
             val annotations = function.annotation.flatMap {
                 val parameterList: List<*> = function.parameter?.let { classLoader.getParameterList(it) } ?: listOf(null)
@@ -274,14 +281,10 @@ class HotPreviewViewModel(
             compilingInProgress = false
         }
         subscribeForFileChanges(scope) {
-            scope.launch {
-                if (settings.recompileOnSave) {
-                    recompile()
-                } else {
-                    errorHandling {
-                        rerender()
-                    }
-                }
+            if (settings.recompileOnSave) {
+                recompile()
+            } else {
+                rerender()
             }
         }
     }

@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toIntSize
 import androidx.compose.ui.use
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.RenderedImage
+import de.drick.compose.hotpreview.plugin.service.RenderedImage
 import de.drick.compose.hotpreview.plugin.ui.preview_window.SelfPreviewTheme
 import org.jetbrains.jewel.ui.component.Text
 
