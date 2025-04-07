@@ -4,12 +4,11 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
-import com.intellij.openapi.vfs.VirtualFile
 import de.drick.compose.hotpreview.plugin.ClassPathMode
 import de.drick.compose.hotpreview.plugin.ProjectAnalyzer
+import de.drick.compose.hotpreview.plugin.useSuspendWorkspace
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jetbrains.kotlin.idea.util.projectStructure.getModule
 import java.io.File
 import java.net.URL
 import java.net.URLClassLoader
@@ -38,23 +37,31 @@ class ClassPathService private constructor(
     val classLoader = URLClassLoader(classPathFull, null)
 
     companion object {
-        suspend fun getInstance(project: Project, file: VirtualFile) = withContext(Dispatchers.Default) {
-            val module = requireNotNull(file.getModule(project)) { "Module for file: $file not found!" }
-            getInstance(project, module)
-        }
-        suspend fun getInstance(project: Project, module: Module) = withContext(Dispatchers.Default) {
+        suspend fun getInstance(
+            project: Project,
+            module: Module,
+            gradleParameters: String,
+            jvmRuntimeClasspathTask: JvmRuntimeClasspathTask,
+            recompile: Boolean = false
+        ) = withContext(Dispatchers.Default) {
             val ts = TimeSource.Monotonic
             val start = ts.markNow()
             val projectAnalyzer = ProjectAnalyzer(project)
             val jvmModule = projectAnalyzer.getJvmTargetModule(module)
             val skikoLibs = RuntimeLibrariesManager.getRuntimeLibs()
-
-            // Get classpath using Gradle task
             val path = requireNotNull(projectAnalyzer.getModulePath(module)) { "Module path $module not found!" }
+
+            val compileTask = if (recompile) project.useSuspendWorkspace {
+                val moduleEntity = requireNotNull(getModule(module)) { "Module ${module.name} not found!" }
+                val desktopModule = getJvmTargetModule(moduleEntity)
+                getGradleTaskName(desktopModule)
+            } else null
+            println("compile task: $compileTask path: $path")
+
             val preparation = ts.markNow() - start
             println("ClassPathService preparation time: $preparation")
             val (gradleTaskClassPath, duration) = measureTimedValue {
-                getClassPathFromGradleTask(project, "jvmRuntimeClasspath", path)
+                getClassPathFromGradleTask(project, jvmRuntimeClasspathTask, path, compileTask, gradleParameters)
             }
             println("Class path jvmRuntimeClasspath execution time: $duration")
             // Fall back to the old method if the task method fails
