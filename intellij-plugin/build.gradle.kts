@@ -34,8 +34,11 @@ val versionName = "0.6.0-$ijPlatform"
 val changeNotesText = """
 <h3>V 0.6.0</h3>
 <ul>
+    <li>Tried to fix some stability issues. Now compilation and rendering is synchronized.</li>
+    <li>Refactoring of architecture. Hope there are not too many new issues</li>
     <li>Fixed a problem with transitive dependencies. Now classpath is collected from gradle task</li>
     <li>Added HotPreviewParameterProvider to provide mock data for previews</li>
+    <li>Fixed problem with gutter icon when no parameters where attached to the @HotPreview annotation</li>
 </ul>
 
 <h3>V 0.5.0</h3>
