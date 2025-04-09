@@ -103,13 +103,14 @@ class JvmRuntimeClasspathTask(
 
     companion object {
         private const val TASK_NAME = "hotPreviewPrintClasspath"
+        private const val TRIPE_QUOTE = "\"\"\""
         private fun initScriptString(outputFilePath: String) = """
             allprojects {
                 tasks.register("$TASK_NAME") {
                     val classpathRuntime = project.configurations.findByName("jvmRuntimeClasspath")?.map { it.absolutePath }
                     doLast {
                         val text = classpathRuntime?.joinToString("\n")
-                        File("$outputFilePath").writeText(text ?: "")
+                        File($TRIPE_QUOTE$outputFilePath$TRIPE_QUOTE).writeText(text ?: "")
                     }
                 }
             }
