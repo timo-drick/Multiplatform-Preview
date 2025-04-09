@@ -28,10 +28,15 @@ repositories {
 val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.4")
 val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("243")
 
-val versionName = "0.6.0-$ijPlatform"
+val versionName = "0.6.1-$ijPlatform"
 
 @Language("HTML")
 val changeNotesText = """
+<h3>V 0.6.1</h3>
+<ul>
+    <li>Fixed problem on windows machines with temp file path in a gradle init file.</li>
+</ul>
+
 <h3>V 0.6.0</h3>
 <ul>
     <li>Tried to fix some stability issues. Now compilation and rendering is synchronized.</li>
