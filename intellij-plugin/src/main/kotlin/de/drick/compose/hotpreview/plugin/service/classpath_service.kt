@@ -29,12 +29,43 @@ data class RenderClassLoaderInstance(
 
 private const val previewRenderImplFqn = "de.drick.compose.hotpreview.RenderPreviewImpl"
 
+class HotPreviewClassLoader(
+    private val local: ClassLoader,
+    private val override: ClassLoader,
+    private val libs: ClassLoader
+) : ClassLoader(null) {
+    override fun findClass(name: String): Class<*> {
+        try {
+            val localClazz = local.loadClass(name)
+            resolveClass(localClazz)
+            println("Loading class: $name from local")
+            return localClazz
+        } catch (e: ClassNotFoundException) {
+            println("Loading class: $name from override")
+        }
+        try {
+            val overrideClazz = override.loadClass(name)
+            resolveClass(overrideClazz)
+            return overrideClazz
+        } catch (e: ClassNotFoundException) {
+            println("Loading class: $name from libs")
+        }
+        val libsClass = libs.loadClass(name)
+        resolveClass(libsClass)
+        return libsClass
+    }
+}
+
 class ClassPathService private constructor(
+    val classPathOverride: Array<URL>,
     val classPathLibs: Array<URL>,
     classPathLocal: Array<URL>
 ) {
-    val classPathFull = classPathLocal + classPathLibs
-    val classLoader = URLClassLoader(classPathFull, null)
+    val classPathFull = classPathOverride + classPathLocal + classPathLibs
+    private val overrideLoader = URLClassLoader(classPathOverride, null)
+    private val localLoader = URLClassLoader(classPathLocal, null)
+    private val libsLoader = URLClassLoader(classPathLibs, null)
+    val classLoader = URLClassLoader(classPathLocal + classPathLibs, overrideLoader)//HotPreviewClassLoader(localLoader, overrideLoader, libsLoader)
 
     companion object {
         suspend fun getInstance(
@@ -49,6 +80,7 @@ class ClassPathService private constructor(
             val projectAnalyzer = ProjectAnalyzer(project)
             val jvmModule = projectAnalyzer.getJvmTargetModule(module)
             val skikoLibs = RuntimeLibrariesManager.getRuntimeLibs()
+            val classOverrideLibs = RuntimeLibrariesManager.getClassOverrideLibs()
             val path = requireNotNull(projectAnalyzer.getModulePath(module)) { "Module path $module not found!" }
 
             val compileTask = if (recompile) project.useSuspendWorkspace {
@@ -82,9 +114,13 @@ class ClassPathService private constructor(
             //val fileClassName = kotlinFileClassName(file)
 
             //println("Libs by Gradle analysis:")
-            //classPathLibs.forEach { println("Gradle: ${it.path}") }
+            classPathLibs.forEach { println("${it.path}") }
 
-            ClassPathService(classPathLibs.toTypedArray(), classPathLocal.toTypedArray())
+            ClassPathService(
+                classPathLocal = classPathLocal.toTypedArray(),
+                classPathOverride = classOverrideLibs,
+                classPathLibs = classPathLibs.toTypedArray()
+            )
         }
     }
 
@@ -112,8 +148,11 @@ object RuntimeLibrariesManager {
     private var tmpFolder: File? = null
 
     private val runtimeLibs = listOf(
-        "hot_preview_render-all.jar"
+        "hot_preview_render-all.jar",
+        "hot_preview_window_insets.jar"
     )
+    private val renderLib = listOf("hot_preview_render-all.jar")
+    private val classOverrideLibs = arrayOf("hot_preview_window_insets.jar")
 
     private fun getResUrl(name: String) = this.javaClass.classLoader.getResource(name)
 
@@ -141,8 +180,15 @@ object RuntimeLibrariesManager {
 
     suspend fun getRuntimeLibs(): List<URL> = withContext(Dispatchers.Default) {
         val tmpFolder = initialize()
-        runtimeLibs.map {
+        renderLib.map {
             File(tmpFolder, it).toURI().toURL()
         }
+    }
+
+    suspend fun getClassOverrideLibs(): Array<URL> = withContext(Dispatchers.Default) {
+        val tmpFolder = initialize()
+        classOverrideLibs.map {
+            File(tmpFolder, it).toURI().toURL()
+        }.toTypedArray()
     }
 }

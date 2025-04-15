@@ -165,14 +165,23 @@ dependencies {
 tasks.register<GradleBuild>("buildRenderModule") {
     group = "build"
     dir = file("../")
-    tasks = listOf(":hot_preview_render:shadowJar")
+    tasks = listOf(":hot_preview_render:shadowJar", ":hot_preview_window_insets:jar")
 }
 
 val renderModulePath = layout.projectDirectory.dir("../hot_preview_render/build/libs")
 
+/*tasks.register<GradleBuild>("buildWindowInsetsModule") {
+    group = "build"
+    dir = file("../")
+    tasks = listOf(":hot_preview_window_insets:jar")
+}
+*/
+val buildWindowInsetsModulePath = layout.projectDirectory.dir("../hot_preview_window_insets/build/libs")
+
 tasks.processResources {
     dependsOn("buildRenderModule")
     from(renderModulePath)
+    from(buildWindowInsetsModulePath)
 }
 
 
