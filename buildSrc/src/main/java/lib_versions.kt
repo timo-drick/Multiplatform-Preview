@@ -6,8 +6,8 @@ object Versions {
     const val benManesPlugin = "0.52.0"
 
     const val composeLintChecks = "1.3.1"
-    //const val composeMP = "1.7.3"
-    const val composeMP = "1.8.0-alpha03"
+    const val composeMP = "1.7.3"
+    //const val composeMP = "1.8.0-alpha03"
 
     const val shadow = "8.3.6"
 
