@@ -32,6 +32,11 @@ val versionName = "0.6.1-$ijPlatform"
 
 @Language("HTML")
 val changeNotesText = """
+<h3>V 0.7.0</h3>
+<ul>
+    <li>Fixed problem with using WindowInsets. Changed Compose Multiplatform version 1.7.3</li>
+</ul>
+
 <h3>V 0.6.1</h3>
 <ul>
     <li>Fixed problem on windows machines with temp file path in a gradle init file.</li>
