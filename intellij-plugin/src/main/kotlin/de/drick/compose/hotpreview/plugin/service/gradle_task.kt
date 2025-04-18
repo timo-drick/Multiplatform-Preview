@@ -1,17 +1,20 @@
 package de.drick.compose.hotpreview.plugin.service
 
 import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.openapi.externalSystem.model.DataNode
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings
+import com.intellij.openapi.externalSystem.model.project.ModuleData
 import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
 import com.intellij.openapi.externalSystem.task.TaskCallback
 import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.UserDataHolderBase
-import com.intellij.openapi.util.io.FileUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.plugins.gradle.settings.GradleSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
+import org.jetbrains.plugins.gradle.util.GradleUtil
 import java.io.File
 import java.net.URL
 import kotlin.coroutines.resume
@@ -62,13 +65,12 @@ suspend fun executeGradleTask(project: Project, taskNameList: List<String>, para
  */
 suspend fun getClassPathFromGradleTask(
     project: Project,
-    classPathTask: JvmRuntimeClasspathTask,
+    module: Module,
     path: String,
     recompileTask: String? = null,
     parameters: String
 ): List<URL> {
-    //val classPathTask = JvmRuntimeClasspathTask.create()
-
+    val classPathTask = JvmRuntimeClasspathTask.create(module)
     val parameters = """--init-script "${classPathTask.initScriptFile.absolutePath}" $parameters"""
     val taskList = listOfNotNull(recompileTask, classPathTask.taskName)
     try {
@@ -86,7 +88,7 @@ class JvmRuntimeClasspathTask(
     private val outputFile: File,
 ) {
     // Create a temporary file for output
-    val taskName = TASK_NAME
+    val taskName = "hotPreviewDetectClasspath"
 
     fun readClassPath(): List<URL> {
         // Check if the output file exists and has content
@@ -102,26 +104,44 @@ class JvmRuntimeClasspathTask(
     }
 
     companion object {
-        private const val TASK_NAME = "hotPreviewPrintClasspath"
-        private const val TRIPE_QUOTE = "\"\"\""
-        private fun initScriptString(outputFilePath: String) = """
-            allprojects {
-                tasks.register("$TASK_NAME") {
-                    val classpathRuntime = project.configurations.findByName("jvmRuntimeClasspath")?.map { it.absolutePath }
-                    doLast {
-                        val text = classpathRuntime?.joinToString("\n")
-                        File($TRIPE_QUOTE$outputFilePath$TRIPE_QUOTE).writeText(text ?: "")
-                    }
-                }
-            }
-        """.trimIndent()
-
-        suspend fun create(): JvmRuntimeClasspathTask = withContext(Dispatchers.IO) {
-            val outputFile = FileUtil.createTempFile("hotpreview-classpath-", ".txt")
-            val initScriptFile = FileUtil.createTempFile("hotpreview-init-", ".gradle.kts")
-            val initScriptString = initScriptString(outputFile.absolutePath)
-            initScriptFile.writeText(initScriptString)
-            JvmRuntimeClasspathTask(initScriptFile, outputFile)
+        suspend fun create(module: Module): JvmRuntimeClasspathTask {
+            val buildDir = requireNotNull(getBuildDirectoryFromGradle(module)) { "Build directory not defined" }
+            val classPathGradleScript = RuntimeLibrariesManager.getClassPathGradleScript()
+            return JvmRuntimeClasspathTask(
+                initScriptFile = classPathGradleScript,
+                outputFile = File(buildDir, "hotPreviewClasspath.txt")
+            )
         }
     }
+}
+
+/**
+ * Gets the build directory for a module using Gradle module data.
+ * This function extracts the build directory path from the ModuleData returned by GradleUtil.findGradleModuleData.
+ *
+ * @param module The IntelliJ module
+ * @return The build directory path as a string, or null if it couldn't be determined
+ */
+private suspend fun getBuildDirectoryFromGradle(module: Module): String? = withContext(Dispatchers.Default) {
+    val gradleData: DataNode<ModuleData>? = GradleUtil.findGradleModuleData(module)
+    if (gradleData == null) {
+        println("No gradle module data found for ${module.name}")
+        return@withContext null
+    }
+
+    // Get the module data
+    val moduleData = gradleData.data
+
+    // Try to get the external project path
+    val externalProjectPath = moduleData.linkedExternalProjectPath
+    if (externalProjectPath.isNotEmpty()) {
+        // Typically, the build directory is at <project_path>/build
+        val buildDirPath = File(externalProjectPath, "build").absolutePath
+        println("Build directory from external project path: $buildDirPath")
+        return@withContext buildDirPath
+    }
+
+    // If all else fails, return null
+    println("Could not determine build directory for module: ${module.name}")
+    return@withContext null
 }

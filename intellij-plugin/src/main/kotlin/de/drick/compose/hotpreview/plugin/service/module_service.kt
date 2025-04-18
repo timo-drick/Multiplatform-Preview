@@ -2,8 +2,8 @@ package de.drick.compose.hotpreview.plugin.service
 
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
+import de.drick.compose.hotpreview.plugin.ProjectAnalyzer
 import de.drick.compose.hotpreview.plugin.ui.HotPreviewSettings
-import de.drick.compose.utils.lazySuspend
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,10 +25,6 @@ class ModulePreviewService(
 
     private val settings = HotPreviewSettings.getInstance()
 
-    private val jvmRuntimeClasspathTask by lazySuspend {
-        JvmRuntimeClasspathTask.create()
-    }
-
     private val classPathServiceMutableFlow = MutableStateFlow<ClassPathService?>(null)
     val classPathServiceFlow = classPathServiceMutableFlow.asStateFlow()
 
@@ -43,7 +39,7 @@ class ModulePreviewService(
     suspend fun updateClasspathService(recompile: Boolean = false): ClassPathService {
         val newClassPathService = compileMutex.withLock {
             val parameters = if (settings.state.gradleParametersEnabled) settings.state.gradleParameters else ""
-            ClassPathService.getInstance(project, module, parameters, jvmRuntimeClasspathTask.get(), recompile)
+            ClassPathService.getInstance(project, module, parameters, recompile)
         }
         classPathServiceMutableFlow.emit(newClassPathService)
         return newClassPathService

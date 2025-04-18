@@ -41,7 +41,6 @@ class ClassPathService private constructor(
             project: Project,
             module: Module,
             gradleParameters: String,
-            jvmRuntimeClasspathTask: JvmRuntimeClasspathTask,
             recompile: Boolean = false
         ) = withContext(Dispatchers.Default) {
             val ts = TimeSource.Monotonic
@@ -61,7 +60,7 @@ class ClassPathService private constructor(
             val preparation = ts.markNow() - start
             println("ClassPathService preparation time: $preparation")
             val (gradleTaskClassPath, duration) = measureTimedValue {
-                getClassPathFromGradleTask(project, jvmRuntimeClasspathTask, path, compileTask, gradleParameters)
+                getClassPathFromGradleTask(project, module, path, compileTask, gradleParameters)
             }
             println("Class path jvmRuntimeClasspath execution time: $duration")
             // Fall back to the old method if the task method fails
@@ -115,6 +114,12 @@ object RuntimeLibrariesManager {
         "hot_preview_render-all.jar"
     )
 
+    private val classpathGradleScript = "classpath.gradle.kts"
+
+    private val gradleScripts = listOf(
+        classpathGradleScript
+    )
+
     private fun getResUrl(name: String) = this.javaClass.classLoader.getResource(name)
 
     private suspend fun initialize(): File = withContext(Dispatchers.IO) {
@@ -124,7 +129,7 @@ object RuntimeLibrariesManager {
             tmpFolder = dir
             //Copy libraries
             LOG.debug("Temp dir: $dir")
-            runtimeLibs.forEach { fileName ->
+            (runtimeLibs+gradleScripts).forEach { fileName ->
                 val url = getResUrl(fileName)
                 val outputFile = File(dir, fileName)
                 url?.openStream()?.use { inputStream ->
@@ -144,5 +149,10 @@ object RuntimeLibrariesManager {
         runtimeLibs.map {
             File(tmpFolder, it).toURI().toURL()
         }
+    }
+
+    suspend fun getClassPathGradleScript(): File = withContext(Dispatchers.Default) {
+        val tmpFolder = initialize()
+        File(tmpFolder, classpathGradleScript)
     }
 }
