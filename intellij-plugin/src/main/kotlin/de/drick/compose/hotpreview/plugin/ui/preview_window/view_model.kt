@@ -79,14 +79,13 @@ sealed interface HotPreviewAction {
     data object Refresh : HotPreviewAction
     data class SelectGroup(val group: String?) : HotPreviewAction
     data class SelectTab(val tabIndex: Int) : HotPreviewAction
-    data class ChangeScale(val newScale: Float) : HotPreviewAction
     data class NavigateCodeLine(val line: Int) : HotPreviewAction
     data class MonitorChanges(val scope: CoroutineScope) : HotPreviewAction
 
 }
 
 interface HotPreviewViewModelI {
-    val scale: Float
+    val scaleState: ScaleState
     val isPureTextEditor: Boolean
     val compilingInProgress: Boolean
     val errorMessage: Throwable?
@@ -131,9 +130,7 @@ class HotPreviewViewModel(
 
     private val properties = PluginPersistentStore(project, file)
 
-    private val scaleProperty = properties.float("scale", 1f)
-    override var scale: Float by mutableStateOf(scaleProperty.get())
-        private set
+    override val scaleState = ScaleState(properties)
 
     private val selectGroupProperty = properties.stringNA("selected_group", null)
     override var selectedGroup by mutableStateOf(selectGroupProperty.get())
@@ -157,7 +154,6 @@ class HotPreviewViewModel(
             HotPreviewAction.OpenSettings -> openSettings()
             HotPreviewAction.Refresh -> recompile()
             HotPreviewAction.ToggleLayout -> toggleLayout()
-            is HotPreviewAction.ChangeScale -> changeScale(action.newScale)
             is HotPreviewAction.MonitorChanges -> monitorChanges(action.scope)
             is HotPreviewAction.NavigateCodeLine -> navigateCodeLine(action.line)
             is HotPreviewAction.SelectGroup -> selectGroup(action.group)
@@ -243,11 +239,6 @@ class HotPreviewViewModel(
                 annotations = annotations
             )
         }
-    }
-
-    private fun changeScale(newScale: Float) {
-        scaleProperty.set(newScale)
-        scale = newScale
     }
 
     private fun toggleLayout() {

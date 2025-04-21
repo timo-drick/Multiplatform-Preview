@@ -2,7 +2,6 @@ package de.drick.compose.hotpreview.plugin.ui.preview_window
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,11 +14,8 @@ import org.jetbrains.jewel.foundation.modifier.onHover
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.Orientation
 import org.jetbrains.jewel.ui.component.Divider
-import org.jetbrains.jewel.ui.component.Icon
-import org.jetbrains.jewel.ui.component.IconButton
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.VerticallyScrollableContainer
-import org.jetbrains.jewel.ui.icons.AllIconsKeys
 import org.jetbrains.jewel.ui.theme.editorTabStyle
 import org.jetbrains.jewel.ui.theme.groupHeaderStyle
 
@@ -27,14 +23,14 @@ import org.jetbrains.jewel.ui.theme.groupHeaderStyle
 private val LOG = fileLogger()
 
 @OptIn(ExperimentalResourceApi::class)
-@HotPreview(widthDp = 650, heightDp = 1400)
-@HotPreview(widthDp = 650, heightDp = 1400, darkMode = false)
+@HotPreview(widthDp = 1280, heightDp = 800, density = 1.5f)
+@HotPreview(widthDp = 1280, heightDp = 800, darkMode = false, density = 1.5f)
 @Composable
 private fun PreviewMainScreen() {
     val env = rememberResourceEnvironment()
     val viewModel = remember {
         mockViewModel(env, getMockData()).apply {
-            onAction(HotPreviewAction.ChangeScale(1f))
+            scaleState.setNeutral()
         }
     }
     SelfPreviewBase(viewModel)
@@ -45,7 +41,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
     val scope = rememberCoroutineScope()
 
     val previewList = model.previewList
-    val scale = model.scale
+    val scaleState = model.scaleState
     val compilingInProgress = model.compilingInProgress
     val error: Throwable? = model.errorMessage
 
@@ -84,7 +80,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
                     PreviewGridPanel(
                         modifier = Modifier.fillMaxWidth(),
                         hotPreviewList = previewList,
-                        scale = scale,
+                        scaleState = scaleState,
                         selectedGroup = model.selectedGroup,
                         onNavigateCode = { model.onAction(HotPreviewAction.NavigateCodeLine(it)) },
                         requestPreviews = model::requestPreviews,
@@ -98,7 +94,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
                             modifier = Modifier.fillMaxWidth(),
                             hotPreviewList = previewList,
                             selectedTab = selectedTab,
-                            scale = scale,
+                            scaleState = scaleState,
                             requestPreviews = { model.requestPreviews(it) },
                             onNavigateCode = { model.onAction(HotPreviewAction.NavigateCodeLine(it)) },
                             onSelectTab = { model.onAction(HotPreviewAction.SelectTab(it)) },
@@ -106,26 +102,11 @@ fun MainScreen(model: HotPreviewViewModelI) {
                         )
                     }
                 }
-                if (showZoomControls) {
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(8.dp)
-                            .background(JewelTheme.globalColors.panelBackground, RoundedCornerShape(4.dp))
-                            .padding(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        IconButton(onClick = { model.onAction(HotPreviewAction.ChangeScale(scale + .2f)) }) {
-                            Icon(AllIconsKeys.General.Add, contentDescription = "ZoomIn")
-                        }
-                        IconButton(onClick = { model.onAction(HotPreviewAction.ChangeScale(scale - .2f)) }) {
-                            Icon(AllIconsKeys.General.Remove, contentDescription = "ZoomOut")
-                        }
-                        IconButton(onClick = { model.onAction(HotPreviewAction.ChangeScale(1f)) }) {
-                            Icon(AllIconsKeys.General.ActualZoom, contentDescription = "100%")
-                        }
-                    }
-                }
+                ZoomControls(
+                    modifier = Modifier.align(Alignment.BottomEnd),
+                    visible = showZoomControls,
+                    scaleState = scaleState
+                )
             }
         }
     }

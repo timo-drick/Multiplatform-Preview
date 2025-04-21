@@ -34,7 +34,8 @@ val versionName = "0.6.1-$ijPlatform"
 val changeNotesText = """
 <h3>V 0.7.0</h3>
 <ul>
-    <li>Fixed problem with using WindowInsets. Changed Compose Multiplatform version 1.7.3</li>
+    <li>Added fit content to zoom control. And improved zoom controls.</li>
+    <li>Fixed problem with using WindowInsets. Changed Compose Multiplatform version to 1.7.3</li>
 </ul>
 
 <h3>V 0.6.1</h3>
@@ -109,9 +110,9 @@ dependencies {
 
     intellijPlatform {
         //See this list for available versions: https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html
-        //androidStudio("2024.3.1.13") //Meerkat
+        androidStudio("2024.3.1.13") //Meerkat
         //androidStudio("2024.2.2.13") //Ladybug
-        intellijIdeaCommunity(ijPlatform)
+        //intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
         zipSigner()
         bundledPlugins("com.intellij.java", "org.jetbrains.kotlin", "com.intellij.gradle") // Plugins must be also provided in plugin.xml!!!

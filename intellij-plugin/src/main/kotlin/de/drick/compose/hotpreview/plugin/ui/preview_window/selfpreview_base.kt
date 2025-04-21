@@ -15,6 +15,7 @@ import de.drick.compose.hotpreview.plugin.*
 import de.drick.compose.hotpreview.plugin.service.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.service.RenderError
 import de.drick.compose.hotpreview.plugin.service.RenderedImage
+import de.drick.compose.hotpreview.plugin.tools.MockPersistentStore
 import de.drick.compose.hotpreview.plugin.ui.guttericon.GutterIconViewModelI
 import de.drick.compose.hotpreview.plugin.ui.guttericon.mockGutterIconViewModel
 import hotpreviewplugin.generated.resources.*
@@ -175,7 +176,7 @@ fun mockViewModel(
     env: ResourceEnvironment,
     mockData: List<UIHotPreviewData>,
 ) = object : HotPreviewViewModelI {
-    override var scale: Float = 1f
+    override val scaleState: ScaleState = ScaleState(MockPersistentStore())
     override val isPureTextEditor = false
     override var compilingInProgress = false
     override var errorMessage: Throwable? = null
@@ -185,8 +186,6 @@ fun mockViewModel(
     override val selectedTab: Int? = null
     override fun requestPreviews(keys: Set<RenderCacheKey>): Map<RenderCacheKey, UIRenderState> =
         resolveRenderState(env, keys)
-    override fun onAction(action: HotPreviewAction) {
-        if (action is HotPreviewAction.ChangeScale) scale = action.newScale
-    }
+    override fun onAction(action: HotPreviewAction) {}
     override fun getGutterIconViewModel(annotation: UIAnnotation): GutterIconViewModelI = mockGutterIconViewModel
 }

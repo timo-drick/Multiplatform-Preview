@@ -8,11 +8,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.*
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.service.RenderCacheKey
+import de.drick.compose.hotpreview.plugin.tools.MockPersistentStore
 import de.drick.compose.hotpreview.plugin.ui.components.FoldableSection
-import de.drick.compose.hotpreview.plugin.ui.components.ScrollbarContainer
+import de.drick.compose.hotpreview.plugin.ui.components.ScrollbarContainerWithoutScrollModifier
 import de.drick.compose.hotpreview.plugin.ui.components.forwardMinIntrinsicWidth
 import de.drick.compose.hotpreview.plugin.ui.components.intrinsicScrollModifier
 import de.drick.compose.hotpreview.plugin.ui.guttericon.DialogGutterIconSettings
@@ -33,10 +35,11 @@ private fun PreviewPreviewGridPanel() {
     val data = remember {
         getMockData()
     }
+    val mockScaleState = remember { ScaleState(MockPersistentStore()) }
     SelfPreviewTheme {
         PreviewGridPanel(
             hotPreviewList = data,
-            scale = 1f,
+            scaleState = mockScaleState,
             selectedGroup = "dark",
             requestPreviews = { resolveRenderState(env, it) },
             onNavigateCode = {},
@@ -45,12 +48,34 @@ private fun PreviewPreviewGridPanel() {
     }
 }
 
+@Composable
+fun fitScalingToContent(
+    key: Any,
+    viewportIntSize: IntSize,
+    contentSize: IntSize,
+    scaleState: ScaleState
+) {
+    var lastStepDown by remember(key, scaleState.fitToContent, viewportIntSize) { mutableStateOf(false) }
+    if (viewportIntSize == IntSize.Zero || contentSize == IntSize.Zero) return
+    if (scaleState.fitToContent && scaleState.minReached().not() &&
+        (contentSize.width > viewportIntSize.width || contentSize.height > viewportIntSize.height)
+    ) {
+        scaleState.fitOut()
+        lastStepDown = true
+    }
+    //Check if we can increase size by 15%
+    if (scaleState.fitToContent && scaleState.maxReached().not() && lastStepDown.not() &&
+        contentSize.height * 1.15f < viewportIntSize.height
+    ) {
+        scaleState.fitIn()
+    }
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PreviewGridPanel(
     hotPreviewList: List<UIHotPreviewData>,
-    scale: Float,
+    scaleState: ScaleState,
     selectedGroup: String?,
     modifier: Modifier = Modifier,
     onNavigateCode: (Int) -> Unit,
@@ -76,16 +101,28 @@ fun PreviewGridPanel(
     }
     val horizontalScrollState = rememberScrollState()
     val verticalScrollState = rememberScrollState()
-    ScrollbarContainer(
-        modifier = modifier.fillMaxSize(),
+    var contentSize by remember { mutableStateOf(IntSize.Zero) }
+    var viewPortSize by remember { mutableStateOf(IntSize.Zero) }
+    fitScalingToContent(
+        key = previewList,
+        viewportIntSize = viewPortSize,
+        contentSize = contentSize,
+        scaleState = scaleState,
+    )
+    ScrollbarContainerWithoutScrollModifier(
+        modifier = modifier
+            .fillMaxSize()
+            .onSizeChanged { viewPortSize = it },
         verticalScrollState = verticalScrollState,
         horizontalScrollState = horizontalScrollState
     ) {
         FlowRow(
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier
+                .padding(8.dp)
                 .fillMaxWidth()
                 .verticalScroll(verticalScrollState)
-                .intrinsicScrollModifier(horizontalScrollState),
+                .intrinsicScrollModifier(horizontalScrollState)
+                .onSizeChanged { contentSize = it },
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -95,7 +132,7 @@ fun PreviewGridPanel(
                         PreviewSection(
                             modifier = Modifier.forwardMinIntrinsicWidth(),
                             hasHeader = true,
-                            scale = scale,
+                            scale = scaleState.scale,
                             preview = preview,
                             renderStateMap = previewMap,
                             onNavigateCode = onNavigateCode,
@@ -105,7 +142,7 @@ fun PreviewGridPanel(
                 } else {
                     PreviewSection(
                         hasHeader = false,
-                        scale = scale,
+                        scale = scaleState.scale,
                         preview = preview,
                         renderStateMap = previewMap,
                         onNavigateCode = onNavigateCode,

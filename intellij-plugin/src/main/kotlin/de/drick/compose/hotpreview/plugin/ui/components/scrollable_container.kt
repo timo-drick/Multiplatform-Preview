@@ -60,6 +60,27 @@ import kotlin.time.Duration
 @OptIn(ExperimentalLayoutApi::class)
 @HotPreview(widthDp = 250, heightDp = 300)
 @Composable
+private fun PreviewScrollableText() {
+    SelfPreviewTheme {
+        val hScrollState = rememberScrollState()
+        val vScrollState = rememberScrollState()
+        ScrollableContainer(
+            verticalScrollState = vScrollState,
+            horizontalScrollState = hScrollState
+        ) {
+
+            Text(
+                text = "Test Text",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.background(Color.Green).requiredSize(100.dp, 100.dp)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@HotPreview(widthDp = 250, heightDp = 300)
+@Composable
 private fun PreviewScrollableFlowRow() {
     SelfPreviewTheme {
         val hScrollState = rememberScrollState()
@@ -80,7 +101,9 @@ private fun PreviewScrollableFlowRow() {
                     Text(
                         text = "Test $index",
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.background(Color.Green).requiredSize(100.dp, 100.dp)
+                        modifier = Modifier
+                            .background(Color.Green)
+                            .requiredSize(100.dp, 100.dp)
                     )
                 }
             }
@@ -88,6 +111,14 @@ private fun PreviewScrollableFlowRow() {
     }
 }
 
+/**
+ * Creates a custom layout modifier that captures and forwards the minimum intrinsic width of a composable.
+ * 
+ * This is particularly useful when you need to ensure that a composable's minimum intrinsic width 
+ * is properly considered during layout calculations, especially in complex nested layouts.
+ *
+ * @return A [Modifier] that forwards the minimum intrinsic width
+ */
 fun Modifier.forwardMinIntrinsicWidth() = this then object : LayoutModifier {
     var minIntrinsicWidth = 0
     override fun MeasureScope.measure(
@@ -107,6 +138,27 @@ fun Modifier.forwardMinIntrinsicWidth() = this then object : LayoutModifier {
     ) = if (minIntrinsicWidth != 0) minIntrinsicWidth else measurable.minIntrinsicWidth(height)
 }
 
+/**
+ * Creates a custom layout modifier that combines horizontal scrolling with intrinsic width handling.
+ * 
+ * This modifier ensures that scrollable content is properly sized based on both its intrinsic width 
+ * and the viewport size of the scroll container.
+ * 
+ * ### Behavior
+ * 1. First applies the standard `horizontalScroll` modifier with the provided `scrollState`
+ * 2. Then applies a custom `LayoutModifier` that:
+ *    - Calculates the minimum intrinsic width of the measurable
+ *    - Determines the maximum viewport size (the larger of the minimum constraint width or the scroll state's viewport size)
+ *    - Creates new constraints with a maximum width that accommodates both the viewport and the intrinsic width
+ *    - Measures the composable with these adjusted constraints
+ *    - Returns a layout with a width that's at least as large as both the measured width and the intrinsic width
+ * 
+ * ### Usage
+ * This modifier is used in scrollable containers to ensure that content is properly sized for horizontal scrolling.
+ *
+ * @param scrollState A [ScrollState] object that manages the scroll position and provides information about the viewport size
+ * @return A [Modifier] that handles horizontal scrolling with proper intrinsic width handling
+ */
 fun Modifier.intrinsicScrollModifier(scrollState: ScrollState) = horizontalScroll(scrollState) then object : LayoutModifier {
     override fun MeasureScope.measure(
         measurable: Measurable,
@@ -213,7 +265,7 @@ fun ScrollableContainer(
 }
 
 @Composable
-fun ScrollbarContainer(
+fun ScrollbarContainerWithoutScrollModifier(
     verticalScrollState: ScrollState,
     horizontalScrollState: ScrollState,
     modifier: Modifier = Modifier,

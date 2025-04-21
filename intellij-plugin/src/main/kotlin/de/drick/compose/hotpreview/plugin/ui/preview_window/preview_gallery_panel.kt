@@ -9,9 +9,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.*
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.service.RenderCacheKey
+import de.drick.compose.hotpreview.plugin.tools.MockPersistentStore
 import de.drick.compose.hotpreview.plugin.ui.components.TabBar
 import de.drick.compose.hotpreview.plugin.ui.components.ScrollableContainer
 import de.drick.compose.hotpreview.plugin.ui.guttericon.DialogGutterIconSettings
@@ -34,10 +36,13 @@ private fun PreviewPreviewGalleryPanel() {
     val data = remember {
         getMockData()
     }
+    val scaleState = remember {
+        ScaleState(MockPersistentStore())
+    }
     SelfPreviewTheme {
         PreviewGalleryPanel(
             hotPreviewList = data,
-            scale = 1f,
+            scaleState = scaleState,
             selectedTab = 0,
             requestPreviews = { resolveRenderState(env, it) },
             onNavigateCode = {},
@@ -56,11 +61,31 @@ fun UIFunctionAnnotation.toName(): String {
     }
 }
 
+fun fitScalingToContent(
+    horizontalScrollState: ScrollState,
+    verticalScrollState: ScrollState,
+    contentSize: IntSize,
+    scaleState: ScaleState
+) {
+    val viewportIntSize = IntSize(horizontalScrollState.viewportSize, verticalScrollState.viewportSize)
+    if (scaleState.fitToContent && scaleState.minReached().not() &&
+        (contentSize.width > viewportIntSize.width || contentSize.height > viewportIntSize.height)
+    ) {
+        scaleState.fitOut()
+    }
+    //Check if we can increase size by 15%
+    if (scaleState.fitToContent && scaleState.maxReached().not() &&
+        (contentSize.width * 1.15f < viewportIntSize.width && contentSize.height * 1.15f < viewportIntSize.height)
+    ) {
+        scaleState.fitIn()
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PreviewGalleryPanel(
     hotPreviewList: List<UIHotPreviewData>,
-    scale: Float,
+    scaleState: ScaleState,
     selectedTab: Int,
     modifier: Modifier = Modifier,
     requestPreviews: (Set<RenderCacheKey>) -> Map<RenderCacheKey, UIRenderState>,
@@ -104,18 +129,34 @@ fun PreviewGalleryPanel(
             thickness = style.metrics.dividerThickness,
         )
         Spacer(Modifier.height(4.dp))
-        ScrollableContainer(Modifier.fillMaxWidth().weight(1f)) {
+        val verticalScrollState = rememberScrollState()
+        val horizontalScrollState = rememberScrollState()
+        var contentSize by remember { mutableStateOf(IntSize.Zero) }
+        fitScalingToContent(
+            horizontalScrollState = horizontalScrollState,
+            verticalScrollState = verticalScrollState,
+            contentSize = contentSize,
+            scaleState = scaleState,
+        )
+        ScrollableContainer(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            verticalScrollState = verticalScrollState,
+            horizontalScrollState = horizontalScrollState,
+        ) {
             PreviewItem(
-                modifier = Modifier.align(Alignment.Center).clickable(
-                    onClick = {
-                        onNavigateCode(selectedItem.annotation.lineRange.first)
-                    },
+                modifier = Modifier
+                    .onSizeChanged { contentSize = it }
+                    .align(Alignment.Center)
+                    .clickable(
+                        onClick = {
+                            onNavigateCode(selectedItem.annotation.lineRange.first)
+                        },
                     interactionSource = null,
                     indication = null
                 ),
                 name = selectedItem.toName(),
                 renderState = uiRenderState.state,
-                scale = scale,
+                scale = scaleState.scale,
                 hasFocus = false,
                 onSettings = if (selectedItem.annotation.isAnnotationClass.not()) {
                     { gutterIconViewModel = onGetGutterIconViewModel(selectedItem.annotation) }

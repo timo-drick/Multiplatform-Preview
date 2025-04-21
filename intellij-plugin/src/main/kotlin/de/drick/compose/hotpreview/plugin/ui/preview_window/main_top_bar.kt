@@ -113,7 +113,6 @@ private fun PreviewTopAppBarGroups() {
                 selectedGroup = groups.first(),
                 onAction = {}
             )
-            Text("More content", modifier = Modifier.padding(100.dp))
         }
     }
 }
