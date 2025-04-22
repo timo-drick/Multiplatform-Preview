@@ -1,8 +1,8 @@
 # HotPreview for Compose Multiplatform
 
-HotPreview is a preview system for Compose Multiplatform UI code. Unlike Android Studio's preview system which is limited to Android code only, HotPreview is implemented from scratch specifically for multiplatform development. It allows developers to visualize their Compose UI components across multiple platforms. With features like custom device configurations, screen sizes, font scaling, locale and dark mode. HotPreview makes multiplatform UI development faster and more efficient.
+HotPreview is a preview system for Compose Multiplatform UI code. Unlike Android Studio's preview system which is limited to Android code only, HotPreview is implemented from scratch specifically for multiplatform development. It allows developers to visualize their Compose UI components. With features like custom device configurations, screen sizes, font scaling, locale and dark mode. HotPreview makes multiplatform UI development faster and more efficient.
 
-The HotPreview system is developed as a IntelliJ plugin using Jewel. It also previews itself. If you want to use as well to preview Jewel plugin projects please have look here: [Jewel plugin development](JEWEL.md)
+The HotPreview system is developed as a IntelliJ plugin using Jewel. It also previews itself. If you want to use it as well in your Jewel plugin projects please see the setup guide here: [Jewel plugin development](JEWEL.md)
 
 ![](screenshots/compose_dev_challenge_home_screen.png)
 

@@ -2,13 +2,17 @@
 
 Jewel is a Compose UI for IntelliJ: https://github.com/JetBrains/intellij-community/tree/master/platform/jewel
 
-## Setup dependencies
-
 Please follow the documentation from the Jewel project for general setup.
+
+## Setup dependencies for preview
+
 To preview Jewel compose code add the following dependency to your build.gradle.kts file:
 
 ```kotlin
 implementation("org.jetbrains.jewel:jewel-int-ui-standalone-$branch:0.27.0") {
+    exclude(group = "org.jetbrains.kotlinx")
+}
+implementation("de.drick.compose:hotpreview:<version>") {
     exclude(group = "org.jetbrains.kotlinx")
 }
 ```
@@ -18,9 +22,7 @@ This dependency is needed for preview only because the preview cannot access the
 
 ## Preview theme
 
-To preview Jewel compose UI, a Jewel theme is required. For now, you can use the default IntUiTheme. The following PreviewTheme definition works best in my experience.
-
-Here's the theme implementation:
+Jewel needs a JewelTheme. For now, you can use the default IntUiTheme. The following PreviewTheme definition works best in my experience:
 ```kotlin
 @OptIn(InternalComposeUiApi::class)
 @Composable

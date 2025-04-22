@@ -110,9 +110,9 @@ dependencies {
 
     intellijPlatform {
         //See this list for available versions: https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html
-        androidStudio("2024.3.1.13") //Meerkat
+        //androidStudio("2024.3.1.13") //Meerkat
         //androidStudio("2024.2.2.13") //Ladybug
-        //intellijIdeaCommunity(ijPlatform)
+        intellijIdeaCommunity(ijPlatform)
         pluginVerifier()
         zipSigner()
         bundledPlugins("com.intellij.java", "org.jetbrains.kotlin", "com.intellij.gradle") // Plugins must be also provided in plugin.xml!!!
