@@ -35,9 +35,28 @@ dependencies {
 }
 ```
 
+### Add jvm target
+
+In a multiplatform project you need to add the jvm target to your module:
+
+```kotlin
+kotlin {
+    
+   jvm() // add this line
+   
+   // more targets
+
+   sourceSets {
+       //...
+   }
+}
+```
+
 ### Install IDE plugin
 
 You also need the plugin. It is published already to the  marketplace so just search for HotPreview.
+
+https://plugins.jetbrains.com/plugin/26327-compose-multiplatform-hotpreview
 
 If you want to compile it yourself please see documentation in the intellij project:
 [intellij-plugin](intellij-plugin/README.md)
