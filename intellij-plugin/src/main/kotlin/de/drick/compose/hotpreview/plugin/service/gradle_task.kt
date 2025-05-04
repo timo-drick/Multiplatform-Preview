@@ -59,7 +59,6 @@ suspend fun executeGradleTask(project: Project, taskNameList: List<String>, para
  * This function uses the Gradle API to execute a task that prints the classpath.
  *
  * @param project The IntelliJ project
- * @param configurationName The name of the Gradle configuration to get the classpath for (e.g., "runtimeClasspath")
  * @param path The path to the Gradle project
  * @return A list of URLs representing the classpath
  */
@@ -85,20 +84,21 @@ suspend fun getClassPathFromGradleTask(
 
 class JvmRuntimeClasspathTask(
     val initScriptFile: File,
-    private val outputFile: File,
+    private val buildDir: File,
 ) {
+    private val runtimeClassPathFile = File(buildDir, "hotPreviewRuntimeClasspath.txt")
     // Create a temporary file for output
     val taskName = "hotPreviewDetectClasspath"
 
     fun readClassPath(): List<URL> {
         // Check if the output file exists and has content
-        return if (outputFile.exists() && outputFile.length() > 0) {
+        return if (runtimeClassPathFile.exists() && runtimeClassPathFile.length() > 0) {
             // Read the classpath entries from the file
-            outputFile.readLines()
+            runtimeClassPathFile.readLines()
                 .filter { it.isNotBlank() }
                 .map { File(it.trim()).toURI().toURL() }
         } else {
-            println("Output file not found or empty: $outputFile")
+            println("Output file not found or empty: $runtimeClassPathFile")
             emptyList()
         }
     }
@@ -109,7 +109,7 @@ class JvmRuntimeClasspathTask(
             val classPathGradleScript = RuntimeLibrariesManager.getClassPathGradleScript()
             return JvmRuntimeClasspathTask(
                 initScriptFile = classPathGradleScript,
-                outputFile = File(buildDir, "hotPreviewClasspath.txt")
+                buildDir = File(buildDir)
             )
         }
     }

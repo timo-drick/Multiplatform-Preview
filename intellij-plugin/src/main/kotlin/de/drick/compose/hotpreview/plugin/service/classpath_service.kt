@@ -6,7 +6,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import de.drick.compose.hotpreview.plugin.ClassPathMode
 import de.drick.compose.hotpreview.plugin.ProjectAnalyzer
-import de.drick.compose.hotpreview.plugin.useSuspendWorkspace
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -50,17 +49,13 @@ class ClassPathService private constructor(
             val skikoLibs = RuntimeLibrariesManager.getRuntimeLibs()
             val path = requireNotNull(projectAnalyzer.getModulePath(module)) { "Module path $module not found!" }
 
-            val compileTask = if (recompile) project.useSuspendWorkspace {
-                val moduleEntity = requireNotNull(getModule(module)) { "Module ${module.name} not found!" }
-                val desktopModule = getJvmTargetModule(moduleEntity)
-                getGradleTaskName(desktopModule)
-            } else null
+            val compileTask = projectAnalyzer.getGradleCompileTaskName(jvmModule)
             println("compile task: $compileTask path: $path")
 
             val preparation = ts.markNow() - start
             println("ClassPathService preparation time: $preparation")
             val (gradleTaskClassPath, duration) = measureTimedValue {
-                getClassPathFromGradleTask(project, module, path, compileTask, gradleParameters)
+                getClassPathFromGradleTask(project, module, path, if (recompile) compileTask else null, gradleParameters)
             }
             println("Class path jvmRuntimeClasspath execution time: $duration")
             // Fall back to the old method if the task method fails

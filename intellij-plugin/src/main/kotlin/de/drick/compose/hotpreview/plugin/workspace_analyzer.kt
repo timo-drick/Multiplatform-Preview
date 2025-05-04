@@ -57,9 +57,9 @@ private class WorkspaceAnalyzer(
     override fun getJvmTargetModule(module: ModuleEntity): ModuleEntity {
         val baseModuleName = module.name.substringBeforeLast(".")
         val isMultiplatform = module.isMultiplatform()
-        val desktopModule = currentSnapshot.entities(ModuleEntity::class.java)
+        val modules = currentSnapshot.entities(ModuleEntity::class.java)
             .filter { it.name.startsWith(baseModuleName) }
-            //.filter { it.isTestModule.not() }
+        val desktopModule = modules
             .find {
                 if (isMultiplatform) {
                     it.name.contains("jvmMain") || it.name.contains("desktopMain")

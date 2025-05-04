@@ -43,6 +43,8 @@ In a multiplatform project you need to add the jvm target to your module:
 kotlin {
     
    jvm() // add this line
+   // or
+   jvm("desktop") // if you have a custom name for the jvm target
    
    // more targets
 

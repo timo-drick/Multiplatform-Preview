@@ -233,7 +233,6 @@ suspend fun findFunctionsWithHotPreviewAnnotationsNew(project: Project, file: Vi
 suspend fun findFunctionsWithHotPreviewAnnotations(project: Project, file: VirtualFile): List<HotPreviewFunction> =
     withContext(Dispatchers.Default) {
         project.smartReadActionPsiFile(file) { psiFile ->
-            LOG.debug("Find preview annotations for: $file")
             val functionList = mutableListOf<KtNamedFunction>()
             psiFile.accept(object : KtTreeVisitorVoid() {
                 override fun visitNamedFunction(function: KtNamedFunction) {
@@ -248,8 +247,6 @@ suspend fun findFunctionsWithHotPreviewAnnotations(project: Project, file: Virtu
 
 @RequiresReadLock
 fun KaSession.checkFunctionForAnnotation(project: Project, function: KaFunctionSymbol): List<HotPreviewAnnotation> {
-    //TODO Find a solution which is also working in dumb mode.
-    LOG.debug("Function: ${function.name}")
     val hotPreviewAnnotations = function.annotations
         .filter { it.classId == hotPreviewAnnotationClassId }
         .mapNotNull {

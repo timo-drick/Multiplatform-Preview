@@ -36,6 +36,7 @@ val changeNotesText = """
 <ul>
     <li>Added fit content to zoom control. And improved zoom controls.</li>
     <li>Fixed problem with using WindowInsets. Changed Compose Multiplatform version to 1.7.3</li>
+    <li>Added support for custom sourceSet name for jvm target.</li>
 </ul>
 
 <h3>V 0.6.1</h3>

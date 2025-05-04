@@ -14,6 +14,9 @@ import de.drick.compose.utils.livecompile.SourceSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.idea.base.facet.isMultiPlatformModule
+import org.jetbrains.kotlin.idea.base.facet.isTestModule
+import org.jetbrains.kotlin.idea.base.facet.platform.platform
+import org.jetbrains.kotlin.idea.base.util.isAndroidModule
 import org.jetbrains.kotlin.idea.util.projectStructure.getModule
 import java.io.File
 import java.net.URL
@@ -71,20 +74,19 @@ class ProjectAnalyzer(
         // TODO not sure if the name is always desktop for jvm modules
         return smartReadAction(project) {
             if (module.isMultiPlatformModule) {
-                val desktopModule = project.modules
+                val modules = project.modules
                     .filter { it.name.startsWith(baseModuleName) && it.name != baseModuleName }
-                    //.filter { it.isTestModule.not() }
-                    .find {
-                        it.name.contains("jvmMain") || it.name.contains("desktopMain")
-                        //it.platform.size == 1 && it.platform.first().platformName == "JVM"
+                    .filter { it.isTestModule.not() }
+                val desktopModule = modules
+                    .find { module ->
+                        val isJvmPlatform = module.platform.firstOrNull { it.platformName == "JVM" }
+                        isJvmPlatform != null && module.platform.size == 1 && module.isAndroidModule().not()
                     }
-                //println("Found module: ${desktopModule?.name} base: $baseModuleName")
                 requireNotNull(desktopModule) { "No desktop module found!" }
             } else {
                 val desktopModule = project.modules.filter { it.name.startsWith(baseModuleName) }
-                    //.filter { it.isTestModule.not() }
+                    .filter { it.isTestModule.not() }
                     .find { it.name.substringAfterLast(".") == "main" }
-                //println("Found module: ${desktopModule?.name} base: $baseModuleName")
                 requireNotNull(desktopModule) { "No desktop module found!" }
             }
         }
@@ -156,4 +158,11 @@ class ProjectAnalyzer(
 
     suspend fun getModulePath(module: Module) =
         smartReadAction(project) { ExternalSystemApiUtil.getExternalProjectPath(module) }
+
+    fun getGradleCompileTaskName(module: Module): String {
+        val tokens = module.name.split(".")
+        val moduleName = tokens.drop(1).joinToString(":")
+        val taskName = ":${moduleName}Classes"
+        return taskName
+    }
 }
