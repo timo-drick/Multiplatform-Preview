@@ -20,7 +20,7 @@ allprojects {
         val jvmTargetName = layout.buildDirectory.file("hotPreviewJvmTargetName.txt")
 
         doLast {
-            configFile.get().asFile.writeText(allConfigurationNames)
+            //configFile.get().asFile.writeText(allConfigurationNames)
             runtimeFile.get().asFile.writeText(runtimeClasspath?.joinToString("\n") ?: "")
             compileFile.get().asFile.writeText(compileClasspath?.joinToString("\n") ?: "")
             jvmTargetName.get().asFile.writeText(targetName)
