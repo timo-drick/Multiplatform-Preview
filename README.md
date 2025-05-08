@@ -10,9 +10,7 @@ The HotPreview system is developed as a IntelliJ plugin using Jewel. It also pre
 
 Supported are projects with:
 
-Supported Compose Multiplatform versions:
-- 1.7.3
-- 1.8.0
+Supported Compose Multiplatform versions: 1.7.3, 1.8.0
 
 - Compose for Desktop (CFD) only code.
 - Multiplatform projects
