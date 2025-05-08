@@ -28,10 +28,18 @@ repositories {
 val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.4")
 val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("243")
 
-val versionName = "0.7.0-$ijPlatform"
+val versionName = "0.7.1-$ijPlatform"
 
 @Language("HTML")
 val changeNotesText = """
+<h3>V 0.7.0</h3>
+<ul>
+    <li>
+        Updated preview rendering to Compose Multiplatform 1.8.0 
+        (In my tests this now works for both 1.7.3 and 1.8.0 but if you have issues please report them to the github repo)
+     </li>
+</ul>
+
 <h3>V 0.7.0</h3>
 <ul>
     <li>Added fit content to zoom control. And improved zoom controls.</li>
