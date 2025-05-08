@@ -25,7 +25,7 @@ repositories {
 
 //val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.2.5")
 //val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("242")
-val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.4")
+val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.5")
 val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("243")
 
 val versionName = "0.7.1-$ijPlatform"

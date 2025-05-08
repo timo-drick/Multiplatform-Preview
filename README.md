@@ -22,7 +22,7 @@ This is because the previews are rendered using CFD itself.
 
 Supported IDEs:
 
-- IntelliJ 2024.2.5, 2024.3.2 (Important: 2025.1.0 is not supported yet!)
+- IntelliJ 2024.2, 2024.3 (Important: 2025.1 is not supported yet!)
 - Android Studio Ladybug, Meerkat
 
 ## Usage
