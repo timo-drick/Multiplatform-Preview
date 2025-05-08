@@ -106,7 +106,7 @@ object RuntimeLibrariesManager {
     private var tmpFolder: File? = null
 
     private val runtimeLibs = listOf(
-        "hot_preview_render-all.jar"
+        "hot_preview_render_1_8-all.jar"
     )
 
     private val classpathGradleScript = "classpath.gradle.kts"

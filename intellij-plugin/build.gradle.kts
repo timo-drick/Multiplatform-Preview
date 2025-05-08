@@ -172,10 +172,10 @@ dependencies {
 tasks.register<GradleBuild>("buildRenderModule") {
     group = "build"
     dir = file("../")
-    tasks = listOf(":hot_preview_render:shadowJar")
+    tasks = listOf(":hot_preview_render_1_8:shadowJar")
 }
 
-val renderModulePath = layout.projectDirectory.dir("../hot_preview_render/build/libs")
+val renderModulePath = layout.projectDirectory.dir("../hot_preview_render_1_8/build/libs")
 
 tasks.processResources {
     dependsOn("buildRenderModule")
