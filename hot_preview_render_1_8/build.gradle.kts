@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm")
     kotlin("plugin.compose") version Versions.kotlin
-    id("org.jetbrains.compose") version Versions.composeMP
+    id("org.jetbrains.compose") version "1.8.0"
     id("com.gradleup.shadow") version Versions.shadow
 }
 

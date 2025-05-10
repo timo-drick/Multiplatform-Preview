@@ -12,12 +12,14 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.util.concurrency.annotations.RequiresReadLock
+import io.ktor.util.valuesOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotation
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationValue
+import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationValue.NestedAnnotationValue
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.name
 import org.jetbrains.kotlin.idea.debugger.core.stepping.getLineRange
@@ -33,6 +35,7 @@ import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.psiUtil.argumentIndex
 import kotlin.collections.plus
+import kotlin.enums.enumEntries
 
 @Suppress("UnstableApiUsage")
 private val LOG = fileLogger()
@@ -43,25 +46,65 @@ private val composableClassId = ClassId.topLevel(FqName(Composable::class.qualif
 
 private val hotPreviewDefaultValues = HotPreviewModel()
 
-inline fun <reified T>Map<String, Any?>.withDefault(key: String, defaultValue: T): T =
-    this[key] as? T ?: defaultValue
+inline fun <reified T>KaAnnotation.findParameterWithDefault(name: String, defaultValue: T): T =
+    arguments.find { it.name.toString() == name }?.expression?.let { expression ->
+        val value = (expression as? KaAnnotationValue.ConstantValue)?.value?.value
+        value as? T
+    } ?: defaultValue
+
+inline fun <reified T: Enum<T>>KaAnnotation.findEnumParameterWithDefault(name: String, defaultValue: T): T =
+    arguments.find { it.name.toString() == name }?.expression?.let { expression ->
+        val value = (expression as? KaAnnotationValue.EnumEntryValue)?.callableId?.callableName?.identifier?.let { value ->
+            println("Find in enum model: $value")
+            enumEntries<T>().find { it.name == value }
+        }
+        println("Enum value: $value")
+        // find in enum class
+        value
+    } ?: defaultValue
+
+
+fun KaAnnotation.findNestedAnnotationParameter(name: String): KaAnnotation? {
+    val nestedAnnotation = arguments.find { it.name.toString() == name }?.expression as? NestedAnnotationValue
+    return nestedAnnotation?.annotation
+}
+
+
+
+private fun KaAnnotation.toStatusBarModel() = StatusBarConfigModel(
+    visibility = findEnumParameterWithDefault("visibility", VisibilityModel.Visible)
+)
+private fun KaAnnotation.toNavigationBarModel() = NavigationBarConfigModel(
+    visibility = findEnumParameterWithDefault("visibility", VisibilityModel.Visible),
+    mode = findEnumParameterWithDefault("mode", NavigationModeModel.ThreeButtonBottom),
+    contrastEnforced = findParameterWithDefault("contrastEnforced", false)
+)
+private fun KaAnnotation.toCameraModel() = CameraConfigModel(
+    visibility = findEnumParameterWithDefault("visibility", VisibilityModel.Visible),
+    cameraPosition = findEnumParameterWithDefault("cameraPosition", CameraPositionModel.Top)
+)
+private fun KaAnnotation.toCaptionBarModel() = CaptionBarConfigModel(
+    visibility = findEnumParameterWithDefault("visibility", VisibilityModel.Visible)
+)
 
 private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
     // Build a map
-    val map = arguments.associateBy { it.name.toString() }
-        .mapValues { (it.value.expression as? KaAnnotationValue.ConstantValue)?.value?.value }
     val dv = hotPreviewDefaultValues
-    val dpi = map["dpi"] as? Int?
+    val dpi = findParameterWithDefault<Int?>("dpi", null) // This was in an old version of the HotPreview annotation
     val defaultDensity = if (dpi != null) dpi.toFloat() / 160f else dv.density
     return HotPreviewModel(
-        name = map.withDefault("name", dv.name),
-        group = map.withDefault("group", dv.group),
-        widthDp = map.withDefault("widthDp", dv.widthDp),
-        heightDp = map.withDefault("heightDp", dv.heightDp),
-        locale = map.withDefault("locale", dv.locale),
-        fontScale = map.withDefault("fontScale", dv.fontScale),
-        darkMode = map.withDefault("darkMode", dv.darkMode),
-        density = map.withDefault("density", defaultDensity)
+        name = findParameterWithDefault("name", dv.name),
+        group = findParameterWithDefault("group", dv.group),
+        widthDp = findParameterWithDefault("widthDp", dv.widthDp),
+        heightDp = findParameterWithDefault("heightDp", dv.heightDp),
+        locale = findParameterWithDefault("locale", dv.locale),
+        fontScale = findParameterWithDefault("fontScale", dv.fontScale),
+        darkMode = findParameterWithDefault("darkMode", dv.darkMode),
+        density = findParameterWithDefault("density", defaultDensity),
+        statusBar = findNestedAnnotationParameter("statusBar")?.toStatusBarModel() ?: dv.statusBar,
+        navigationBar = findNestedAnnotationParameter("navigationBar")?.toNavigationBarModel() ?: dv.navigationBar,
+        camera = findNestedAnnotationParameter("camera")?.toCameraModel() ?: dv.camera,
+        captionBar = findNestedAnnotationParameter("captionBar")?.toCaptionBarModel() ?: dv.captionBar
     )
 }
 
@@ -86,7 +129,6 @@ private fun findAnnotationArgument(
     annotationEntry: KtAnnotationEntry,
     argumentName: String,
 ): KtValueArgument? {
-    //call?.symbol?.valueParameters?.getOrNull(1)?.name?.asString()
     return annotationEntry.valueArgumentList?.arguments?.find {
         val name = it.getArgumentName()?.asName?.asString() ?: argumentNameList[it.argumentIndex]
         argumentName == name
@@ -177,8 +219,6 @@ class AnnotationUpdate(
 }
 
 private fun KaAnnotation.toHotPreviewParameter(name: String): HotPreviewParameterModel {
-    val map = arguments.associateBy { it.name.toString() }
-        .mapValues { (it.value.expression as? KaAnnotationValue.ConstantValue)?.value?.value }
     val clazz = arguments
         .find { it.name.toString() == "provider" }
         ?.let { it.expression as KaAnnotationValue.ClassLiteralValue }
@@ -186,7 +226,7 @@ private fun KaAnnotation.toHotPreviewParameter(name: String): HotPreviewParamete
     return HotPreviewParameterModel(
         name = name,
         providerClassName = provider.asFqNameString(),
-        limit = map.withDefault("limit", Int.MAX_VALUE)
+        limit = findParameterWithDefault("limit", Int.MAX_VALUE)
     )
 }
 

@@ -1,5 +1,15 @@
 package de.drick.compose.hotpreview
 
+import androidx.compose.foundation.layout.captionBarInsets
+import androidx.compose.foundation.layout.displayCutoutInsets
+import androidx.compose.foundation.layout.imeInsets
+import androidx.compose.foundation.layout.mandatorySystemGesturesInsets
+import androidx.compose.foundation.layout.navigationBarsInsets
+import androidx.compose.foundation.layout.resetWindowInsets
+import androidx.compose.foundation.layout.statusBarsInsets
+import androidx.compose.foundation.layout.systemGesturesInsets
+import androidx.compose.foundation.layout.tappableElementInsets
+import androidx.compose.foundation.layout.waterfallInsets
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.currentComposer
 import androidx.compose.ui.*
@@ -10,6 +20,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Surface
+import parseWindowInsets
 import java.lang.reflect.Method
 import kotlin.math.min
 import kotlin.time.TimeSource
@@ -33,7 +44,8 @@ class RenderPreviewImpl {
         fontScale: Float,
         isDarkTheme: Boolean,
         locale: String,
-        isInspectionMode: Boolean
+        isInspectionMode: Boolean,
+        windowInsets: String
     ): Any {
         val theme = if (isDarkTheme) SystemTheme.Dark else SystemTheme.Light
         val defaultWidth = 1024f * density
@@ -44,6 +56,21 @@ class RenderPreviewImpl {
         val heightUndefined = heightPx < 1f
         val renderWidth = if (widthUndefined) defaultWidth.toInt() else widthPx.toInt()
         val renderHeight = if (heightUndefined) defaultHeight.toInt() else heightPx.toInt()
+        val insetMap = parseWindowInsets(windowInsets, density)
+        resetWindowInsets()
+        insetMap.forEach { (key, value) ->
+            when (key) {
+                "captionBarInsets" -> captionBarInsets = value
+                "displayCutoutInsets" -> displayCutoutInsets = value
+                "imeInsets" -> imeInsets = value
+                "mandatorySystemGesturesInsets" -> mandatorySystemGesturesInsets = value
+                "navigationBarsInsets" -> navigationBarsInsets = value
+                "statusBarsInsets" -> statusBarsInsets = value
+                "systemGesturesInsets" -> systemGesturesInsets = value
+                "tappableElementInsets" -> tappableElementInsets = value
+                "waterfallInsets" -> waterfallInsets = value
+            }
+        }
         //println("Render size: $renderWidth x $renderHeight")
         val ts = TimeSource.Monotonic
         val beginComposeScene = ts.markNow()
@@ -94,13 +121,13 @@ class RenderPreviewImpl {
             //println("Rendered size: $placedWidth x $placedHeight")
             val scaleTime = ts.markNow() - beginScale
             println("Scale time: $scaleTime")
-            val (bytes, duration) = measureTimedValue {
+            val (awtImage, duration) = measureTimedValue {
                 //image.peekPixels()?.buffer?.bytes
                 image.toComposeImageBitmap().toAwtImage()
                 //image.encodeToData(EncodedImageFormat.JPEG)?.bytes ?: "Unable to encode rendered preview!"
             }
             println("Encoding time: $duration")
-            return bytes
+            return awtImage
         } catch (err: Throwable) {
             println("Problem during render!")
             err.printStackTrace()

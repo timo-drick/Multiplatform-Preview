@@ -28,8 +28,8 @@ import org.jetbrains.jewel.ui.theme.groupHeaderStyle
 
 
 @OptIn(ExperimentalResourceApi::class)
-@HotPreview(widthDp = 500, heightDp = 500)
-@HotPreview(widthDp = 500, heightDp = 500, darkMode = false)
+@HotPreview(name = "dark mode", widthDp = 500, heightDp = 500)
+@HotPreview(name = "light mode", widthDp = 500, heightDp = 500, darkMode = false)
 @Composable
 private fun PreviewPreviewGalleryPanel() {
     val env = rememberResourceEnvironment()

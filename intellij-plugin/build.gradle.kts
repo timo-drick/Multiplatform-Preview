@@ -170,7 +170,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx")
     }*/
 
-    implementation("de.drick.compose:hotpreview:0.1.6") {
+    implementation("de.drick.compose:hotpreview:0.1.7") {
         exclude(group = "org.jetbrains.kotlinx")
     }
 
@@ -180,14 +180,18 @@ dependencies {
 tasks.register<GradleBuild>("buildRenderModule") {
     group = "build"
     dir = file("../")
-    tasks = listOf(":hot_preview_render:shadowJar")
+    tasks = listOf(
+        ":hot_preview_render_1_7:shadowJar",
+        ":hot_preview_render_1_8:shadowJar"
+    )
 }
 
-val renderModulePath = layout.projectDirectory.dir("../hot_preview_render/build/libs")
+val renderModulePath17 = layout.projectDirectory.dir("../hot_preview_render_1_7/build/libs")
+val renderModulePath18 = layout.projectDirectory.dir("../hot_preview_render_1_8/build/libs")
 
 tasks.processResources {
     dependsOn("buildRenderModule")
-    from(renderModulePath)
+    from(renderModulePath17, renderModulePath18)
 }
 
 

@@ -32,4 +32,43 @@ data class HotPreviewModel(
     val fontScale: Float = 1f, // The scaling factor for fonts. Should be between 0.5f and 2.0f
     val density: Float = 1f,   // The logical density of the display. This is a scaling factor for the Dp unit.
     val darkMode: Boolean = true,
+    val statusBar: StatusBarConfigModel = StatusBarConfigModel(VisibilityModel.Off),
+    val navigationBar: NavigationBarConfigModel = NavigationBarConfigModel(VisibilityModel.Off),
+    val camera: CameraConfigModel = CameraConfigModel(VisibilityModel.Off),
+    val captionBar: CaptionBarConfigModel = CaptionBarConfigModel(VisibilityModel.Off)
+)
+
+enum class VisibilityModel {
+    Visible,    // It is visible in the preview and WindowInsets are simulated
+    Off,        // Not visible and no WindowInsets are simulated
+    Invisible   // Currently it is identical to Off,
+    // but I plan to support e.g. WindowInsets.systemBarsIgnoringVisibility
+    // So the inset is than not shown but WindowInsets.systemBarsIgnoringVisibility is injected
+}
+
+data class StatusBarConfigModel(
+    val visibility: VisibilityModel = VisibilityModel.Visible
+)
+
+enum class NavigationModeModel {
+    GestureBottom, ThreeButtonBottom, ThreeButtonLeft, ThreeButtonRight
+}
+
+data class NavigationBarConfigModel(
+    val visibility: VisibilityModel = VisibilityModel.Visible,
+    val mode: NavigationModeModel = NavigationModeModel.ThreeButtonBottom,
+    val contrastEnforced: Boolean = false,
+)
+
+enum class CameraPositionModel {
+    Left, Top, Right, Bottom
+}
+
+data class CameraConfigModel(
+    val visibility: VisibilityModel = VisibilityModel.Visible,
+    val cameraPosition: CameraPositionModel = CameraPositionModel.Top,
+)
+
+data class CaptionBarConfigModel(
+    val visibility: VisibilityModel = VisibilityModel.Visible,
 )
