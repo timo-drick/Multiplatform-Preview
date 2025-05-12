@@ -6,6 +6,11 @@ The HotPreview system is developed as a IntelliJ plugin using Jewel. It also pre
 
 ![](screenshots/compose_dev_challenge_home_screen.png)
 
+## Releases
+
+IntelliJ release notes are here: [RELEASE_NOTES_PLUGIN.md](intellij-plugin/RELEASE_NOTES_PLUGIN.md)
+Release notes for the HotPreview annotation dependency are here: https://github.com/timo-drick/Multiplatform-Preview/releases
+
 ## Requirements
 
 Supported are projects with:
