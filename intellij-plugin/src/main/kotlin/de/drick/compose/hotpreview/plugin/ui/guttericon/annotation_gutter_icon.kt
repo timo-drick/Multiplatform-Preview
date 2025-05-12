@@ -86,6 +86,12 @@ private fun createMockArgumentField(value: String) = ArgumentField(
     isString = false,
     useUpdateDsl = {}
 )
+private fun createMockArgumentFieldNA(value: String?) = ArgumentFieldNA(
+    name = "dummy",
+    defaultValue = value,
+    isString = false,
+    useUpdateDsl = {}
+)
 
 val mockGutterIconViewModel = object: GutterIconViewModelI {
     override val baseModel = HotPreviewModel(
@@ -98,6 +104,7 @@ val mockGutterIconViewModel = object: GutterIconViewModelI {
     override val density = createMockArgumentField("${baseModel.density}f")
     override val locale = createMockArgumentField("de")
     override val fontScale = createMockArgumentField("1f")
+    override val darkMode = createMockArgumentFieldNA(null)
 
     override fun update(dsl: UpdateAnnotationDsl.() -> Unit) {}
     override fun render() {}
@@ -319,8 +326,7 @@ fun GutterIconAnnotationSettings(
                             ToggleableState.Off -> "false"
                             ToggleableState.Indeterminate -> null
                         }
-                        vm.update { parameter("darkMode", value) }
-                        vm.render()
+                        vm.darkMode.update(value, true)
                     }
                 )
             }

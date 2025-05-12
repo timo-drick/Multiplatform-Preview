@@ -30,6 +30,7 @@ interface GutterIconViewModelI {
     val density: ArgumentField
     val locale: ArgumentField
     val fontScale: ArgumentField
+    val darkMode: ArgumentFieldNA
 
     fun update(dsl: UpdateAnnotationDsl.() -> Unit)
     fun render()
@@ -92,6 +93,12 @@ class GutterIconViewModel(
         useUpdateDsl = ::update
     )
 
+    override val darkMode = ArgumentFieldNA(
+        name = "darkMode",
+        defaultValue = null,
+        isString = false,
+        useUpdateDsl = ::update
+    )
 
     override fun update(block: UpdateAnnotationDsl.() -> Unit) {
         scope.launch {
@@ -137,6 +144,33 @@ class ArgumentField(
     }
 
     fun update(newValue: String, renderUpdate: Boolean = false) {
+        useUpdateDsl {
+            update(this, newValue)
+            if (renderUpdate) render()
+        }
+    }
+}
+
+class ArgumentFieldNA(
+    val name: String,
+    defaultValue: String?,
+    val isString: Boolean,
+    private val useUpdateDsl: (block: UpdateAnnotationDsl.() -> Unit) -> Unit
+) {
+    var value by mutableStateOf(defaultValue)
+        private set
+
+    fun update(dsl: UpdateAnnotationDsl, newValue: String?) {
+        if (value == newValue) return
+        value = newValue
+        if (isString) {
+            dsl.string(name, newValue)
+        } else {
+            dsl.parameter(name, newValue)
+        }
+    }
+
+    fun update(newValue: String?, renderUpdate: Boolean = false) {
         useUpdateDsl {
             update(this, newValue)
             if (renderUpdate) render()

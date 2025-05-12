@@ -154,8 +154,8 @@ suspend fun checkAnnotationParameter(
 
 
 interface UpdatePsiAnnotationDsl {
-    fun string(key: String, value: String) {
-        parameter(key, if (value.isNotBlank()) "\"$value\"" else null)
+    fun string(key: String, value: String?) {
+        parameter(key, if (value.isNullOrBlank()) null else "\"$value\"")
     }
     fun parameter(key: String, value: String?)
 }
