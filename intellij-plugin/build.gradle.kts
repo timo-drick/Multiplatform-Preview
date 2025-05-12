@@ -182,16 +182,18 @@ tasks.register<GradleBuild>("buildRenderModule") {
     dir = file("../")
     tasks = listOf(
         ":hot_preview_render_1_7:shadowJar",
-        ":hot_preview_render_1_8:shadowJar"
+        ":hot_preview_render_1_8:shadowJar",
+        ":hot_preview_render_1_9:shadowJar"
     )
 }
 
 val renderModulePath17 = layout.projectDirectory.dir("../hot_preview_render_1_7/build/libs")
 val renderModulePath18 = layout.projectDirectory.dir("../hot_preview_render_1_8/build/libs")
+val renderModulePath19 = layout.projectDirectory.dir("../hot_preview_render_1_9/build/libs")
 
 tasks.processResources {
     dependsOn("buildRenderModule")
-    from(renderModulePath17, renderModulePath18)
+    from(renderModulePath17, renderModulePath18, renderModulePath19)
 }
 
 

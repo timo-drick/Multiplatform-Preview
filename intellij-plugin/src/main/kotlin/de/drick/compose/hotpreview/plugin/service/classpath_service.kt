@@ -112,6 +112,7 @@ object RuntimeLibrariesManager {
     private val runtimeLibs = listOf(
         "hot_preview_render_1_7-all.jar",
         "hot_preview_render_1_8-all.jar",
+        "hot_preview_render_1_9-all.jar",
     )
 
     private val classpathGradleScript = "classpath.gradle.kts"
@@ -150,7 +151,8 @@ object RuntimeLibrariesManager {
         val minor = version.substringAfter(".").toInt()
         val versionFileName = when {
             (major < 2 && minor <= 7) -> "1_7"
-            else -> "1_8"
+            (major < 2 && minor <= 8) -> "1_8"
+            else -> "1_9"
         }
         runtimeLibs.filter { it.contains(versionFileName) }.map {
             File(tmpFolder, it).toURI().toURL()
