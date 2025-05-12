@@ -34,10 +34,15 @@ data class InsetConfigs(
 )
 
 data class WindowInsetsDeviceConfig(
-    val cameraCutout: InsetConfigs = InsetConfigs(),
-    val statusBar: InsetConfigs = InsetConfigs(),
-    val navigationBar: InsetConfigs = InsetConfigs(),
     val captionBar: InsetConfigs = InsetConfigs(),
+    val displayCutout: InsetConfigs = InsetConfigs(),
+    val ime: InsetConfigs = InsetConfigs(),
+    val mandatorySystemGestures: InsetConfigs = InsetConfigs(),
+    val navigationBars: InsetConfigs = InsetConfigs(),
+    val statusBars: InsetConfigs = InsetConfigs(),
+    val systemGestures: InsetConfigs = InsetConfigs(),
+    val tappableElement: InsetConfigs = InsetConfigs(),
+    val waterfall: InsetConfigs = InsetConfigs(),
 )
 
 

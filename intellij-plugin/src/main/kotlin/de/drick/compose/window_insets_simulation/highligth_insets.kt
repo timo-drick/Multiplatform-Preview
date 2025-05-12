@@ -14,7 +14,12 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import de.drick.compose.hotpreview.CameraConfig
+import de.drick.compose.hotpreview.CameraPosition
 import de.drick.compose.hotpreview.HotPreview
+import de.drick.compose.hotpreview.NavigationBarConfig
+import de.drick.compose.hotpreview.NavigationMode
+import de.drick.compose.hotpreview.StatusBarConfig
 
 @Composable
 fun HighlightInsets(
@@ -57,7 +62,18 @@ fun HighlightInsets(
     )
 }
 
-@HotPreview(widthDp = 411, heightDp = 891, density = 2.625f)
+@HotPreview(
+    widthDp = 411, heightDp = 891, density = 2.625f,
+    statusBar = StatusBarConfig(),
+    navigationBar = NavigationBarConfig(),
+    camera = CameraConfig()
+)
+@HotPreview(
+    widthDp = 891, heightDp = 411, density = 2.625f,
+    statusBar = StatusBarConfig(),
+    navigationBar = NavigationBarConfig(mode = NavigationMode.GestureBottom),
+    camera = CameraConfig(cameraPosition = CameraPosition.Right)
+)
 @Composable
 private fun PreviewHighlightInsets() {
     HighlightInsets(WindowInsets.safeContent, Modifier.fillMaxSize())
