@@ -10,7 +10,7 @@ import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import de.drick.compose.hotpreview.CameraPosition
+import androidx.compose.ui.unit.max
 import de.drick.compose.hotpreview.plugin.CameraPositionModel
 import de.drick.compose.hotpreview.plugin.HotPreviewModel
 import de.drick.compose.hotpreview.plugin.NavigationModeModel
@@ -28,8 +28,8 @@ fun HotPreviewModel.toWindowInsetsDeviceConfig(): WindowInsetsDeviceConfig {
         CameraPositionModel.Right -> InsetConfigs(right = cameraInset)
         CameraPositionModel.Bottom -> InsetConfigs(bottom = cameraInset)
     }
-
-    val statusBarInsetsConfig = if (statusBar) InsetConfigs(top = InsetConfig(24.dp)) else InsetConfigs()
+    val statusBarHeight = max(24.dp, cameraInsetsConfig.top.size)
+    val statusBarInsetsConfig = if (statusBar) InsetConfigs(top = InsetConfig(statusBarHeight)) else InsetConfigs()
     val navigationBarInsetsConfig = when (navigationBar) {
         NavigationModeModel.Off -> InsetConfigs()
         NavigationModeModel.GestureBottom -> InsetConfigs(bottom = InsetConfig(32.dp + cameraInsetsConfig.bottom.size))

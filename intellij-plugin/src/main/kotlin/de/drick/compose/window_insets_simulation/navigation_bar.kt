@@ -3,8 +3,8 @@ package de.drick.compose.window_insets_simulation
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -37,8 +38,21 @@ private fun PreviewNavigationBar() {
     Box {
         NavigationBar(
             modifier = Modifier.align(AbsoluteAlignment.BottomLeft),
-            size = 50.dp,
+            size = 48.dp,
             navMode = NavigationModeModel.ThreeButtonBottom,
+        )
+    }
+}
+
+@HotPreview(widthDp = 300, density = 2.0f, darkMode = false)
+@HotPreview(widthDp = 300, density = 2.0f)
+@Composable
+private fun PreviewNavigationBarGesture() {
+    Box {
+        NavigationBar(
+            modifier = Modifier.align(AbsoluteAlignment.BottomLeft),
+            size = 32.dp,
+            navMode = NavigationModeModel.GestureBottom,
         )
     }
 }
@@ -52,7 +66,7 @@ private fun PreviewNavigationBarRtl() {
         Box {
             NavigationBar(
                 modifier = Modifier.align(AbsoluteAlignment.BottomLeft),
-                size = 50.dp,
+                size = 48.dp,
                 navMode = NavigationModeModel.ThreeButtonBottom,
             )
         }
@@ -65,7 +79,7 @@ private fun PreviewNavigationBarLandscape() {
     Box {
         NavigationBar(
             modifier = Modifier.align(AbsoluteAlignment.TopLeft),
-            size = 50.dp,
+            size = 48.dp,
             navMode = NavigationModeModel.ThreeButtonLeft,
         )
     }
@@ -108,15 +122,12 @@ fun NavigationBar(
                     .fillMaxHeight()
                     .background(backgroundColor)
                     .padding(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly
             ) {
-                Spacer(Modifier.weight(1f))
                 IconNavigateBack(iconSize, contentColor)
-                Spacer(Modifier.weight(1f))
                 IconNavigateHome(iconSize, contentColor)
-                Spacer(Modifier.weight(1f))
                 IconNavigateHistory(iconSize, contentColor)
-                Spacer(Modifier.weight(1f))
             }
         }
         else -> {
@@ -126,15 +137,12 @@ fun NavigationBar(
                     .fillMaxWidth()
                     .background(backgroundColor)
                     .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Spacer(Modifier.weight(1f))
                 IconNavigateBack(iconSize, contentColor)
-                Spacer(Modifier.weight(1f))
                 IconNavigateHome(iconSize, contentColor)
-                Spacer(Modifier.weight(1f))
                 IconNavigateHistory(iconSize, contentColor)
-                Spacer(Modifier.weight(1f))
             }
         }
     }
@@ -148,11 +156,12 @@ private fun IconNavigateBack(
     val ltr = LocalLayoutDirection.current == LayoutDirection.Ltr
     Image(
         modifier = Modifier
-            .size(iconSize)
+            .size(iconSize + 4.dp)
             .scale(if (ltr) -1f else 1f),
         imageVector = Icons_Navigation_Back,
         contentDescription = "Back",
-        colorFilter = ColorFilter.tint(contentColor)
+        colorFilter = ColorFilter.tint(contentColor),
+        contentScale = ContentScale.Crop
     )
 }
 
@@ -165,7 +174,8 @@ private fun IconNavigateHome(
         modifier = Modifier.size(iconSize - 8.dp),
         imageVector = Icons_Filled_Circle,
         contentDescription = "Home",
-        colorFilter = ColorFilter.tint(contentColor)
+        colorFilter = ColorFilter.tint(contentColor),
+        contentScale = ContentScale.Crop
     )
 }
 
@@ -178,6 +188,6 @@ private fun IconNavigateHistory(
         modifier = Modifier.size(iconSize - 4.dp),
         imageVector = Icons_Filled_Rectangle,
         contentDescription = "History",
-        colorFilter = ColorFilter.tint(contentColor)
+        colorFilter = ColorFilter.tint(contentColor),
     )
 }

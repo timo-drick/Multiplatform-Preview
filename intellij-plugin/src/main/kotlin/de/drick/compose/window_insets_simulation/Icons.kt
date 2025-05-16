@@ -302,15 +302,15 @@ val Icons_Filled_Rectangle: ImageVector
         }
         _rectangle = materialIcon(name = "Rounded.Rectangle") {
             materialPath {
-                moveTo(2.0f, 6.0f)
-                verticalLineToRelative(12.0f)
-                curveToRelative(0.0f, 1.1f, 0.9f, 2.0f, 2.0f, 2.0f)
-                horizontalLineToRelative(12.0f)
-                curveToRelative(1.1f, 0.0f, 2.0f, -0.9f, 2.0f, -2.0f)
-                verticalLineTo(6.0f)
-                curveToRelative(0.0f, -1.1f, -0.9f, -2.0f, -2.0f, -2.0f)
-                horizontalLineTo(4.0f)
-                curveTo(2.9f, 4.0f, 2.0f, 4.9f, 2.0f, 6.0f)
+                moveTo(4.0f, 8.0f)
+                verticalLineToRelative(8.0f)
+                curveToRelative(0.0f, 2.2f, 1.8f, 4.0f, 4.0f, 4.0f)
+                horizontalLineToRelative(8.0f)
+                curveToRelative(2.2f, 0.0f, 4.0f, -1.8f, 4.0f, -4.0f)
+                verticalLineTo(8.0f)
+                curveToRelative(0.0f, -2.2f, -1.8f, -4.0f, -4.0f, -4.0f)
+                horizontalLineTo(8.0f)
+                curveTo(6.8f, 4.0f, 4.0f, 5.8f, 4.0f, 8.0f)
                 close()
             }
         }
@@ -318,3 +318,4 @@ val Icons_Filled_Rectangle: ImageVector
     }
 
 private var _rectangle: ImageVector? = null
+

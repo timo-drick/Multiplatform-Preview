@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -42,7 +43,7 @@ fun StatusBar(
 
     Row(
         modifier = modifier.padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicText(
             text = "11:52",
@@ -50,11 +51,13 @@ fun StatusBar(
         )
         Spacer(Modifier.weight(1f))
         Image(
+            modifier = Modifier.size(18.dp),
             imageVector = Icons_Filled_Wifi,
             contentDescription = "Wifi icon",
-            colorFilter = ColorFilter.tint(contentColor)
+            colorFilter = ColorFilter.tint(contentColor),
         )
         Image(
+            modifier = Modifier.size(18.dp),
             imageVector = Icons_Filled_BatteryChargingFull,
             contentDescription = "Battery icon",
             colorFilter = ColorFilter.tint(contentColor)
