@@ -25,17 +25,18 @@ data class HotPreviewAnnotation(
  */
 data class HotPreviewModel(
     val name: String = "",
-    val group: String = "",    // Not used yet!
-    val widthDp: Int = -1,     // if < 0 it will adapt to content max 1024 dp
-    val heightDp: Int = -1,    // if < 0 it will adapt to content max 1024 dp
-    val locale: String = "",   // Not supported yet!
-    val fontScale: Float = 1f, // The scaling factor for fonts. Should be between 0.5f and 2.0f
-    val density: Float = 1f,   // The logical density of the display. This is a scaling factor for the Dp unit.
-    val darkMode: Boolean = true,
-    val statusBar: StatusBarConfigModel = StatusBarConfigModel(VisibilityModel.Off),
-    val navigationBar: NavigationBarConfigModel = NavigationBarConfigModel(VisibilityModel.Off),
-    val camera: CameraConfigModel = CameraConfigModel(VisibilityModel.Off),
-    val captionBar: CaptionBarConfigModel = CaptionBarConfigModel(VisibilityModel.Off)
+    val group: String = "",         // Not used yet!
+    val widthDp: Int = -1,          // if < 0 it will adapt to content max 1024 dp
+    val heightDp: Int = -1,         // if < 0 it will adapt to content max 1024 dp
+    val locale: String = "",        // Not supported yet!
+    val fontScale: Float = 1f,      // The scaling factor for fonts. Should be between 0.5f and 2.0f
+    val density: Float = 1f,        // The logical density of the display. This is a scaling factor for the Dp unit.
+    val darkMode: Boolean = true,   // Set the system theme to dark mode or light mode
+    val statusBar: Boolean = false, // Shows a status bar at the top of the preview also simulating the WindowInsets
+    val navigationBar: NavigationModeModel = NavigationModeModel.Off,
+    val navigationBarContrastEnforced: Boolean = true,
+    val camera: CameraPositionModel = CameraPositionModel.Off,
+    val captionBar: Boolean = false
 )
 
 enum class VisibilityModel {
@@ -46,28 +47,13 @@ enum class VisibilityModel {
     // So the inset is than not shown but WindowInsets.systemBarsIgnoringVisibility is injected
 }
 
-data class StatusBarConfigModel(
-    val visibility: VisibilityModel = VisibilityModel.Visible
-)
-
 enum class NavigationModeModel {
-    GestureBottom, ThreeButtonBottom, ThreeButtonLeft, ThreeButtonRight
+    Off, GestureBottom, ThreeButtonBottom, ThreeButtonLeft, ThreeButtonRight
 }
-
-data class NavigationBarConfigModel(
-    val visibility: VisibilityModel = VisibilityModel.Visible,
-    val mode: NavigationModeModel = NavigationModeModel.ThreeButtonBottom,
-    val contrastEnforced: Boolean = false,
-)
 
 enum class CameraPositionModel {
-    Left, Top, Right, Bottom
+    Off, Left, Top, Right, Bottom
 }
-
-data class CameraConfigModel(
-    val visibility: VisibilityModel = VisibilityModel.Visible,
-    val cameraPosition: CameraPositionModel = CameraPositionModel.Top,
-)
 
 data class CaptionBarConfigModel(
     val visibility: VisibilityModel = VisibilityModel.Visible,

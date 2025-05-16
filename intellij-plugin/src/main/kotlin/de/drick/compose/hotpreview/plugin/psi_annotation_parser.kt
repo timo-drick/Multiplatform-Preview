@@ -64,16 +64,13 @@ inline fun <reified T: Enum<T>>KaAnnotation.findEnumParameterWithDefault(name: S
     } ?: defaultValue
 
 
+/*
+// Code to find nested annotations but not needed anymore
+
 fun KaAnnotation.findNestedAnnotationParameter(name: String): KaAnnotation? {
     val nestedAnnotation = arguments.find { it.name.toString() == name }?.expression as? NestedAnnotationValue
     return nestedAnnotation?.annotation
 }
-
-
-
-private fun KaAnnotation.toStatusBarModel() = StatusBarConfigModel(
-    visibility = findEnumParameterWithDefault("visibility", VisibilityModel.Visible)
-)
 private fun KaAnnotation.toNavigationBarModel() = NavigationBarConfigModel(
     visibility = findEnumParameterWithDefault("visibility", VisibilityModel.Visible),
     mode = findEnumParameterWithDefault("mode", NavigationModeModel.ThreeButtonBottom),
@@ -86,6 +83,7 @@ private fun KaAnnotation.toCameraModel() = CameraConfigModel(
 private fun KaAnnotation.toCaptionBarModel() = CaptionBarConfigModel(
     visibility = findEnumParameterWithDefault("visibility", VisibilityModel.Visible)
 )
+ */
 
 private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
     // Build a map
@@ -101,10 +99,11 @@ private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
         fontScale = findParameterWithDefault("fontScale", dv.fontScale),
         darkMode = findParameterWithDefault("darkMode", dv.darkMode),
         density = findParameterWithDefault("density", defaultDensity),
-        statusBar = findNestedAnnotationParameter("statusBar")?.toStatusBarModel() ?: dv.statusBar,
-        navigationBar = findNestedAnnotationParameter("navigationBar")?.toNavigationBarModel() ?: dv.navigationBar,
-        camera = findNestedAnnotationParameter("camera")?.toCameraModel() ?: dv.camera,
-        captionBar = findNestedAnnotationParameter("captionBar")?.toCaptionBarModel() ?: dv.captionBar
+        statusBar = findParameterWithDefault("statusBar", dv.statusBar),
+        navigationBar = findEnumParameterWithDefault("navigationBar", dv.navigationBar),
+        navigationBarContrastEnforced = findParameterWithDefault("navigationBarContrastEnforced", dv.navigationBarContrastEnforced),
+        camera = findEnumParameterWithDefault("camera", dv.camera),
+        captionBar = findParameterWithDefault("captionBar", dv.captionBar)
     )
 }
 
@@ -158,6 +157,7 @@ interface UpdatePsiAnnotationDsl {
         parameter(key, if (value.isNullOrBlank()) null else "\"$value\"")
     }
     fun parameter(key: String, value: String?)
+    fun checkParameter(argumentName: String): Boolean
 }
 
 class AnnotationUpdate(
@@ -180,6 +180,7 @@ class AnnotationUpdate(
                 val factory = KtPsiFactory(project)
                 //println("Found: $annotation")
                 val dsl = object : UpdatePsiAnnotationDsl {
+
                     override fun parameter(argumentName: String, newValue: String?) {
                         if (annotation != null) {
                             val argument = findAnnotationArgument(argumentList, annotation, argumentName)
@@ -206,6 +207,13 @@ class AnnotationUpdate(
                                 argument?.let { annotation.valueArgumentList?.removeArgument(it) }
                             }
                         }
+                    }
+
+                    override fun checkParameter(argumentName: String): Boolean {
+                        return if (annotation != null)
+                            findAnnotationArgument(argumentList, annotation, argumentName) != null
+                        else
+                            false
                     }
                 }
                 writeAction {

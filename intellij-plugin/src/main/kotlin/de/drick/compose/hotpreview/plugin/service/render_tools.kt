@@ -9,16 +9,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.asSkiaBitmap
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.intellij.openapi.diagnostic.fileLogger
 import de.drick.compose.window_insets_simulation.WindowInsetsDeviceSimulation
-import de.drick.compose.window_insets_simulation.insetsPhonePortraitNormal
 import de.drick.compose.window_insets_simulation.toWindowInsetsDeviceConfig
 import de.drick.compose.window_insets_simulation.toWindowInsetsString
 import org.jetbrains.skia.Image

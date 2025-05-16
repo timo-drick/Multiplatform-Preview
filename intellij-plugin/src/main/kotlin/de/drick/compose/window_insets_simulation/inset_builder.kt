@@ -10,6 +10,7 @@ import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import de.drick.compose.hotpreview.CameraPosition
 import de.drick.compose.hotpreview.plugin.CameraPositionModel
 import de.drick.compose.hotpreview.plugin.HotPreviewModel
 import de.drick.compose.hotpreview.plugin.NavigationModeModel
@@ -20,28 +21,23 @@ fun VisibilityModel.isVisible() = this == VisibilityModel.Visible
 
 fun HotPreviewModel.toWindowInsetsDeviceConfig(): WindowInsetsDeviceConfig {
     val cameraInset = InsetConfig(52.dp)
-    val cameraInsetsConfig = if (camera.visibility.isVisible()) {
-        when (camera.cameraPosition) {
-            CameraPositionModel.Left -> InsetConfigs(left = cameraInset)
-            CameraPositionModel.Top -> InsetConfigs(top = cameraInset)
-            CameraPositionModel.Right -> InsetConfigs(right = cameraInset)
-            CameraPositionModel.Bottom -> InsetConfigs(bottom = cameraInset)
-        }
-    } else InsetConfigs()
-    val statusBarInsetsConfig = if (statusBar.visibility.isVisible())
-        InsetConfigs(top = InsetConfig(24.dp))
-    else InsetConfigs()
-    val navigationBarInsetsConfig = if (navigationBar.visibility.isVisible()) {
-        when (navigationBar.mode) {
-            NavigationModeModel.GestureBottom -> InsetConfigs(bottom = InsetConfig(32.dp))
-            NavigationModeModel.ThreeButtonBottom -> InsetConfigs(bottom = InsetConfig(48.dp))
-            NavigationModeModel.ThreeButtonLeft -> InsetConfigs(left = InsetConfig(48.dp))
-            NavigationModeModel.ThreeButtonRight -> InsetConfigs(right = InsetConfig(48.dp))
-        }
-    } else InsetConfigs()
-    val captionBarInsetsConfig = if (captionBar.visibility.isVisible())
-        InsetConfigs(top = InsetConfig(42.dp))
-    else InsetConfigs()
+    val cameraInsetsConfig = when (camera) {
+        CameraPositionModel.Off -> InsetConfigs()
+        CameraPositionModel.Left -> InsetConfigs(left = cameraInset)
+        CameraPositionModel.Top -> InsetConfigs(top = cameraInset)
+        CameraPositionModel.Right -> InsetConfigs(right = cameraInset)
+        CameraPositionModel.Bottom -> InsetConfigs(bottom = cameraInset)
+    }
+
+    val statusBarInsetsConfig = if (statusBar) InsetConfigs(top = InsetConfig(24.dp)) else InsetConfigs()
+    val navigationBarInsetsConfig = when (navigationBar) {
+        NavigationModeModel.Off -> InsetConfigs()
+        NavigationModeModel.GestureBottom -> InsetConfigs(bottom = InsetConfig(32.dp + cameraInsetsConfig.bottom.size))
+        NavigationModeModel.ThreeButtonBottom -> InsetConfigs(bottom = InsetConfig(48.dp + cameraInsetsConfig.bottom.size))
+        NavigationModeModel.ThreeButtonLeft -> InsetConfigs(left = InsetConfig(48.dp + cameraInsetsConfig.left.size))
+        NavigationModeModel.ThreeButtonRight -> InsetConfigs(right = InsetConfig(48.dp + cameraInsetsConfig.right.size))
+    }
+    val captionBarInsetsConfig = if (captionBar) InsetConfigs(top = InsetConfig(42.dp)) else InsetConfigs()
 
     val allInsets = listOf(
         cameraInsetsConfig,
@@ -50,9 +46,7 @@ fun HotPreviewModel.toWindowInsetsDeviceConfig(): WindowInsetsDeviceConfig {
         captionBarInsetsConfig,
     ).unionVisible()
 
-    val systemGesturesHorizontal = if (
-        navigationBar.mode == NavigationModeModel.GestureBottom && navigationBar.visibility.isVisible()
-    ) 30.dp else 0.dp
+    val systemGesturesHorizontal = if (navigationBar == NavigationModeModel.GestureBottom) 30.dp else 0.dp
 
     val systemGesturesInsetsConfig = InsetConfigs(
         left = InsetConfig(systemGesturesHorizontal + allInsets.left.size),
@@ -98,63 +92,75 @@ fun WindowInsetsDeviceSimulation(
     hotPreviewAnnotation: HotPreviewModel,
 ) {
     Box(Modifier.fillMaxSize()) {
-        if (hotPreviewAnnotation.statusBar.visibility == VisibilityModel.Visible) {
-            val padding = PaddingValues.Absolute(
-                left = deviceConfig.navigationBars.left.size + deviceConfig.displayCutout.left.size,
-                right = deviceConfig.navigationBars.right.size + deviceConfig.displayCutout.right.size
-            )
+        val statusBarPadding = PaddingValues.Absolute(
+            left = deviceConfig.navigationBars.left.size + deviceConfig.displayCutout.left.size,
+            right = deviceConfig.navigationBars.right.size + deviceConfig.displayCutout.right.size
+        )
+        if (hotPreviewAnnotation.statusBar) {
             StatusBar(
-                modifier = Modifier.align(Alignment.TopStart).padding(padding).height(deviceConfig.statusBars.top.size),
+                modifier = Modifier.align(Alignment.TopStart).padding(statusBarPadding).height(deviceConfig.statusBars.top.size),
                 isDarkMode = hotPreviewAnnotation.darkMode,
             )
         }
-        if (hotPreviewAnnotation.captionBar.visibility == VisibilityModel.Visible) {
+        if (hotPreviewAnnotation.captionBar) {
             CaptionBar(
-                modifier = Modifier.align(Alignment.TopStart).height(deviceConfig.captionBar.top.size),
+                modifier = Modifier.align(Alignment.TopStart).padding(statusBarPadding).height(deviceConfig.captionBar.top.size),
                 isDarkMode = hotPreviewAnnotation.darkMode,
             )
         }
-        if (hotPreviewAnnotation.camera.visibility == VisibilityModel.Visible) {
-            val alignment = when (hotPreviewAnnotation.camera.cameraPosition) {
+        if (hotPreviewAnnotation.camera != CameraPositionModel.Off) {
+            val alignment = when (hotPreviewAnnotation.camera) {
                 CameraPositionModel.Left -> AbsoluteAlignment.TopLeft
                 CameraPositionModel.Top -> AbsoluteAlignment.TopLeft
                 CameraPositionModel.Right -> AbsoluteAlignment.TopRight
                 CameraPositionModel.Bottom -> AbsoluteAlignment.BottomLeft
+                CameraPositionModel.Off -> AbsoluteAlignment.TopLeft // This case is already handled above
             }
-            val size = when (hotPreviewAnnotation.camera.cameraPosition) {
+            val size = when (hotPreviewAnnotation.camera) {
                 CameraPositionModel.Left -> deviceConfig.displayCutout.left.size
                 CameraPositionModel.Top -> deviceConfig.displayCutout.top.size
                 CameraPositionModel.Right -> deviceConfig.displayCutout.right.size
                 CameraPositionModel.Bottom -> deviceConfig.displayCutout.bottom.size
+                CameraPositionModel.Off -> 0.dp // This case is already handled above
             }
             CameraCutout(
                 modifier = Modifier.align(alignment),
-                isVertical = with(hotPreviewAnnotation.camera.cameraPosition) {
+                isVertical = with(hotPreviewAnnotation.camera) {
                     this == CameraPositionModel.Left || this == CameraPositionModel.Right
                 },
                 cutoutSize = size
             )
         }
         hotPreviewAnnotation.navigationBar.let { navBar ->
-            if (navBar.visibility == VisibilityModel.Visible) {
-                val size = when (navBar.mode) {
-                    NavigationModeModel.GestureBottom -> deviceConfig.navigationBars.bottom.size
-                    NavigationModeModel.ThreeButtonBottom -> deviceConfig.navigationBars.bottom.size
-                    NavigationModeModel.ThreeButtonLeft -> deviceConfig.navigationBars.left.size
-                    NavigationModeModel.ThreeButtonRight -> deviceConfig.navigationBars.right.size
+            if (navBar != NavigationModeModel.Off) {
+                val size = when (navBar) {
+                    NavigationModeModel.GestureBottom -> 32.dp
+                    NavigationModeModel.Off -> 0.dp // This case is already handled above
+                    else -> 42.dp
                 }
-                val alignment = when (navBar.mode) {
+                val alignment = when (navBar) {
                     NavigationModeModel.GestureBottom -> AbsoluteAlignment.BottomLeft
                     NavigationModeModel.ThreeButtonBottom -> AbsoluteAlignment.BottomLeft
                     NavigationModeModel.ThreeButtonLeft -> AbsoluteAlignment.TopLeft
                     NavigationModeModel.ThreeButtonRight -> AbsoluteAlignment.TopRight
+                    NavigationModeModel.Off -> AbsoluteAlignment.TopLeft // This case is already handled above
                 }
+                /*
+                    // It looks like Android itself do not prevent the navigation bar from overlapping the display cutout
+                    // Or it does it by just choosing the opposite side for the NavigationBar to the DisplayCutout
+                    val padding = when (navBar) {
+                    NavigationModeModel.Off -> PaddingValues(0.dp)
+                    NavigationModeModel.GestureBottom,
+                    NavigationModeModel.ThreeButtonBottom -> PaddingValues(bottom = deviceConfig.displayCutout.bottom.size)
+                    NavigationModeModel.ThreeButtonLeft -> PaddingValues.Absolute(left = deviceConfig.displayCutout.left.size)
+                    NavigationModeModel.ThreeButtonRight -> PaddingValues.Absolute(right = deviceConfig.displayCutout.right.size)
+                }*/
                 NavigationBar(
-                    modifier = Modifier.align(alignment),
-                    navMode = navBar.mode,
+                    modifier = Modifier.align(alignment),//.padding(padding),
+                    navMode = navBar,
                     size = size,
                     isDarkMode = hotPreviewAnnotation.darkMode,
-                    backgroundAlpha = if (navBar.contrastEnforced) 0.5f else 0f,
+                    backgroundAlpha = if (hotPreviewAnnotation.navigationBarContrastEnforced) 0.5f else 0f,
                 )
             }
         }

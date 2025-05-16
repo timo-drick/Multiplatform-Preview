@@ -15,7 +15,9 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
+import de.drick.compose.hotpreview.plugin.CameraPositionModel
 import de.drick.compose.hotpreview.plugin.HotPreviewModel
+import de.drick.compose.hotpreview.plugin.NavigationModeModel
 import de.drick.compose.hotpreview.plugin.ui.preview_window.SelfPreviewTheme
 import de.drick.compose.hotpreview.plugin.ui.components.GenericComboBox
 import de.drick.compose.hotpreview.plugin.ui.Typography
@@ -86,10 +88,16 @@ private fun createMockArgumentField(value: String) = ArgumentField(
     isString = false,
     useUpdateDsl = {}
 )
-private fun createMockArgumentFieldNA(value: String?) = ArgumentFieldNA(
+private fun <T: Enum<T>>createMockArgumentEnum(value: T) = ArgumentFieldEnum(
     name = "dummy",
     defaultValue = value,
-    isString = false,
+    fqName = "",
+    useUpdateDsl = {}
+)
+
+private fun createMockArgumentFieldTrieState(value: Boolean?) = ArgumentTriStateBoolean(
+    name = "dummy",
+    defaultValue = value ?: false,
     useUpdateDsl = {}
 )
 
@@ -104,7 +112,12 @@ val mockGutterIconViewModel = object: GutterIconViewModelI {
     override val density = createMockArgumentField("${baseModel.density}f")
     override val locale = createMockArgumentField("de")
     override val fontScale = createMockArgumentField("1f")
-    override val darkMode = createMockArgumentFieldNA(null)
+    override val darkMode = createMockArgumentFieldTrieState(null)
+    override val statusBar = createMockArgumentFieldTrieState(null)
+    override val captionBar = createMockArgumentFieldTrieState(null)
+    override val navigationBar = createMockArgumentEnum(NavigationModeModel.Off)
+    override val navigationBarContrastEnforced = createMockArgumentFieldTrieState(null)
+    override val camera = createMockArgumentEnum(CameraPositionModel.Off)
 
     override fun update(dsl: UpdateAnnotationDsl.() -> Unit) {}
     override fun render() {}
@@ -270,6 +283,64 @@ fun GutterIconAnnotationSettings(
                     }
                 )
             }
+            SettingsRow("Statusbar") {
+                TriStateCheckbox(
+                    state = vm.statusBar.value,
+                    onClick = {
+                        vm.statusBar.toggle()
+                    }
+                )
+            }
+            SettingsRow("Captionbar") {
+                TriStateCheckbox(
+                    state = vm.captionBar.value,
+                    onClick = {
+                        vm.captionBar.toggle()
+                    }
+                )
+            }
+            SettingsRow("Navigationbar") {
+                GenericComboBox<NavigationModeModel>(
+                    modifier = Modifier.width(180.dp),
+                    labelText = vm.navigationBar.value.name,
+                    selectedItem = vm.navigationBar.value,
+                    onSelectItem = { item ->
+                        vm.navigationBar.update(item)
+                    },
+                    items = NavigationModeModel.entries,
+                    listItemContent = { item, isSelected, _, isItemHovered, isPreviewSelection ->
+                        SimpleListItem(
+                            text = item.name,
+                            state = ListItemState(isSelected, isItemHovered, isPreviewSelection)
+                        )
+                    }
+                )
+            }
+            SettingsRow("Navigationbar contrast enforced") {
+                TriStateCheckbox(
+                    state = vm.navigationBarContrastEnforced.value,
+                    onClick = {
+                        vm.navigationBarContrastEnforced.toggle()
+                    }
+                )
+            }
+            SettingsRow("Camera") {
+                GenericComboBox<CameraPositionModel>(
+                    modifier = Modifier.width(180.dp),
+                    labelText = vm.camera.value.name,
+                    selectedItem = vm.camera.value,
+                    onSelectItem = { item ->
+                        vm.camera.update(item)
+                    },
+                    items = CameraPositionModel.entries,
+                    listItemContent = { item, isSelected, _, isItemHovered, isPreviewSelection ->
+                        SimpleListItem(
+                            text = item.name,
+                            state = ListItemState(isSelected, isItemHovered, isPreviewSelection)
+                        )
+                    }
+                )
+            }
             GroupHeader("Display", Modifier.padding(vertical = 4.dp))
             SettingsRow("locale") {
                 TextField(
@@ -302,31 +373,10 @@ fun GutterIconAnnotationSettings(
                 )
             }
             SettingsRow("Dark mode") {
-                var darkModeState by remember {
-                    val state = if (vm.baseModel.darkMode) ToggleableState.On
-                    else ToggleableState.Off
-                    mutableStateOf(state)
-                }
-                LaunchedEffect(vm) {
-                    if (vm.checkParameterExists("darkMode").not()) {
-                        darkModeState = ToggleableState.Indeterminate
-                    }
-                }
                 TriStateCheckbox(
-                    state = darkModeState,
+                    state = vm.darkMode.value,
                     onClick = {
-                        val newState = when (darkModeState) {
-                            ToggleableState.On -> ToggleableState.Off
-                            ToggleableState.Off -> ToggleableState.Indeterminate
-                            ToggleableState.Indeterminate -> ToggleableState.On
-                        }
-                        darkModeState = newState
-                        val value: String? = when (newState) {
-                            ToggleableState.On -> "true"
-                            ToggleableState.Off -> "false"
-                            ToggleableState.Indeterminate -> null
-                        }
-                        vm.darkMode.update(value, true)
+                        vm.darkMode.toggle()
                     }
                 )
             }

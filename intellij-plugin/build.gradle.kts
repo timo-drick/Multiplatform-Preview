@@ -124,7 +124,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx")
     }*/
 
-    implementation("de.drick.compose:hotpreview:0.1.7") {
+    implementation("de.drick.compose:hotpreview:0.1.9") {
         exclude(group = "org.jetbrains.kotlinx")
     }
 
@@ -211,3 +211,4 @@ tasks.named("dependencyUpdates", com.github.benmanes.gradle.versions.updates.Dep
         (isNonStable(candidate.version) && isNonStable(currentVersion).not())
     }
 }
+
