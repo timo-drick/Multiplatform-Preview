@@ -26,6 +26,7 @@ interface UpdateAnnotationDsl : UpdatePsiAnnotationDsl {
 }
 
 interface GutterIconViewModelI {
+    val outdatedAnnotationVersion: Boolean
     val baseModel: HotPreviewModel
     val name: ArgumentField
     val group: ArgumentField
@@ -51,8 +52,11 @@ class GutterIconViewModel(
     private val file: VirtualFile,
     private val annotation: HotPreviewAnnotation,
     private val groups: Set<String>,
-    private val requestRender: () -> Unit
+    private val requestRender: () -> Unit,
+    annotationVersion: Int
 ): GutterIconViewModelI {
+    override val outdatedAnnotationVersion = annotationVersion < 2
+
     private val scope = project.service<ProjectScopeProviderService>().scope
     private val line = requireNotNull(annotation.lineRange.first) { "Line should not be null!" }
 

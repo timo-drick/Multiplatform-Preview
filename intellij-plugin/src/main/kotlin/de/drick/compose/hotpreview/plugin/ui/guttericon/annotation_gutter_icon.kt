@@ -25,11 +25,13 @@ import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.Orientation
 import org.jetbrains.jewel.ui.component.Divider
 import org.jetbrains.jewel.ui.component.GroupHeader
+import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.ListItemState
 import org.jetbrains.jewel.ui.component.SimpleListItem
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.TextField
 import org.jetbrains.jewel.ui.component.TriStateCheckbox
+import org.jetbrains.jewel.ui.icons.AllIconsKeys
 import org.jetbrains.jewel.ui.theme.groupHeaderStyle
 
 
@@ -102,6 +104,7 @@ private fun createMockArgumentFieldTrieState(value: Boolean?) = ArgumentTriState
 )
 
 val mockGutterIconViewModel = object: GutterIconViewModelI {
+    override val outdatedAnnotationVersion = true
     override val baseModel = HotPreviewModel(
         name = "Test name"
     )
@@ -152,6 +155,11 @@ fun SettingsRow(
     }
 }
 
+private val outdatedWarningMessage = """
+    You are using an outdated version of the @HotPreview annotation dependency.
+    Maybe some of the settings will not work as expected!"
+""".trimIndent()
+
 @Composable
 fun GutterIconAnnotationSettings(
     vm: GutterIconViewModelI,
@@ -171,6 +179,15 @@ fun GutterIconAnnotationSettings(
     Column(
         modifier.width(IntrinsicSize.Min)
     ) {
+        if (vm.outdatedAnnotationVersion) {
+            Row(
+                modifier = Modifier.padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(key = AllIconsKeys.General.Warning, contentDescription = "Warning")
+                Text(text = outdatedWarningMessage, style = Typography.labelTextStyle())
+            }
+        }
         Text(
             modifier = Modifier.padding(8.dp).align(Alignment.CenterHorizontally),
             text = "HotPreview Configuration"

@@ -12,14 +12,12 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.util.concurrency.annotations.RequiresReadLock
-import io.ktor.util.valuesOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotation
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationValue
-import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationValue.NestedAnnotationValue
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.name
 import org.jetbrains.kotlin.idea.debugger.core.stepping.getLineRange
@@ -55,11 +53,8 @@ inline fun <reified T>KaAnnotation.findParameterWithDefault(name: String, defaul
 inline fun <reified T: Enum<T>>KaAnnotation.findEnumParameterWithDefault(name: String, defaultValue: T): T =
     arguments.find { it.name.toString() == name }?.expression?.let { expression ->
         val value = (expression as? KaAnnotationValue.EnumEntryValue)?.callableId?.callableName?.identifier?.let { value ->
-            println("Find in enum model: $value")
             enumEntries<T>().find { it.name == value }
         }
-        println("Enum value: $value")
-        // find in enum class
         value
     } ?: defaultValue
 

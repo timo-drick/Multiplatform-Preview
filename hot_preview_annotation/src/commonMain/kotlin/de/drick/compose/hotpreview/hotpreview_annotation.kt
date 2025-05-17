@@ -1,6 +1,8 @@
 package de.drick.compose.hotpreview
 
-private const val hotPreviewAnnotationVersion = 2
+data object Info {
+    const val hotPreviewAnnotationVersion = 2
+}
 
 @Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.FUNCTION)
 @Repeatable
@@ -22,14 +24,6 @@ annotation class HotPreview(
     val camera: CameraPosition = CameraPosition.Off,
     val captionBar: Boolean = false // Shows a caption bar at the top of the preview
 )
-
-enum class Visibility {
-    Visible,    // It is visible in the preview and WindowInsets are simulated
-    Off,        // Not visible and no WindowInsets are simulated
-    Invisible   // Currently it is identical to Off,
-                // but I plan to support e.g. WindowInsets.systemBarsIgnoringVisibility
-                // So the inset is than not shown but WindowInsets.systemBarsIgnoringVisibility is injected
-}
 
 enum class NavigationMode {
     Off, GestureBottom, ThreeButtonBottom, ThreeButtonLeft, ThreeButtonRight
