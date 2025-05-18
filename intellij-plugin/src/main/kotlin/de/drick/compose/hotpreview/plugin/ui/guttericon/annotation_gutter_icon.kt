@@ -3,19 +3,14 @@ package de.drick.compose.hotpreview.plugin.ui.guttericon
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
-import de.drick.compose.hotpreview.plugin.CameraPositionModel
+import de.drick.compose.hotpreview.plugin.DisplayCutoutModeModel
 import de.drick.compose.hotpreview.plugin.HotPreviewModel
 import de.drick.compose.hotpreview.plugin.NavigationModeModel
 import de.drick.compose.hotpreview.plugin.ui.preview_window.SelfPreviewTheme
@@ -120,7 +115,7 @@ val mockGutterIconViewModel = object: GutterIconViewModelI {
     override val captionBar = createMockArgumentFieldTrieState(null)
     override val navigationBar = createMockArgumentEnum(NavigationModeModel.Off)
     override val navigationBarContrastEnforced = createMockArgumentFieldTrieState(null)
-    override val camera = createMockArgumentEnum(CameraPositionModel.Off)
+    override val displayCutout = createMockArgumentEnum(DisplayCutoutModeModel.Off)
 
     override fun update(dsl: UpdateAnnotationDsl.() -> Unit) {}
     override fun render() {}
@@ -341,15 +336,15 @@ fun GutterIconAnnotationSettings(
                     }
                 )
             }
-            SettingsRow("Camera") {
-                GenericComboBox<CameraPositionModel>(
+            SettingsRow("Display cutout") {
+                GenericComboBox<DisplayCutoutModeModel>(
                     modifier = Modifier.width(180.dp),
-                    labelText = vm.camera.value.name,
-                    selectedItem = vm.camera.value,
+                    labelText = vm.displayCutout.value.name,
+                    selectedItem = vm.displayCutout.value,
                     onSelectItem = { item ->
-                        vm.camera.update(item)
+                        vm.displayCutout.update(item)
                     },
-                    items = CameraPositionModel.entries,
+                    items = DisplayCutoutModeModel.entries,
                     listItemContent = { item, isSelected, _, isItemHovered, isPreviewSelection ->
                         SimpleListItem(
                             text = item.name,

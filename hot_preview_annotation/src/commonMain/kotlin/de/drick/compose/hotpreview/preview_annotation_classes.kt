@@ -107,33 +107,33 @@ annotation class HotPreviewDynamicColors
 )
 @HotPreview(
     name = "Phone portrait Gesture", widthDp = 411, heightDp = 891,
-    camera = CameraPosition.Top,
+    displayCutout = DisplayCutoutMode.CameraTop,
     statusBar = true,
-    navigationBar = NavigationMode.GestureBottom,
+    navigationBar = NavigationBarMode.GestureBottom,
 )
 @HotPreview(
     name = "Phone portrait 3button", widthDp = 411, heightDp = 891,
-    camera = CameraPosition.Top,
+    displayCutout = DisplayCutoutMode.CameraTop,
     statusBar = true,
-    navigationBar = NavigationMode.ThreeButtonBottom,
+    navigationBar = NavigationBarMode.ThreeButtonBottom,
 )
 @HotPreview(
     name = "Phone landscape gesture", widthDp = 891, heightDp = 411,
-    camera = CameraPosition.Left,
+    displayCutout = DisplayCutoutMode.CameraLeft,
     statusBar = true,
-    navigationBar = NavigationMode.GestureBottom,
+    navigationBar = NavigationBarMode.GestureBottom,
 )
 @HotPreview(
     name = "Phone landscape nav left", widthDp = 891, heightDp = 411,
-    camera = CameraPosition.Right,
+    displayCutout = DisplayCutoutMode.CameraRight,
     statusBar = true,
-    navigationBar = NavigationMode.ThreeButtonLeft,
+    navigationBar = NavigationBarMode.ThreeButtonLeft,
 )
 @HotPreview(
     name = "Phone landscape nav right", widthDp = 891, heightDp = 411,
-    camera = CameraPosition.Left,
+    displayCutout = DisplayCutoutMode.CameraLeft,
     statusBar = true,
-    navigationBar = NavigationMode.ThreeButtonRight,
+    navigationBar = NavigationBarMode.ThreeButtonRight,
 )
 @HotPreview(
     name = "Tablet window mode", widthDp = 673, heightDp = 841,
@@ -154,36 +154,36 @@ annotation class HotPreviewWindowInsets
 )
 @HotPreview(
     name = "Phone portrait Gesture", widthDp = 411, heightDp = 891,
-    camera = CameraPosition.Top,
+    displayCutout = DisplayCutoutMode.CameraTop,
     statusBar = true,
-    navigationBar = NavigationMode.GestureBottom,
+    navigationBar = NavigationBarMode.GestureBottom,
 )
 @HotPreview(
     name = "Phone portrait 3button", widthDp = 411, heightDp = 891,
-    camera = CameraPosition.Top,
+    displayCutout = DisplayCutoutMode.CameraTop,
     statusBar = true,
-    navigationBar = NavigationMode.ThreeButtonBottom,
+    navigationBar = NavigationBarMode.ThreeButtonBottom,
     navigationBarContrastEnforced = false
 )
 @HotPreview(
     name = "Phone landscape gesture", widthDp = 891, heightDp = 411,
-    camera = CameraPosition.Left,
+    displayCutout = DisplayCutoutMode.CameraLeft,
     statusBar = true,
-    navigationBar = NavigationMode.GestureBottom,
+    navigationBar = NavigationBarMode.GestureBottom,
     navigationBarContrastEnforced = false
 )
 @HotPreview(
     name = "Phone landscape nav left", widthDp = 891, heightDp = 411,
-    camera = CameraPosition.Right,
+    displayCutout = DisplayCutoutMode.CameraRight,
     statusBar = true,
-    navigationBar = NavigationMode.ThreeButtonLeft,
+    navigationBar = NavigationBarMode.ThreeButtonLeft,
     navigationBarContrastEnforced = false
 )
 @HotPreview(
     name = "Phone landscape nav right", widthDp = 891, heightDp = 411,
-    camera = CameraPosition.Left,
+    displayCutout = DisplayCutoutMode.CameraLeft,
     statusBar = true,
-    navigationBar = NavigationMode.ThreeButtonRight,
+    navigationBar = NavigationBarMode.ThreeButtonRight,
     navigationBarContrastEnforced = false
 )
 @HotPreview(

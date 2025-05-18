@@ -19,16 +19,16 @@ annotation class HotPreview(
 
     // WindowInsets simulation
     val statusBar: Boolean = false, // Shows a status bar at the top of the preview
-    val navigationBar: NavigationMode = NavigationMode.Off,
+    val navigationBar: NavigationBarMode = NavigationBarMode.Off,
     val navigationBarContrastEnforced: Boolean = true,
-    val camera: CameraPosition = CameraPosition.Off,
+    val displayCutout: DisplayCutoutMode = DisplayCutoutMode.Off,
     val captionBar: Boolean = false // Shows a caption bar at the top of the preview
 )
 
-enum class NavigationMode {
+enum class NavigationBarMode {
     Off, GestureBottom, ThreeButtonBottom, ThreeButtonLeft, ThreeButtonRight
 }
 
-enum class CameraPosition {
-    Off, Left, Top, Right, Bottom
+enum class DisplayCutoutMode {
+    Off, CameraTop, CameraLeft, CameraRight, CameraBottom
 }

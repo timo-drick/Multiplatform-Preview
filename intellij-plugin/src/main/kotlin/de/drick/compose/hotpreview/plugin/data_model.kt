@@ -35,26 +35,14 @@ data class HotPreviewModel(
     val statusBar: Boolean = false, // Shows a status bar at the top of the preview also simulating the WindowInsets
     val navigationBar: NavigationModeModel = NavigationModeModel.Off,
     val navigationBarContrastEnforced: Boolean = true,
-    val camera: CameraPositionModel = CameraPositionModel.Off,
+    val displayCutout: DisplayCutoutModeModel = DisplayCutoutModeModel.Off,
     val captionBar: Boolean = false
 )
-
-enum class VisibilityModel {
-    Visible,    // It is visible in the preview and WindowInsets are simulated
-    Off,        // Not visible and no WindowInsets are simulated
-    Invisible   // Currently it is identical to Off,
-    // but I plan to support e.g. WindowInsets.systemBarsIgnoringVisibility
-    // So the inset is than not shown but WindowInsets.systemBarsIgnoringVisibility is injected
-}
 
 enum class NavigationModeModel {
     Off, GestureBottom, ThreeButtonBottom, ThreeButtonLeft, ThreeButtonRight
 }
 
-enum class CameraPositionModel {
-    Off, Left, Top, Right, Bottom
+enum class DisplayCutoutModeModel {
+    Off, CameraTop, CameraLeft, CameraRight, CameraBottom
 }
-
-data class CaptionBarConfigModel(
-    val visibility: VisibilityModel = VisibilityModel.Visible,
-)

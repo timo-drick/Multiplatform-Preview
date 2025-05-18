@@ -11,22 +11,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
-import de.drick.compose.hotpreview.plugin.CameraPositionModel
+import de.drick.compose.hotpreview.plugin.DisplayCutoutModeModel
 import de.drick.compose.hotpreview.plugin.HotPreviewModel
 import de.drick.compose.hotpreview.plugin.NavigationModeModel
-import de.drick.compose.hotpreview.plugin.VisibilityModel
 import kotlin.math.roundToInt
-
-fun VisibilityModel.isVisible() = this == VisibilityModel.Visible
 
 fun HotPreviewModel.toWindowInsetsDeviceConfig(): WindowInsetsDeviceConfig {
     val cameraInset = InsetConfig(52.dp)
-    val cameraInsetsConfig = when (camera) {
-        CameraPositionModel.Off -> InsetConfigs()
-        CameraPositionModel.Left -> InsetConfigs(left = cameraInset)
-        CameraPositionModel.Top -> InsetConfigs(top = cameraInset)
-        CameraPositionModel.Right -> InsetConfigs(right = cameraInset)
-        CameraPositionModel.Bottom -> InsetConfigs(bottom = cameraInset)
+    val cameraInsetsConfig = when (displayCutout) {
+        DisplayCutoutModeModel.Off -> InsetConfigs()
+        DisplayCutoutModeModel.CameraLeft -> InsetConfigs(left = cameraInset)
+        DisplayCutoutModeModel.CameraTop -> InsetConfigs(top = cameraInset)
+        DisplayCutoutModeModel.CameraRight -> InsetConfigs(right = cameraInset)
+        DisplayCutoutModeModel.CameraBottom -> InsetConfigs(bottom = cameraInset)
     }
     val statusBarHeight = max(24.dp, cameraInsetsConfig.top.size)
     val statusBarInsetsConfig = if (statusBar) InsetConfigs(top = InsetConfig(statusBarHeight)) else InsetConfigs()
@@ -108,25 +105,25 @@ fun WindowInsetsDeviceSimulation(
                 isDarkMode = hotPreviewAnnotation.darkMode,
             )
         }
-        if (hotPreviewAnnotation.camera != CameraPositionModel.Off) {
-            val alignment = when (hotPreviewAnnotation.camera) {
-                CameraPositionModel.Left -> AbsoluteAlignment.TopLeft
-                CameraPositionModel.Top -> AbsoluteAlignment.TopLeft
-                CameraPositionModel.Right -> AbsoluteAlignment.TopRight
-                CameraPositionModel.Bottom -> AbsoluteAlignment.BottomLeft
-                CameraPositionModel.Off -> AbsoluteAlignment.TopLeft // This case is already handled above
+        if (hotPreviewAnnotation.displayCutout != DisplayCutoutModeModel.Off) {
+            val alignment = when (hotPreviewAnnotation.displayCutout) {
+                DisplayCutoutModeModel.CameraLeft -> AbsoluteAlignment.TopLeft
+                DisplayCutoutModeModel.CameraTop -> AbsoluteAlignment.TopLeft
+                DisplayCutoutModeModel.CameraRight -> AbsoluteAlignment.TopRight
+                DisplayCutoutModeModel.CameraBottom -> AbsoluteAlignment.BottomLeft
+                DisplayCutoutModeModel.Off -> AbsoluteAlignment.TopLeft // This case is already handled above
             }
-            val size = when (hotPreviewAnnotation.camera) {
-                CameraPositionModel.Left -> deviceConfig.displayCutout.left.size
-                CameraPositionModel.Top -> deviceConfig.displayCutout.top.size
-                CameraPositionModel.Right -> deviceConfig.displayCutout.right.size
-                CameraPositionModel.Bottom -> deviceConfig.displayCutout.bottom.size
-                CameraPositionModel.Off -> 0.dp // This case is already handled above
+            val size = when (hotPreviewAnnotation.displayCutout) {
+                DisplayCutoutModeModel.CameraLeft -> deviceConfig.displayCutout.left.size
+                DisplayCutoutModeModel.CameraTop -> deviceConfig.displayCutout.top.size
+                DisplayCutoutModeModel.CameraRight -> deviceConfig.displayCutout.right.size
+                DisplayCutoutModeModel.CameraBottom -> deviceConfig.displayCutout.bottom.size
+                DisplayCutoutModeModel.Off -> 0.dp // This case is already handled above
             }
             CameraCutout(
                 modifier = Modifier.align(alignment),
-                isVertical = with(hotPreviewAnnotation.camera) {
-                    this == CameraPositionModel.Left || this == CameraPositionModel.Right
+                isVertical = with(hotPreviewAnnotation.displayCutout) {
+                    this == DisplayCutoutModeModel.CameraLeft || this == DisplayCutoutModeModel.CameraRight
                 },
                 cutoutSize = size
             )

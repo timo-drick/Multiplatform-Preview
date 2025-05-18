@@ -8,9 +8,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import de.drick.compose.hotpreview.CameraPosition
 import de.drick.compose.hotpreview.plugin.AnnotationUpdate
-import de.drick.compose.hotpreview.plugin.CameraPositionModel
+import de.drick.compose.hotpreview.plugin.DisplayCutoutModeModel
 import de.drick.compose.hotpreview.plugin.HotPreviewAnnotation
 import de.drick.compose.hotpreview.plugin.HotPreviewModel
 import de.drick.compose.hotpreview.plugin.NavigationModeModel
@@ -40,7 +39,7 @@ interface GutterIconViewModelI {
     val captionBar: ArgumentTriStateBoolean
     val navigationBar: ArgumentFieldEnum<NavigationModeModel>
     val navigationBarContrastEnforced: ArgumentTriStateBoolean
-    val camera: ArgumentFieldEnum<CameraPositionModel>
+    val displayCutout: ArgumentFieldEnum<DisplayCutoutModeModel>
 
     fun update(dsl: UpdateAnnotationDsl.() -> Unit)
     fun render()
@@ -125,7 +124,7 @@ class GutterIconViewModel(
     override val navigationBar = ArgumentFieldEnum(
         name = "navigationBar",
         defaultValue = baseModel.navigationBar,
-        fqName = "de.drick.compose.hotpreview.NavigationMode",
+        fqName = "de.drick.compose.hotpreview.NavigationBarMode",
         useUpdateDsl = ::update
     )
     override val navigationBarContrastEnforced = ArgumentTriStateBoolean(
@@ -134,10 +133,10 @@ class GutterIconViewModel(
         useUpdateDsl = ::update
     )
 
-    override val camera = ArgumentFieldEnum(
-        name = "camera",
-        defaultValue = baseModel.camera,
-        fqName = "de.drick.compose.hotpreview.CameraPosition",
+    override val displayCutout = ArgumentFieldEnum(
+        name = "displayCutout",
+        defaultValue = baseModel.displayCutout,
+        fqName = "de.drick.compose.hotpreview.DisplayCutoutMode",
         useUpdateDsl = ::update
     )
 

@@ -15,7 +15,7 @@ Release notes for the HotPreview annotation dependency are here: https://github.
 
 Supported are projects with:
 
-- Compose Multiplatform versions: 1.7.3, 1.8.0
+- Compose Multiplatform versions: 1.7.3, 1.8.0 and 1.9.0 (Maybe also other versions)
 - Compose for Desktop (CFD) only code.
 - Multiplatform projects
     - Common code
@@ -180,6 +180,16 @@ private fun PreviewWeatherCanvas(
 The plugin will use the values provided by your `HotPreviewParameterProvider` to generate previews with different data.
 
 ![](screenshots/hotpreview_parameter_provider_sample.png)
+
+### WindowInsets simulation (edge-to-edge mode)
+You can simulate window insets in your previews. This allows you to test how your UI behaves with different insets, such as status bars or navigation bars.
+Please read the official documentation for details: https://developer.android.com/develop/ui/compose/system/insets
+
+There is an annotation class which does simulate most of the common WindowInsets configurations:
+`@HotPreviewWindowInsets`
+
+
+
 
 ## Coil image preview
 
