@@ -1,62 +1,42 @@
 package androidx.compose.foundation.layout
 
-var captionBarInsets = WindowInsets(0, 0, 0, 0)
-var displayCutoutInsets = WindowInsets(0, 0, 0, 0)
-var imeInsets = WindowInsets(0, 0, 0, 0)
-var mandatorySystemGesturesInsets = WindowInsets(0, 0, 0, 0)
-var navigationBarsInsets = WindowInsets(0, 0, 0, 0)
-var statusBarsInsets = WindowInsets(0, 0, 0, 0)
-var systemGesturesInsets = WindowInsets(0, 0, 0, 0)
-var tappableElementInsets = WindowInsets(0, 0, 0, 0)
-var waterfallInsets = WindowInsets(0, 0, 0, 0)
-
-fun resetWindowInsets() {
-    captionBarInsets = WindowInsets(0, 0, 0, 0)
-    displayCutoutInsets = WindowInsets(0, 0, 0, 0)
-    imeInsets = WindowInsets(0, 0, 0, 0)
-    mandatorySystemGesturesInsets = WindowInsets(0, 0, 0, 0)
-    navigationBarsInsets = WindowInsets(0, 0, 0, 0)
-    statusBarsInsets = WindowInsets(0, 0, 0, 0)
-    systemGesturesInsets = WindowInsets(0, 0, 0, 0)
-    tappableElementInsets = WindowInsets(0, 0, 0, 0)
-    waterfallInsets = WindowInsets(0, 0, 0, 0)
-}
+import de.drick.compose.hotpreview.WindowInsetsProvider
 
 val WindowInsets.Companion.captionBar: WindowInsets
-    get() = captionBarInsets
+    get() = WindowInsetsProvider.insets.captionBarInsets
 
 val WindowInsets.Companion.displayCutout: WindowInsets
-    get() = displayCutoutInsets
+    get() = WindowInsetsProvider.insets.displayCutoutInsets
 
 val WindowInsets.Companion.ime: WindowInsets
-    get() = imeInsets
+    get() = WindowInsetsProvider.insets.imeInsets
 
 val WindowInsets.Companion.mandatorySystemGestures: WindowInsets
-    get() = mandatorySystemGesturesInsets
+    get() = WindowInsetsProvider.insets.mandatorySystemGesturesInsets
 
 val WindowInsets.Companion.navigationBars: WindowInsets
-    get() = navigationBarsInsets
+    get() = WindowInsetsProvider.insets.navigationBarsInsets
 
 val WindowInsets.Companion.statusBars: WindowInsets
-    get() = statusBarsInsets
+    get() = WindowInsetsProvider.insets.statusBarsInsets
 
 val WindowInsets.Companion.systemBars: WindowInsets
     get() = statusBars.union(navigationBars)
 
 val WindowInsets.Companion.systemGestures: WindowInsets
-    get() = systemGesturesInsets
+    get() = WindowInsetsProvider.insets.systemGesturesInsets
 
 val WindowInsets.Companion.tappableElement: WindowInsets
-    get() = tappableElementInsets
+    get() = WindowInsetsProvider.insets.tappableElementInsets
 
 val WindowInsets.Companion.waterfall: WindowInsets
-    get() = waterfallInsets
+    get() = WindowInsetsProvider.insets.waterfallInsets
 
 val WindowInsets.Companion.safeDrawing: WindowInsets
     get() = systemBars.union(displayCutout)
 
 val WindowInsets.Companion.safeGestures: WindowInsets
-    get() = systemGesturesInsets.union(mandatorySystemGesturesInsets)
+    get() = systemGestures.union(mandatorySystemGestures)
 
 val WindowInsets.Companion.safeContent: WindowInsets
     get() = safeDrawing.union(safeGestures)

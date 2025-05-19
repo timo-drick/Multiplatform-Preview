@@ -25,14 +25,16 @@ data class HotPreviewAnnotation(
  */
 data class HotPreviewModel(
     val name: String = "",
-    val group: String = "",         // Not used yet!
-    val widthDp: Int = -1,          // if < 0 it will adapt to content max 1024 dp
-    val heightDp: Int = -1,         // if < 0 it will adapt to content max 1024 dp
-    val locale: String = "",        // Not supported yet!
-    val fontScale: Float = 1f,      // The scaling factor for fonts. Should be between 0.5f and 2.0f
-    val density: Float = 1f,        // The logical density of the display. This is a scaling factor for the Dp unit.
-    val darkMode: Boolean = true,   // Set the system theme to dark mode or light mode
-    val statusBar: Boolean = false, // Shows a status bar at the top of the preview also simulating the WindowInsets
+    val group: String = "",
+    val widthDp: Int = -1,
+    val heightDp: Int = -1,
+    val locale: String = "",
+    val layoutDirectionRTL: Boolean = false,
+    val fontScale: Float = 1f,
+    val density: Float = 1f,
+    val darkMode: Boolean = true,
+    val backgroundColor: Long = 0x0,
+    val statusBar: Boolean = false,
     val navigationBar: NavigationModeModel = NavigationModeModel.Off,
     val navigationBarContrastEnforced: Boolean = true,
     val displayCutout: DisplayCutoutModeModel = DisplayCutoutModeModel.Off,
