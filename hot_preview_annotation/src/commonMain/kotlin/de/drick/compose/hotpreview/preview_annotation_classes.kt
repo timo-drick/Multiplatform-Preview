@@ -136,7 +136,7 @@ annotation class HotPreviewDynamicColors
     navigationBar = NavigationBarMode.ThreeButtonRight,
 )
 @HotPreview(
-    name = "Tablet window mode", widthDp = 673, heightDp = 841,
+    name = "Tablet caption bar", widthDp = 673, heightDp = 841,
     captionBar = true
 )
 annotation class HotPreviewWindowInsets
@@ -187,7 +187,7 @@ annotation class HotPreviewWindowInsets
     navigationBarContrastEnforced = false
 )
 @HotPreview(
-    name = "Tablet window mode", widthDp = 673, heightDp = 841,
+    name = "Tablet caption bar", widthDp = 673, heightDp = 841,
     captionBar = true
 )
 annotation class HotPreviewWindowInsetsNC

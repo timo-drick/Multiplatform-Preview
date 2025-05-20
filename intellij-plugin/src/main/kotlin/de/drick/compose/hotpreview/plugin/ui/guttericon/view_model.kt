@@ -25,7 +25,7 @@ interface UpdateAnnotationDsl : UpdatePsiAnnotationDsl {
 }
 
 interface GutterIconViewModelI {
-    val outdatedAnnotationVersion: Boolean
+    val annotationVersion: Int
     val baseModel: HotPreviewModel
     val name: ArgumentField
     val group: ArgumentField
@@ -33,6 +33,7 @@ interface GutterIconViewModelI {
     val heightDp: ArgumentField
     val density: ArgumentField
     val locale: ArgumentField
+    val layoutDirectionRTL: ArgumentTriStateBoolean
     val fontScale: ArgumentField
     val darkMode: ArgumentTriStateBoolean
     val statusBar: ArgumentTriStateBoolean
@@ -40,6 +41,8 @@ interface GutterIconViewModelI {
     val navigationBar: ArgumentFieldEnum<NavigationModeModel>
     val navigationBarContrastEnforced: ArgumentTriStateBoolean
     val displayCutout: ArgumentFieldEnum<DisplayCutoutModeModel>
+
+    val deviceTemplates: List<DeviceTemplate>
 
     fun update(dsl: UpdateAnnotationDsl.() -> Unit)
     fun render()
@@ -52,14 +55,15 @@ class GutterIconViewModel(
     private val annotation: HotPreviewAnnotation,
     private val groups: Set<String>,
     private val requestRender: () -> Unit,
-    annotationVersion: Int
+    override val annotationVersion: Int
 ): GutterIconViewModelI {
-    override val outdatedAnnotationVersion = annotationVersion < 2
 
     private val scope = project.service<ProjectScopeProviderService>().scope
     private val line = requireNotNull(annotation.lineRange.first) { "Line should not be null!" }
 
     private val annotationUpdate = AnnotationUpdate(project, file, line)
+
+    override val deviceTemplates = if (annotationVersion < 2) deviceTemplatesV1 else deviceTemplatesV2
 
     override val baseModel = annotation.annotation
     override val name = ArgumentField(
@@ -98,6 +102,11 @@ class GutterIconViewModel(
         isString = true,
         useUpdateDsl = ::update
     )
+    override val layoutDirectionRTL = ArgumentTriStateBoolean(
+        name = "layoutDirectionRTL",
+        defaultValue = baseModel.layoutDirectionRTL,
+        useUpdateDsl = ::update
+    )
     override val fontScale = ArgumentField(
         name = "fontScale",
         defaultValue = "${baseModel.fontScale}f",
@@ -123,6 +132,7 @@ class GutterIconViewModel(
     )
     override val navigationBar = ArgumentFieldEnum(
         name = "navigationBar",
+        nullValue = NavigationModeModel.Off,
         defaultValue = baseModel.navigationBar,
         fqName = "de.drick.compose.hotpreview.NavigationBarMode",
         useUpdateDsl = ::update
@@ -135,6 +145,7 @@ class GutterIconViewModel(
 
     override val displayCutout = ArgumentFieldEnum(
         name = "displayCutout",
+        nullValue = DisplayCutoutModeModel.Off,
         defaultValue = baseModel.displayCutout,
         fqName = "de.drick.compose.hotpreview.DisplayCutoutMode",
         useUpdateDsl = ::update
@@ -202,22 +213,27 @@ class ArgumentField(
 
 class ArgumentFieldEnum<T: Enum<T>>(
     val name: String,
-    private val defaultValue: T,
+    private val nullValue: T,
+    defaultValue: T,
     private val fqName: String,
     private val useUpdateDsl: (block: UpdateAnnotationDsl.() -> Unit) -> Unit
 ) {
     var value: T by mutableStateOf(defaultValue)
         private set
 
+    fun update(dsl: UpdateAnnotationDsl, newValue: T) {
+        println("Update enum: $name -> $newValue default (${nullValue.name})")
+        if (newValue == nullValue) {
+            dsl.parameter(name, null)
+        } else {
+            dsl.parameter(name, "${fqName}.${newValue.name}")
+        }
+        value = newValue
+    }
+
     fun update(newValue: T) {
         useUpdateDsl {
-            println("Update enum: $name -> $newValue default (${defaultValue.name})")
-            if (newValue == defaultValue) {
-                parameter(name, null)
-            } else {
-                parameter(name, "${fqName}.${newValue.name}")
-            }
-            value = newValue
+            update(this, newValue)
             render()
         }
     }
@@ -235,26 +251,29 @@ class ArgumentTriStateBoolean(
         if (dsl.checkParameter(name).not()) value = ToggleableState.Indeterminate
     }
 
-    fun set(value: ToggleableState) {
-
-    }
-
-    fun toggle() {
-        val newState = when (value) {
-            ToggleableState.On -> ToggleableState.Off
-            ToggleableState.Off -> ToggleableState.Indeterminate
-            ToggleableState.Indeterminate -> ToggleableState.On
-        }
+    fun set(dsl: UpdateAnnotationDsl, newState: ToggleableState) {
         val newValue: String? = when (newState) {
             ToggleableState.On -> "true"
             ToggleableState.Off -> "false"
             ToggleableState.Indeterminate -> null
         }
+        println("New state for $name: $newState -> $newValue")
+        dsl.parameter(name, newValue)
+        value = newState
+    }
+
+    fun toggle() {
         useUpdateDsl {
-            println("New state: $newState -> $newValue")
-            parameter(name, newValue)
-            value = newState
+            toggle(this)
             render()
         }
+    }
+    fun toggle(dsl: UpdateAnnotationDsl) {
+        val newState = when (value) {
+            ToggleableState.On -> ToggleableState.Off
+            ToggleableState.Off -> ToggleableState.Indeterminate
+            ToggleableState.Indeterminate -> ToggleableState.On
+        }
+        set(dsl, newState)
     }
 }

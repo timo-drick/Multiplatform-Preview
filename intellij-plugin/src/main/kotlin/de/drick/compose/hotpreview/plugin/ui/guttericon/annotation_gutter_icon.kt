@@ -6,11 +6,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.plugin.DisplayCutoutModeModel
+import de.drick.compose.hotpreview.plugin.HOT_PREVIEW_ANNOTATION_VERSION
 import de.drick.compose.hotpreview.plugin.HotPreviewModel
 import de.drick.compose.hotpreview.plugin.NavigationModeModel
 import de.drick.compose.hotpreview.plugin.ui.preview_window.SelfPreviewTheme
@@ -58,27 +62,6 @@ val densityTemplates = listOf(
 
 fun List<ComboBoxEntry>.findEntry(name: String) = find { it.name.toFloatOrNull() == name.toFloatOrNull() }
 
-data class DeviceTemplate(
-    val name: String,
-    val widthDp: Int,
-    val heightDp: Int,
-    val density: Float
-)
-
-private const val mdpi = 160f
-
-val deviceTemplates = listOf(
-    DeviceTemplate(name = "Phone", widthDp = 411, heightDp = 891, density = 420/mdpi),
-    DeviceTemplate(name = "Phone Landscape", widthDp = 891, heightDp = 411, density = 420/mdpi),
-    DeviceTemplate(name = "Foldable", widthDp = 673, heightDp = 841, density = 420/mdpi),
-    DeviceTemplate(name = "Tablet", widthDp = 1280, heightDp = 800, density = 240/mdpi),
-    DeviceTemplate(name = "Desktop", widthDp = 1920, heightDp = 1080, density = 160/mdpi),
-)
-
-fun findDeviceTemplate(widthDp: Int, heightDp: Int, density: Float) = deviceTemplates.find {
-    density == it.density && widthDp == it.widthDp && heightDp == it.heightDp
-}
-
 private fun createMockArgumentField(value: String) = ArgumentField(
     name = "dummy",
     defaultValue = value,
@@ -87,6 +70,7 @@ private fun createMockArgumentField(value: String) = ArgumentField(
 )
 private fun <T: Enum<T>>createMockArgumentEnum(value: T) = ArgumentFieldEnum(
     name = "dummy",
+    nullValue = value,
     defaultValue = value,
     fqName = "",
     useUpdateDsl = {}
@@ -99,7 +83,9 @@ private fun createMockArgumentFieldTrieState(value: Boolean?) = ArgumentTriState
 )
 
 val mockGutterIconViewModel = object: GutterIconViewModelI {
-    override val outdatedAnnotationVersion = true
+    override val annotationVersion = 2
+
+    override val deviceTemplates = deviceTemplatesV2
     override val baseModel = HotPreviewModel(
         name = "Test name"
     )
@@ -109,11 +95,12 @@ val mockGutterIconViewModel = object: GutterIconViewModelI {
     override val heightDp = createMockArgumentField(baseModel.heightDp.toString())
     override val density = createMockArgumentField("${baseModel.density}f")
     override val locale = createMockArgumentField("de")
+    override val layoutDirectionRTL = createMockArgumentFieldTrieState(null)
     override val fontScale = createMockArgumentField("1f")
     override val darkMode = createMockArgumentFieldTrieState(null)
     override val statusBar = createMockArgumentFieldTrieState(null)
     override val captionBar = createMockArgumentFieldTrieState(null)
-    override val navigationBar = createMockArgumentEnum(NavigationModeModel.Off)
+    override val navigationBar = createMockArgumentEnum(NavigationModeModel.ThreeButtonBottom)
     override val navigationBarContrastEnforced = createMockArgumentFieldTrieState(null)
     override val displayCutout = createMockArgumentEnum(DisplayCutoutModeModel.Off)
 
@@ -132,27 +119,9 @@ fun GutterIconAnnotationSettingsPreview() {
     }
 }
 
-@Composable
-fun SettingsRow(
-    description: String,
-    content: @Composable () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = description,
-            style = Typography.labelTextStyle()
-        )
-        Spacer(Modifier.weight(1f))
-        content()
-    }
-}
-
 private val outdatedWarningMessage = """
     You are using an outdated version of the @HotPreview annotation dependency.
-    Maybe some of the settings will not work as expected!"
+    Some settings are not supported by the old @HotPreview annotation definition!"
 """.trimIndent()
 
 @Composable
@@ -174,7 +143,7 @@ fun GutterIconAnnotationSettings(
     Column(
         modifier.width(IntrinsicSize.Min)
     ) {
-        if (vm.outdatedAnnotationVersion) {
+        if (vm.annotationVersion < HOT_PREVIEW_ANNOTATION_VERSION && vm.annotationVersion > 0) {
             Row(
                 modifier = Modifier.padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -200,8 +169,6 @@ fun GutterIconAnnotationSettings(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             SettingsRow("Name") {
-                //var name by remember { mutableStateOf(base.name) }
-                //val update = { string("name", name) }
                 TextField(
                     modifier = Modifier.updateOnFocusLoss(vm.name),
                     value = vm.name.value,
@@ -209,8 +176,6 @@ fun GutterIconAnnotationSettings(
                 )
             }
             SettingsRow("Group") {
-                //var name by remember { mutableStateOf(base.name) }
-                //val update = { string("name", name) }
                 TextField(
                     modifier = Modifier.updateOnFocusLoss(vm.group),
                     value = vm.group.value,
@@ -222,26 +187,30 @@ fun GutterIconAnnotationSettings(
                 var selectedDevice: DeviceTemplate? = remember(
                     vm.widthDp.value,
                     vm.heightDp.value,
-                    vm.density.value
+                    vm.density.value,
+                    vm.statusBar.value,
+                    vm.captionBar.value,
+                    vm.navigationBar.value,
+                    vm.displayCutout.value
                 ) {
-                    findDeviceTemplate(
-                        widthDp = vm.widthDp.value.toIntOrNull() ?: -1,
-                        heightDp = vm.heightDp.value.toIntOrNull() ?: -1,
-                        density = vm.density.value.toFloatOrNull() ?: 1f
-                    )
+                    vm.findDeviceTemplate()
                 }
 
                 var deviceName = remember(selectedDevice) { selectedDevice?.name ?: "Custom" }
                 GenericComboBox(
                     modifier = Modifier.width(180.dp),
                     labelText = deviceName,
-                    items = deviceTemplates,
+                    items = vm.deviceTemplates,
                     selectedItem = selectedDevice,
                     onSelectItem = {
                         vm.update {
                             vm.widthDp.update(this, it.widthDp.toString())
                             vm.heightDp.update(this, it.heightDp.toString())
                             vm.density.update(this, "${it.density}f")
+                            vm.statusBar.set(this, it.statusBar)
+                            vm.captionBar.set(this, it.captionBar)
+                            vm.navigationBar.update(this, it.navigationBar)
+                            vm.displayCutout.update(this, it.displayCutout)
                             render()
                         }
                         deviceName = it.name
@@ -295,23 +264,35 @@ fun GutterIconAnnotationSettings(
                     }
                 )
             }
-            SettingsRow("Statusbar") {
+            SettingsRow("Statusbar", isNewerVersion = vm.annotationVersion < 2) {
                 TriStateCheckbox(
                     state = vm.statusBar.value,
                     onClick = {
-                        vm.statusBar.toggle()
+                        vm.update {
+                            vm.statusBar.toggle(this)
+                            if (vm.statusBar.value == ToggleableState.On) {
+                                vm.captionBar.set(this, ToggleableState.Indeterminate)
+                            }
+                            render()
+                        }
                     }
                 )
             }
-            SettingsRow("Captionbar") {
+            SettingsRow("Captionbar", isNewerVersion = vm.annotationVersion < 2) {
                 TriStateCheckbox(
                     state = vm.captionBar.value,
                     onClick = {
-                        vm.captionBar.toggle()
+                        vm.update {
+                            vm.captionBar.toggle(this)
+                            if (vm.captionBar.value == ToggleableState.On) {
+                                vm.statusBar.set(this, ToggleableState.Indeterminate)
+                            }
+                            render()
+                        }
                     }
                 )
             }
-            SettingsRow("Navigationbar") {
+            SettingsRow("Navigationbar", isNewerVersion = vm.annotationVersion < 2) {
                 GenericComboBox<NavigationModeModel>(
                     modifier = Modifier.width(180.dp),
                     labelText = vm.navigationBar.value.name,
@@ -328,7 +309,7 @@ fun GutterIconAnnotationSettings(
                     }
                 )
             }
-            SettingsRow("Navigationbar contrast enforced") {
+            SettingsRow("Navigationbar contrast enforced", isNewerVersion = vm.annotationVersion < 2) {
                 TriStateCheckbox(
                     state = vm.navigationBarContrastEnforced.value,
                     onClick = {
@@ -336,7 +317,7 @@ fun GutterIconAnnotationSettings(
                     }
                 )
             }
-            SettingsRow("Display cutout") {
+            SettingsRow("Display cutout", isNewerVersion = vm.annotationVersion < 2) {
                 GenericComboBox<DisplayCutoutModeModel>(
                     modifier = Modifier.width(180.dp),
                     labelText = vm.displayCutout.value.name,
@@ -362,6 +343,14 @@ fun GutterIconAnnotationSettings(
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
                     )
+                )
+            }
+            SettingsRow("layout direction RTL", isNewerVersion = vm.annotationVersion < 2) {
+                TriStateCheckbox(
+                    state = vm.layoutDirectionRTL.value,
+                    onClick = {
+                        vm.layoutDirectionRTL.toggle()
+                    }
                 )
             }
             SettingsRow("fontScale") {
@@ -392,6 +381,44 @@ fun GutterIconAnnotationSettings(
                     }
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun SettingsRow(
+    description: String,
+    isNewerVersion: Boolean = false,
+    content: @Composable RowScope.() -> Unit
+) {
+    Box {
+        Row(
+            modifier = if (isNewerVersion) Modifier.alpha(0.5f) else Modifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = description,
+                style = Typography.labelTextStyle()
+            )
+            if (isNewerVersion) {
+                Icon(key = AllIconsKeys.General.Warning, contentDescription = "Warning")
+            }
+            Spacer(Modifier.weight(1f))
+            content()
+        }
+        if (isNewerVersion) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .pointerInput(Unit) { /* Consume all input */
+                        awaitPointerEventScope {
+                            while (true) {
+                                awaitPointerEvent()
+                            }
+                        }
+                    }
+            )
         }
     }
 }

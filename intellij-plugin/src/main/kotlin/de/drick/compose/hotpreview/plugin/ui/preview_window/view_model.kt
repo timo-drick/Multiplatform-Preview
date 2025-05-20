@@ -18,6 +18,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import de.drick.compose.hotpreview.plugin.HOT_PREVIEW_ANNOTATION_VERSION
 import de.drick.compose.hotpreview.plugin.HotPreviewAnnotation
 import de.drick.compose.hotpreview.plugin.HotPreviewFunction
 import de.drick.compose.hotpreview.plugin.HotPreviewView
@@ -86,6 +87,7 @@ sealed interface HotPreviewAction {
 }
 
 interface HotPreviewViewModelI {
+    val outdatedAnnotationVersion: Boolean
     val scaleState: ScaleState
     val isPureTextEditor: Boolean
     val compilingInProgress: Boolean
@@ -119,6 +121,8 @@ class HotPreviewViewModel(
     }
     private val renderService = projectService.createRenderService()
     private var hotPreviewAnnotationVersion = 0
+
+    override val outdatedAnnotationVersion get() = hotPreviewAnnotationVersion < HOT_PREVIEW_ANNOTATION_VERSION && hotPreviewAnnotationVersion > 0
 
     init {
         scope.launch {

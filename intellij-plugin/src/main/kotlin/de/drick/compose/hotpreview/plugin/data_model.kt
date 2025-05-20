@@ -19,6 +19,8 @@ data class HotPreviewAnnotation(
     val isAnnotationClass: Boolean
 )
 
+const val HOT_PREVIEW_ANNOTATION_VERSION = 2
+
 /**
  * This is a copy of the HotPreview annotation.
  * Because of conflicts with the classloaders it is necessary to have a copy of the data structure here.
