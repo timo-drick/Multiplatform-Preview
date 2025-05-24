@@ -82,6 +82,7 @@ private fun createMockArgumentFieldTrieState(value: Boolean?) = ArgumentTriState
     useUpdateDsl = {}
 )
 
+@OptIn(ExperimentalStdlibApi::class)
 val mockGutterIconViewModel = object: GutterIconViewModelI {
     override val annotationVersion = 2
 
@@ -98,6 +99,7 @@ val mockGutterIconViewModel = object: GutterIconViewModelI {
     override val layoutDirectionRTL = createMockArgumentFieldTrieState(null)
     override val fontScale = createMockArgumentField("1f")
     override val darkMode = createMockArgumentFieldTrieState(null)
+    override val backgroundColor = createMockArgumentField(baseModel.backgroundColor.toHexString())
     override val statusBar = createMockArgumentFieldTrieState(null)
     override val captionBar = createMockArgumentFieldTrieState(null)
     override val navigationBar = createMockArgumentEnum(NavigationModeModel.ThreeButtonBottom)

@@ -36,6 +36,7 @@ interface GutterIconViewModelI {
     val layoutDirectionRTL: ArgumentTriStateBoolean
     val fontScale: ArgumentField
     val darkMode: ArgumentTriStateBoolean
+    val backgroundColor: ArgumentField
     val statusBar: ArgumentTriStateBoolean
     val captionBar: ArgumentTriStateBoolean
     val navigationBar: ArgumentFieldEnum<NavigationModeModel>
@@ -117,6 +118,14 @@ class GutterIconViewModel(
     override val darkMode = ArgumentTriStateBoolean(
         name = "darkMode",
         defaultValue = baseModel.darkMode,
+        useUpdateDsl = ::update
+    )
+
+    @OptIn(ExperimentalStdlibApi::class)
+    override val backgroundColor = ArgumentField(
+        name = "backgroundColor",
+        defaultValue = baseModel.backgroundColor.toHexString(),
+        isString = true,
         useUpdateDsl = ::update
     )
 
