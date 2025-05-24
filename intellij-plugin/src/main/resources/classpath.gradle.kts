@@ -1,5 +1,5 @@
 allprojects {
-    project.tasks.register("hotPreviewDetectClasspath2") {
+    project.tasks.register("hotPreviewDetectClasspath") {
         group = "hotPreview"
         val targetName = try {
             val kotlinExt = project.extensions.findByName("kotlin")
