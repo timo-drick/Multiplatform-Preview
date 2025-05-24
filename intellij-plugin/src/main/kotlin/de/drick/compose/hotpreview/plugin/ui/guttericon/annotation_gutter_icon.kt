@@ -122,8 +122,8 @@ fun GutterIconAnnotationSettingsPreview() {
 }
 
 private val outdatedWarningMessage = """
-    You are using an outdated version of the @HotPreview annotation dependency.
-    Some settings are not supported by the old @HotPreview annotation definition!"
+    Some settings are not supported by the old @HotPreview annotation dependency.
+    Maybe update your dependency.
 """.trimIndent()
 
 @Composable
@@ -300,7 +300,26 @@ fun GutterIconAnnotationSettings(
                     labelText = vm.navigationBar.value.name,
                     selectedItem = vm.navigationBar.value,
                     onSelectItem = { item ->
-                        vm.navigationBar.update(item)
+                        vm.update {
+                            vm.navigationBar.update(this, item)
+                            val cutOut = vm.displayCutout.value
+                            val nav = vm.navigationBar.value
+                            when { // Update displayCutout if needed
+                                cutOut == DisplayCutoutModeModel.CameraBottom &&
+                                        nav == NavigationModeModel.ThreeButtonBottom -> {
+                                    vm.displayCutout.update(this, DisplayCutoutModeModel.CameraTop)
+                                }
+                                cutOut == DisplayCutoutModeModel.CameraLeft &&
+                                        nav == NavigationModeModel.ThreeButtonLeft -> {
+                                    vm.displayCutout.update(this, DisplayCutoutModeModel.CameraRight)
+                                }
+                                cutOut == DisplayCutoutModeModel.CameraRight &&
+                                        nav == NavigationModeModel.ThreeButtonRight -> {
+                                    vm.displayCutout.update(this, DisplayCutoutModeModel.CameraLeft)
+                                }
+                            }
+                            render()
+                        }
                     },
                     items = NavigationModeModel.entries,
                     listItemContent = { item, isSelected, _, isItemHovered, isPreviewSelection ->
@@ -325,7 +344,26 @@ fun GutterIconAnnotationSettings(
                     labelText = vm.displayCutout.value.name,
                     selectedItem = vm.displayCutout.value,
                     onSelectItem = { item ->
-                        vm.displayCutout.update(item)
+                        vm.update {
+                            vm.displayCutout.update(this, item)
+                            val cutOut = vm.displayCutout.value
+                            val nav = vm.navigationBar.value
+                            when { // Update navigation bar if needed
+                                cutOut == DisplayCutoutModeModel.CameraBottom &&
+                                        nav == NavigationModeModel.ThreeButtonBottom -> {
+                                    vm.navigationBar.update(this, NavigationModeModel.ThreeButtonBottom)
+                                }
+                                cutOut == DisplayCutoutModeModel.CameraLeft &&
+                                        nav == NavigationModeModel.ThreeButtonLeft -> {
+                                    vm.navigationBar.update(this, NavigationModeModel.ThreeButtonRight)
+                                }
+                                cutOut == DisplayCutoutModeModel.CameraRight &&
+                                        nav == NavigationModeModel.ThreeButtonRight -> {
+                                    vm.navigationBar.update(this, NavigationModeModel.ThreeButtonLeft)
+                                }
+                            }
+                            render()
+                        }
                     },
                     items = DisplayCutoutModeModel.entries,
                     listItemContent = { item, isSelected, _, isItemHovered, isPreviewSelection ->
