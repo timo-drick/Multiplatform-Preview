@@ -202,9 +202,9 @@ class ArgumentField(
     var value by mutableStateOf(defaultValue)
         private set
 
-    fun update(dsl: UpdateAnnotationDsl, newValue: String) {
+    fun update(dsl: UpdateAnnotationDsl, newValue: String?) {
         if (value == newValue) return
-        value = newValue
+        value = newValue ?: ""
         if (isString) {
             dsl.string(name, newValue)
         } else {
@@ -212,7 +212,7 @@ class ArgumentField(
         }
     }
 
-    fun update(newValue: String, renderUpdate: Boolean = false) {
+    fun update(newValue: String?, renderUpdate: Boolean = false) {
         useUpdateDsl {
             update(this, newValue)
             if (renderUpdate) render()

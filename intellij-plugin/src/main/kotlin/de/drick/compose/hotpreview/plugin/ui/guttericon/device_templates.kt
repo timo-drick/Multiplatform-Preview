@@ -57,7 +57,7 @@ val deviceTemplatesV2 = listOf(
 
 
 fun GutterIconViewModelI.findDeviceTemplate() = deviceTemplates.find {
-    density.value.toFloat() == it.density &&
+    density.value.toFloatOrNull() == it.density &&
     widthDp.value.toIntOrNull() == it.widthDp &&
     heightDp.value.toIntOrNull() == it.heightDp &&
     statusBar.value == it.statusBar &&

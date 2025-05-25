@@ -32,16 +32,18 @@ import org.jetbrains.jewel.ui.component.TextField
 import org.jetbrains.jewel.ui.component.TriStateCheckbox
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 import org.jetbrains.jewel.ui.theme.groupHeaderStyle
+import kotlin.math.roundToInt
 
 
 data class ComboBoxEntry(
     val name: String,
-    val value: String
+    val value: String?
 )
 
 val fontScaleTemplates = listOf(
-    ComboBoxEntry("Default (100%)", "1f"),
+    ComboBoxEntry("Default (100%)", null),
     ComboBoxEntry("85%", "0.85f"),
+    ComboBoxEntry("100%", "1.00f"),
     ComboBoxEntry("115%", "1.15f"),
     ComboBoxEntry("130%", "1.30f"),
     ComboBoxEntry("150%", "1.50f"),
@@ -49,18 +51,18 @@ val fontScaleTemplates = listOf(
     ComboBoxEntry("200%", "2.00f")
 )
 
-val densityTemplates = listOf(
-    Pair("l", 120),
-    Pair("m", 160),
-    Pair("h", 240),
-    Pair("xh", 320),
-    Pair("xx", 420),
-    Pair("xxh", 480)
-).map { (name, dpi) ->
-    ComboBoxEntry("${name}dpi ($dpi dpi)", "${dpi.toFloat() / 160f}f")
+val densityTemplates = listOf(ComboBoxEntry("Default (mdpi) 160dpi", null)) + listOf(
+    Pair("l", 120f / 160f),
+    Pair("m", 160f / 160f),
+    Pair("h", 240f / 160f),
+    Pair("xh", 320f / 160f),
+    Pair("xx", 420f / 160f),
+    Pair("xxh", 480f / 160f)
+).map { (name, density) ->
+    ComboBoxEntry("${name}dpi (${(density * 160f).roundToInt()} dpi)", "${density}f")
 }
 
-fun List<ComboBoxEntry>.findEntry(name: String) = find { it.name.toFloatOrNull() == name.toFloatOrNull() }
+fun List<ComboBoxEntry>.findEntry(value: String) = find { it.value?.toFloatOrNull() == value.toFloatOrNull() }
 
 private fun createMockArgumentField(value: String) = ArgumentField(
     name = "dummy",
@@ -381,7 +383,7 @@ fun GutterIconAnnotationSettings(
                     value = vm.locale.value,
                     onValueChange = vm.locale::update,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number
+                        keyboardType = KeyboardType.Text
                     )
                 )
             }
@@ -395,11 +397,11 @@ fun GutterIconAnnotationSettings(
             }
             SettingsRow("fontScale") {
                 val selectedScale = remember(vm.fontScale.value) {
-                    densityTemplates.findEntry(vm.fontScale.value)
+                    fontScaleTemplates.findEntry(vm.fontScale.value)
                 }
                 GenericComboBox(
                     modifier = Modifier.width(180.dp),
-                    labelText = vm.fontScale.value,
+                    labelText = selectedScale?.name ?: vm.fontScale.value,
                     items = fontScaleTemplates,
                     selectedItem = selectedScale,
                     onSelectItem = { item ->
@@ -419,6 +421,16 @@ fun GutterIconAnnotationSettings(
                     onClick = {
                         vm.darkMode.toggle()
                     }
+                )
+            }
+            SettingsRow("Background color") {
+                TextField(
+                    modifier = Modifier.width(160.dp).updateOnFocusLoss(),
+                    value = vm.backgroundColor.value,
+                    onValueChange = vm.backgroundColor::update,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text
+                    )
                 )
             }
         }
