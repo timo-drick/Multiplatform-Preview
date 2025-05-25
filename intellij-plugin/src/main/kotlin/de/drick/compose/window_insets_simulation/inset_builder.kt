@@ -25,7 +25,7 @@ fun HotPreviewModel.toWindowInsetsDeviceConfig(): WindowInsetsDeviceConfig {
         DisplayCutoutModeModel.CameraRight -> InsetConfigs(right = cameraInset)
         DisplayCutoutModeModel.CameraBottom -> InsetConfigs(bottom = cameraInset)
     }
-    val statusBarHeight = max(24.dp, cameraInsetsConfig.top.size)
+    val statusBarHeight = max(22.dp * fontScale, cameraInsetsConfig.top.size)
     val statusBarInsetsConfig = if (statusBar) InsetConfigs(top = InsetConfig(statusBarHeight)) else InsetConfigs()
     val navigationBarInsetsConfig = when (navigationBar) {
         NavigationModeModel.Off -> InsetConfigs()

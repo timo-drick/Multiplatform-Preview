@@ -15,14 +15,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
 
-@HotPreview(widthDp = 300, density = 2.0f)
-@HotPreview(widthDp = 300, darkMode = false, density = 2.0f)
+@HotPreview(widthDp = 250, density = 2.0f)
+@HotPreview(widthDp = 250, darkMode = false, density = 2.0f)
+@HotPreview(widthDp = 250, fontScale = 1.5f)
+@HotPreview(widthDp = 250, fontScale = 2.0f)
+@HotPreview(widthDp = 250, fontScale = 3.0f)
 @Composable
 private fun PreviewStatusBar() {
+    val fontScaling = LocalDensity.current.fontScale
     val backgroundColor = if (isSystemInDarkTheme())
         Color.Black
     else
@@ -30,7 +35,7 @@ private fun PreviewStatusBar() {
     Box(
         modifier = Modifier.background(backgroundColor)
     ) {
-        StatusBar(Modifier.height(24.dp))
+        StatusBar(Modifier.height(22.dp * fontScaling))
     }
 }
 
@@ -40,7 +45,7 @@ fun StatusBar(
     isDarkMode: Boolean = isSystemInDarkTheme()
 ) {
     val contentColor = if (isDarkMode) Color.White else Color.Black
-
+    val fontScaling = LocalDensity.current.fontScale
     Row(
         modifier = modifier.padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -51,13 +56,13 @@ fun StatusBar(
         )
         Spacer(Modifier.weight(1f))
         Image(
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(18.dp * fontScaling),
             imageVector = Icons_Filled_Wifi,
             contentDescription = "Wifi icon",
             colorFilter = ColorFilter.tint(contentColor),
         )
         Image(
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(18.dp * fontScaling),
             imageVector = Icons_Filled_BatteryChargingFull,
             contentDescription = "Battery icon",
             colorFilter = ColorFilter.tint(contentColor)
