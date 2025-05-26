@@ -50,6 +50,7 @@ inline fun <reified T>KaAnnotation.findParameterWithDefault(name: String, defaul
         value as? T
     } ?: defaultValue
 
+@OptIn(ExperimentalStdlibApi::class)
 inline fun <reified T: Enum<T>>KaAnnotation.findEnumParameterWithDefault(name: String, defaultValue: T): T =
     arguments.find { it.name.toString() == name }?.expression?.let { expression ->
         val value = (expression as? KaAnnotationValue.EnumEntryValue)?.callableId?.callableName?.identifier?.let { value ->
