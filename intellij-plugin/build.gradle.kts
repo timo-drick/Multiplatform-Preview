@@ -30,7 +30,7 @@ repositories {
 val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.5")
 val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("243")
 
-val versionName = "0.7.2-$ijPlatform"
+val versionName = "0.8.0-$ijPlatform"
 
 data class VersionInfo(
     val version: String,
@@ -124,7 +124,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx")
     }*/
 
-    implementation("de.drick.compose:hotpreview:0.1.9") {
+    implementation("de.drick.compose:hotpreview:0.2.0") {
         exclude(group = "org.jetbrains.kotlinx")
     }
 

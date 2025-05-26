@@ -188,7 +188,24 @@ Please read the official documentation for details: https://developer.android.co
 There is an annotation class which does simulate most of the common WindowInsets configurations:
 `@HotPreviewWindowInsets`
 
+Or you could specify it yourself using the `@HotPreview` annotation:
 
+```kotlin
+@HotPreview(
+    name = "Phone with insets",
+    widthDp = 400,
+    heightDp = 800,
+    displayCutout = DisplayCutoutMode.CameraTop,
+    statusBar = true,
+    navigationBar = NavigationBarMode.GestureBottom,
+)
+@Composable
+private fun PreviewHomeScreenWithInsets() {
+    MyTheme {
+        MyComposableHandlingInsets()
+    }
+}
+```
 
 
 ## Coil image preview
