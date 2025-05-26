@@ -31,6 +31,7 @@ class HotPreviewGutterIcon(
     private val project: Project,
     private val file: VirtualFile,
     private val annotation: HotPreviewAnnotation,
+    private val annotationVersion: Int,
     private val groups: Set<String>,
     private val requestRender: () -> Unit
 ) : GutterIconRenderer() {
@@ -45,7 +46,7 @@ class HotPreviewGutterIcon(
 
             val scope = project.service<ProjectScopeProviderService>().scope
             scope.launch(Dispatchers.EDT) {
-                val viewModel = GutterIconViewModel(project, file, annotation, groups, requestRender)
+                val viewModel = GutterIconViewModel(project, file, annotation, groups, requestRender, annotationVersion)
                 val dialog = MyCustomDialog(project, viewModel, relativePoint, requestRender)
                 dialog.show()
             }

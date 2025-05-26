@@ -1,13 +1,26 @@
 package de.drick.compose.hotpreview
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.currentComposer
 import androidx.compose.ui.*
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.Surface
 import java.lang.reflect.Method
@@ -33,9 +46,12 @@ class RenderPreviewImpl {
         fontScale: Float,
         isDarkTheme: Boolean,
         locale: String,
-        isInspectionMode: Boolean
+        layoutDirectionRTL: Boolean,
+        isInspectionMode: Boolean,
+        windowInsets: String
     ): Any {
         val theme = if (isDarkTheme) SystemTheme.Dark else SystemTheme.Light
+        val layoutDirection = if (layoutDirectionRTL) LayoutDirection.Rtl else LayoutDirection.Ltr
         val defaultWidth = 1024f * density
         val defaultHeight = 1024f * density
         val widthPx = widthDp * density
@@ -45,6 +61,7 @@ class RenderPreviewImpl {
         val renderWidth = if (widthUndefined) defaultWidth.toInt() else widthPx.toInt()
         val renderHeight = if (heightUndefined) defaultHeight.toInt() else heightPx.toInt()
         //println("Render size: $renderWidth x $renderHeight")
+        WindowInsetsProvider.setInsetsFromString(windowInsets, density)
         val ts = TimeSource.Monotonic
         val beginComposeScene = ts.markNow()
         try {
@@ -57,7 +74,8 @@ class RenderPreviewImpl {
                 content = {
                     CompositionLocalProvider(
                         LocalSystemTheme provides theme,
-                        LocalInspectionMode provides isInspectionMode
+                        LocalInspectionMode provides isInspectionMode,
+                        LocalLayoutDirection provides layoutDirection,
                     ) {
                         OverrideEnv(locale = locale) {
                             if (parameter != null) {
@@ -94,13 +112,13 @@ class RenderPreviewImpl {
             //println("Rendered size: $placedWidth x $placedHeight")
             val scaleTime = ts.markNow() - beginScale
             println("Scale time: $scaleTime")
-            val (bytes, duration) = measureTimedValue {
+            val (awtImage, duration) = measureTimedValue {
                 //image.peekPixels()?.buffer?.bytes
                 image.toComposeImageBitmap().toAwtImage()
                 //image.encodeToData(EncodedImageFormat.JPEG)?.bytes ?: "Unable to encode rendered preview!"
             }
             println("Encoding time: $duration")
-            return bytes
+            return awtImage
         } catch (err: Throwable) {
             println("Problem during render!")
             err.printStackTrace()

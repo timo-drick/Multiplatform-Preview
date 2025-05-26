@@ -4,9 +4,11 @@ import com.intellij.openapi.vfs.VirtualFile
 import de.drick.compose.hotpreview.HotPreview
 import de.drick.compose.hotpreview.HotPreviewParameter
 import de.drick.compose.hotpreview.plugin.service.RenderClassLoaderInstance
+import org.jetbrains.kotlin.idea.gradleTooling.loadClassOrNull
 import org.jetbrains.kotlin.load.kotlin.PackagePartClassUtils
 import org.jetbrains.kotlin.name.FqName
 import kotlin.reflect.full.functions
+import kotlin.reflect.full.memberProperties
 
 val fqNameHotPreview = requireNotNull(HotPreview::class.qualifiedName)
 val fqNameHotPreviewParameter = requireNotNull(HotPreviewParameter::class.qualifiedName)
@@ -33,4 +35,18 @@ fun RenderClassLoaderInstance.getParameterList(parameter: HotPreviewParameterMod
     val providerInstance = providerClazz.constructors.first().call()
     val getParametersRef = providerClazz.functions.find { it.name == "getParameters" }
     return getParametersRef?.call(providerInstance, parameter.limit) as List<*>
+}
+
+fun RenderClassLoaderInstance.getHotPreviewAnnotationVersion(): Int {
+    val version: Int? = try {
+        classLoader.loadClassOrNull("de.drick.compose.hotpreview.Info")?.kotlin?.let { infoClazz ->
+            val version = infoClazz.memberProperties.find { it.name == "hotPreviewAnnotationVersion" }
+                ?.getter?.call() as? Int
+            version
+        }
+    } catch (err: Throwable) {
+        err.printStackTrace()
+        null
+    }
+    return version ?: 1
 }

@@ -33,6 +33,7 @@ import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.psiUtil.argumentIndex
 import kotlin.collections.plus
+import kotlin.enums.enumEntries
 
 @Suppress("UnstableApiUsage")
 private val LOG = fileLogger()
@@ -43,25 +44,64 @@ private val composableClassId = ClassId.topLevel(FqName(Composable::class.qualif
 
 private val hotPreviewDefaultValues = HotPreviewModel()
 
-inline fun <reified T>Map<String, Any?>.withDefault(key: String, defaultValue: T): T =
-    this[key] as? T ?: defaultValue
+inline fun <reified T>KaAnnotation.findParameterWithDefault(name: String, defaultValue: T): T =
+    arguments.find { it.name.toString() == name }?.expression?.let { expression ->
+        val value = (expression as? KaAnnotationValue.ConstantValue)?.value?.value
+        value as? T
+    } ?: defaultValue
+
+inline fun <reified T: Enum<T>>KaAnnotation.findEnumParameterWithDefault(name: String, defaultValue: T): T =
+    arguments.find { it.name.toString() == name }?.expression?.let { expression ->
+        val value = (expression as? KaAnnotationValue.EnumEntryValue)?.callableId?.callableName?.identifier?.let { value ->
+            enumEntries<T>().find { it.name == value }
+        }
+        value
+    } ?: defaultValue
+
+
+/*
+// Code to find nested annotations but not needed anymore
+
+fun KaAnnotation.findNestedAnnotationParameter(name: String): KaAnnotation? {
+    val nestedAnnotation = arguments.find { it.name.toString() == name }?.expression as? NestedAnnotationValue
+    return nestedAnnotation?.annotation
+}
+private fun KaAnnotation.toNavigationBarModel() = NavigationBarConfigModel(
+    visibility = findEnumParameterWithDefault("visibility", VisibilityModel.Visible),
+    mode = findEnumParameterWithDefault("mode", NavigationModeModel.ThreeButtonBottom),
+    contrastEnforced = findParameterWithDefault("contrastEnforced", false)
+)
+private fun KaAnnotation.toCameraModel() = CameraConfigModel(
+    visibility = findEnumParameterWithDefault("visibility", VisibilityModel.Visible),
+    cameraPosition = findEnumParameterWithDefault("cameraPosition", CameraPositionModel.Top)
+)
+private fun KaAnnotation.toCaptionBarModel() = CaptionBarConfigModel(
+    visibility = findEnumParameterWithDefault("visibility", VisibilityModel.Visible)
+)
+ */
 
 private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
     // Build a map
-    val map = arguments.associateBy { it.name.toString() }
-        .mapValues { (it.value.expression as? KaAnnotationValue.ConstantValue)?.value?.value }
     val dv = hotPreviewDefaultValues
-    val dpi = map["dpi"] as? Int?
+    val dpi = findParameterWithDefault<Int?>("dpi", null) // This was in an old version of the HotPreview annotation
     val defaultDensity = if (dpi != null) dpi.toFloat() / 160f else dv.density
     return HotPreviewModel(
-        name = map.withDefault("name", dv.name),
-        group = map.withDefault("group", dv.group),
-        widthDp = map.withDefault("widthDp", dv.widthDp),
-        heightDp = map.withDefault("heightDp", dv.heightDp),
-        locale = map.withDefault("locale", dv.locale),
-        fontScale = map.withDefault("fontScale", dv.fontScale),
-        darkMode = map.withDefault("darkMode", dv.darkMode),
-        density = map.withDefault("density", defaultDensity)
+        name = findParameterWithDefault("name", dv.name),
+        group = findParameterWithDefault("group", dv.group),
+        widthDp = findParameterWithDefault("widthDp", dv.widthDp),
+        heightDp = findParameterWithDefault("heightDp", dv.heightDp),
+        locale = findParameterWithDefault("locale", dv.locale),
+        layoutDirectionRTL = findParameterWithDefault("layoutDirectionRTL", dv.layoutDirectionRTL),
+        fontScale = findParameterWithDefault("fontScale", dv.fontScale),
+        darkMode = findParameterWithDefault("darkMode", dv.darkMode),
+        backgroundColor = findParameterWithDefault("backgroundColor", dv.backgroundColor),
+        density = findParameterWithDefault("density", defaultDensity),
+        statusBar = findParameterWithDefault("statusBar", dv.statusBar),
+        navigationBar = findEnumParameterWithDefault("navigationBar", dv.navigationBar),
+        navigationBarContrastEnforced = findParameterWithDefault("navigationBarContrastEnforced", dv.navigationBarContrastEnforced),
+        displayCutout = findEnumParameterWithDefault("displayCutout", dv.displayCutout),
+        captionBar = findParameterWithDefault("captionBar", dv.captionBar),
+        inspectionMode = findParameterWithDefault("inspectionMode", dv.inspectionMode)
     )
 }
 
@@ -86,7 +126,6 @@ private fun findAnnotationArgument(
     annotationEntry: KtAnnotationEntry,
     argumentName: String,
 ): KtValueArgument? {
-    //call?.symbol?.valueParameters?.getOrNull(1)?.name?.asString()
     return annotationEntry.valueArgumentList?.arguments?.find {
         val name = it.getArgumentName()?.asName?.asString() ?: argumentNameList[it.argumentIndex]
         argumentName == name
@@ -112,10 +151,11 @@ suspend fun checkAnnotationParameter(
 
 
 interface UpdatePsiAnnotationDsl {
-    fun string(key: String, value: String) {
-        parameter(key, if (value.isNotBlank()) "\"$value\"" else null)
+    fun string(key: String, value: String?) {
+        parameter(key, if (value.isNullOrBlank()) null else "\"$value\"")
     }
     fun parameter(key: String, value: String?)
+    fun checkParameter(argumentName: String): Boolean
 }
 
 class AnnotationUpdate(
@@ -138,6 +178,7 @@ class AnnotationUpdate(
                 val factory = KtPsiFactory(project)
                 //println("Found: $annotation")
                 val dsl = object : UpdatePsiAnnotationDsl {
+
                     override fun parameter(argumentName: String, newValue: String?) {
                         if (annotation != null) {
                             val argument = findAnnotationArgument(argumentList, annotation, argumentName)
@@ -165,6 +206,13 @@ class AnnotationUpdate(
                             }
                         }
                     }
+
+                    override fun checkParameter(argumentName: String): Boolean {
+                        return if (annotation != null)
+                            findAnnotationArgument(argumentList, annotation, argumentName) != null
+                        else
+                            false
+                    }
                 }
                 writeAction {
                     WriteCommandAction.runWriteCommandAction(project) {
@@ -177,8 +225,6 @@ class AnnotationUpdate(
 }
 
 private fun KaAnnotation.toHotPreviewParameter(name: String): HotPreviewParameterModel {
-    val map = arguments.associateBy { it.name.toString() }
-        .mapValues { (it.value.expression as? KaAnnotationValue.ConstantValue)?.value?.value }
     val clazz = arguments
         .find { it.name.toString() == "provider" }
         ?.let { it.expression as KaAnnotationValue.ClassLiteralValue }
@@ -186,7 +232,7 @@ private fun KaAnnotation.toHotPreviewParameter(name: String): HotPreviewParamete
     return HotPreviewParameterModel(
         name = name,
         providerClassName = provider.asFqNameString(),
-        limit = map.withDefault("limit", Int.MAX_VALUE)
+        limit = findParameterWithDefault("limit", Int.MAX_VALUE)
     )
 }
 

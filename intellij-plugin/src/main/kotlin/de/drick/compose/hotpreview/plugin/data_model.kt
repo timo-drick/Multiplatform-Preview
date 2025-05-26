@@ -19,17 +19,35 @@ data class HotPreviewAnnotation(
     val isAnnotationClass: Boolean
 )
 
+const val HOT_PREVIEW_ANNOTATION_VERSION = 2
+
 /**
  * This is a copy of the HotPreview annotation.
  * Because of conflicts with the classloaders it is necessary to have a copy of the data structure here.
  */
 data class HotPreviewModel(
     val name: String = "",
-    val group: String = "",    // Not used yet!
-    val widthDp: Int = -1,     // if < 0 it will adapt to content max 1024 dp
-    val heightDp: Int = -1,    // if < 0 it will adapt to content max 1024 dp
-    val locale: String = "",   // Not supported yet!
-    val fontScale: Float = 1f, // The scaling factor for fonts. Should be between 0.5f and 2.0f
-    val density: Float = 1f,   // The logical density of the display. This is a scaling factor for the Dp unit.
+    val group: String = "",
+    val widthDp: Int = -1,
+    val heightDp: Int = -1,
+    val locale: String = "",
+    val layoutDirectionRTL: Boolean = false,
+    val fontScale: Float = 1f,
+    val density: Float = 1f,
     val darkMode: Boolean = true,
+    val backgroundColor: Long = 0x0,
+    val statusBar: Boolean = false,
+    val navigationBar: NavigationModeModel = NavigationModeModel.Off,
+    val navigationBarContrastEnforced: Boolean = true,
+    val displayCutout: DisplayCutoutModeModel = DisplayCutoutModeModel.Off,
+    val captionBar: Boolean = false,
+    val inspectionMode: Boolean = true,
 )
+
+enum class NavigationModeModel {
+    Off, GestureBottom, ThreeButtonBottom, ThreeButtonLeft, ThreeButtonRight
+}
+
+enum class DisplayCutoutModeModel {
+    Off, CameraTop, CameraLeft, CameraRight, CameraBottom
+}

@@ -46,7 +46,6 @@ class ClassPathService private constructor(
             val start = ts.markNow()
             val projectAnalyzer = ProjectAnalyzer(project)
             val jvmModule = projectAnalyzer.getJvmTargetModule(module)
-            val skikoLibs = RuntimeLibrariesManager.getRuntimeLibs()
             val path = requireNotNull(projectAnalyzer.getModulePath(module)) { "Module path $module not found!" }
 
             val compileTask = projectAnalyzer.getGradleCompileTaskName(jvmModule)
@@ -66,9 +65,14 @@ class ClassPathService private constructor(
                 println("Falling back to old method for getting classpath")
                 projectAnalyzer.getClassPath(jvmModule)
             }
+            //Detect compose version
+            val desktopLibName = gradleClassPath.map { it.file.split("/").last() }.find { it.startsWith("foundation-desktop") }
+            // Just taking the first to numbers: 1.7.3 -> 1.7 and 1.8.0 -> 1.8
+            val version = desktopLibName?.substringAfterLast("-")?.substring(0,3) ?: "1.8"
 
+            val skikoLibs = RuntimeLibrariesManager.getRuntimeLibs(version)
             // Combine classpaths and add skiko libs
-            val classPathLibs = (gradleClassPath + skikoLibs).distinct()
+            val classPathLibs = (skikoLibs + gradleClassPath).distinct()
 
             val classPathLocal = projectAnalyzer
                 .getClassPath(jvmModule, ClassPathMode.ONLY_LOCAL)
@@ -106,7 +110,9 @@ object RuntimeLibrariesManager {
     private var tmpFolder: File? = null
 
     private val runtimeLibs = listOf(
-        "hot_preview_render-all.jar"
+        "hot_preview_render_1_7-all.jar",
+        "hot_preview_render_1_8-all.jar",
+        "hot_preview_render_1_9-all.jar",
     )
 
     private val classpathGradleScript = "classpath.gradle.kts"
@@ -139,9 +145,16 @@ object RuntimeLibrariesManager {
         }
     }
 
-    suspend fun getRuntimeLibs(): List<URL> = withContext(Dispatchers.Default) {
+    suspend fun getRuntimeLibs(version: String): List<URL> = withContext(Dispatchers.Default) {
         val tmpFolder = initialize()
-        runtimeLibs.map {
+        val major = version.substringBefore(".").toInt()
+        val minor = version.substringAfter(".").toInt()
+        val versionFileName = when {
+            (major < 2 && minor <= 7) -> "1_7"
+            (major < 2 && minor <= 8) -> "1_8"
+            else -> "1_9"
+        }
+        runtimeLibs.filter { it.contains(versionFileName) }.map {
             File(tmpFolder, it).toURI().toURL()
         }
     }

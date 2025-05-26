@@ -3,42 +3,48 @@ package de.drick.compose.hotpreview.plugin.ui.guttericon
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import de.drick.compose.hotpreview.HotPreview
+import de.drick.compose.hotpreview.plugin.DisplayCutoutModeModel
+import de.drick.compose.hotpreview.plugin.HOT_PREVIEW_ANNOTATION_VERSION
 import de.drick.compose.hotpreview.plugin.HotPreviewModel
+import de.drick.compose.hotpreview.plugin.NavigationModeModel
 import de.drick.compose.hotpreview.plugin.ui.preview_window.SelfPreviewTheme
 import de.drick.compose.hotpreview.plugin.ui.components.GenericComboBox
 import de.drick.compose.hotpreview.plugin.ui.Typography
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.Orientation
+import org.jetbrains.jewel.ui.component.ActionButton
 import org.jetbrains.jewel.ui.component.Divider
 import org.jetbrains.jewel.ui.component.GroupHeader
+import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.ListItemState
 import org.jetbrains.jewel.ui.component.SimpleListItem
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.TextField
 import org.jetbrains.jewel.ui.component.TriStateCheckbox
+import org.jetbrains.jewel.ui.icons.AllIconsKeys
 import org.jetbrains.jewel.ui.theme.groupHeaderStyle
+import kotlin.math.roundToInt
 
 
 data class ComboBoxEntry(
     val name: String,
-    val value: String
+    val value: String?
 )
 
 val fontScaleTemplates = listOf(
-    ComboBoxEntry("Default (100%)", "1f"),
+    ComboBoxEntry("Default (100%)", null),
     ComboBoxEntry("85%", "0.85f"),
+    ComboBoxEntry("100%", "1.00f"),
     ComboBoxEntry("115%", "1.15f"),
     ComboBoxEntry("130%", "1.30f"),
     ComboBoxEntry("150%", "1.50f"),
@@ -46,39 +52,18 @@ val fontScaleTemplates = listOf(
     ComboBoxEntry("200%", "2.00f")
 )
 
-val densityTemplates = listOf(
-    Pair("l", 120),
-    Pair("m", 160),
-    Pair("h", 240),
-    Pair("xh", 320),
-    Pair("xx", 420),
-    Pair("xxh", 480)
-).map { (name, dpi) ->
-    ComboBoxEntry("${name}dpi ($dpi dpi)", "${dpi.toFloat() / 160f}f")
+val densityTemplates = listOf(ComboBoxEntry("Default (mdpi) 160dpi", null)) + listOf(
+    Pair("l", 120f / 160f),
+    Pair("m", 160f / 160f),
+    Pair("h", 240f / 160f),
+    Pair("xh", 320f / 160f),
+    Pair("xx", 420f / 160f),
+    Pair("xxh", 480f / 160f)
+).map { (name, density) ->
+    ComboBoxEntry("${name}dpi (${(density * 160f).roundToInt()} dpi)", "${density}f")
 }
 
-fun List<ComboBoxEntry>.findEntry(name: String) = find { it.name.toFloatOrNull() == name.toFloatOrNull() }
-
-data class DeviceTemplate(
-    val name: String,
-    val widthDp: Int,
-    val heightDp: Int,
-    val density: Float
-)
-
-private const val mdpi = 160f
-
-val deviceTemplates = listOf(
-    DeviceTemplate(name = "Phone", widthDp = 411, heightDp = 891, density = 420/mdpi),
-    DeviceTemplate(name = "Phone Landscape", widthDp = 891, heightDp = 411, density = 420/mdpi),
-    DeviceTemplate(name = "Foldable", widthDp = 673, heightDp = 841, density = 420/mdpi),
-    DeviceTemplate(name = "Tablet", widthDp = 1280, heightDp = 800, density = 240/mdpi),
-    DeviceTemplate(name = "Desktop", widthDp = 1920, heightDp = 1080, density = 160/mdpi),
-)
-
-fun findDeviceTemplate(widthDp: Int, heightDp: Int, density: Float) = deviceTemplates.find {
-    density == it.density && widthDp == it.widthDp && heightDp == it.heightDp
-}
+fun List<ComboBoxEntry>.findEntry(value: String) = find { it.value?.toFloatOrNull() == value.toFloatOrNull() }
 
 private fun createMockArgumentField(value: String) = ArgumentField(
     name = "dummy",
@@ -86,8 +71,25 @@ private fun createMockArgumentField(value: String) = ArgumentField(
     isString = false,
     useUpdateDsl = {}
 )
+private fun <T: Enum<T>>createMockArgumentEnum(value: T) = ArgumentFieldEnum(
+    name = "dummy",
+    nullValue = value,
+    defaultValue = value,
+    fqName = "",
+    useUpdateDsl = {}
+)
 
+private fun createMockArgumentFieldTrieState(value: Boolean?) = ArgumentTriStateBoolean(
+    name = "dummy",
+    defaultValue = value ?: false,
+    useUpdateDsl = {}
+)
+
+@OptIn(ExperimentalStdlibApi::class)
 val mockGutterIconViewModel = object: GutterIconViewModelI {
+    override val annotationVersion = 2
+
+    override val deviceTemplates = deviceTemplatesV2
     override val baseModel = HotPreviewModel(
         name = "Test name"
     )
@@ -97,7 +99,15 @@ val mockGutterIconViewModel = object: GutterIconViewModelI {
     override val heightDp = createMockArgumentField(baseModel.heightDp.toString())
     override val density = createMockArgumentField("${baseModel.density}f")
     override val locale = createMockArgumentField("de")
-    override val fontScale = createMockArgumentField("1f")
+    override val layoutDirectionRTL = createMockArgumentFieldTrieState(null)
+    override val fontScale = createMockArgumentField("1.50f")
+    override val darkMode = createMockArgumentFieldTrieState(null)
+    override val backgroundColor = createMockArgumentField(baseModel.backgroundColor.toHexString())
+    override val statusBar = createMockArgumentFieldTrieState(null)
+    override val captionBar = createMockArgumentFieldTrieState(null)
+    override val navigationBar = createMockArgumentEnum(NavigationModeModel.ThreeButtonBottom)
+    override val navigationBarContrastEnforced = createMockArgumentFieldTrieState(null)
+    override val displayCutout = createMockArgumentEnum(DisplayCutoutModeModel.Off)
 
     override fun update(dsl: UpdateAnnotationDsl.() -> Unit) {}
     override fun render() {}
@@ -114,23 +124,10 @@ fun GutterIconAnnotationSettingsPreview() {
     }
 }
 
-@Composable
-fun SettingsRow(
-    description: String,
-    content: @Composable () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = description,
-            style = Typography.labelTextStyle()
-        )
-        Spacer(Modifier.weight(1f))
-        content()
-    }
-}
+private val outdatedWarningMessage = """
+    Some settings are not supported by the old @HotPreview annotation dependency.
+    Maybe update your dependency.
+""".trimIndent()
 
 @Composable
 fun GutterIconAnnotationSettings(
@@ -151,6 +148,15 @@ fun GutterIconAnnotationSettings(
     Column(
         modifier.width(IntrinsicSize.Min)
     ) {
+        if (vm.annotationVersion < HOT_PREVIEW_ANNOTATION_VERSION && vm.annotationVersion > 0) {
+            Row(
+                modifier = Modifier.padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(key = AllIconsKeys.General.Warning, contentDescription = "Warning")
+                Text(text = outdatedWarningMessage, style = Typography.labelTextStyle())
+            }
+        }
         Text(
             modifier = Modifier.padding(8.dp).align(Alignment.CenterHorizontally),
             text = "HotPreview Configuration"
@@ -168,8 +174,6 @@ fun GutterIconAnnotationSettings(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             SettingsRow("Name") {
-                //var name by remember { mutableStateOf(base.name) }
-                //val update = { string("name", name) }
                 TextField(
                     modifier = Modifier.updateOnFocusLoss(vm.name),
                     value = vm.name.value,
@@ -177,8 +181,6 @@ fun GutterIconAnnotationSettings(
                 )
             }
             SettingsRow("Group") {
-                //var name by remember { mutableStateOf(base.name) }
-                //val update = { string("name", name) }
                 TextField(
                     modifier = Modifier.updateOnFocusLoss(vm.group),
                     value = vm.group.value,
@@ -190,26 +192,30 @@ fun GutterIconAnnotationSettings(
                 var selectedDevice: DeviceTemplate? = remember(
                     vm.widthDp.value,
                     vm.heightDp.value,
-                    vm.density.value
+                    vm.density.value,
+                    vm.statusBar.value,
+                    vm.captionBar.value,
+                    vm.navigationBar.value,
+                    vm.displayCutout.value
                 ) {
-                    findDeviceTemplate(
-                        widthDp = vm.widthDp.value.toIntOrNull() ?: -1,
-                        heightDp = vm.heightDp.value.toIntOrNull() ?: -1,
-                        density = vm.density.value.toFloatOrNull() ?: 1f
-                    )
+                    vm.findDeviceTemplate()
                 }
 
                 var deviceName = remember(selectedDevice) { selectedDevice?.name ?: "Custom" }
                 GenericComboBox(
                     modifier = Modifier.width(180.dp),
                     labelText = deviceName,
-                    items = deviceTemplates,
+                    items = vm.deviceTemplates,
                     selectedItem = selectedDevice,
                     onSelectItem = {
                         vm.update {
                             vm.widthDp.update(this, it.widthDp.toString())
                             vm.heightDp.update(this, it.heightDp.toString())
                             vm.density.update(this, "${it.density}f")
+                            vm.statusBar.set(this, it.statusBar)
+                            vm.captionBar.set(this, it.captionBar)
+                            vm.navigationBar.update(this, it.navigationBar)
+                            vm.displayCutout.update(this, it.displayCutout)
                             render()
                         }
                         deviceName = it.name
@@ -263,6 +269,114 @@ fun GutterIconAnnotationSettings(
                     }
                 )
             }
+            SettingsRow("Statusbar", isNewerVersion = vm.annotationVersion < 2) {
+                TriStateCheckbox(
+                    state = vm.statusBar.value,
+                    onClick = {
+                        vm.update {
+                            vm.statusBar.toggle(this)
+                            if (vm.statusBar.value == ToggleableState.On) {
+                                vm.captionBar.set(this, ToggleableState.Indeterminate)
+                            }
+                            render()
+                        }
+                    }
+                )
+            }
+            SettingsRow("Captionbar", isNewerVersion = vm.annotationVersion < 2) {
+                TriStateCheckbox(
+                    state = vm.captionBar.value,
+                    onClick = {
+                        vm.update {
+                            vm.captionBar.toggle(this)
+                            if (vm.captionBar.value == ToggleableState.On) {
+                                vm.statusBar.set(this, ToggleableState.Indeterminate)
+                            }
+                            render()
+                        }
+                    }
+                )
+            }
+            SettingsRow("Navigationbar", isNewerVersion = vm.annotationVersion < 2) {
+                GenericComboBox<NavigationModeModel>(
+                    modifier = Modifier.width(180.dp),
+                    labelText = vm.navigationBar.value.name,
+                    selectedItem = vm.navigationBar.value,
+                    onSelectItem = { item ->
+                        vm.update {
+                            vm.navigationBar.update(this, item)
+                            val cutOut = vm.displayCutout.value
+                            val nav = vm.navigationBar.value
+                            when { // Update displayCutout if needed
+                                cutOut == DisplayCutoutModeModel.CameraBottom &&
+                                        nav == NavigationModeModel.ThreeButtonBottom -> {
+                                    vm.displayCutout.update(this, DisplayCutoutModeModel.CameraTop)
+                                }
+                                cutOut == DisplayCutoutModeModel.CameraLeft &&
+                                        nav == NavigationModeModel.ThreeButtonLeft -> {
+                                    vm.displayCutout.update(this, DisplayCutoutModeModel.CameraRight)
+                                }
+                                cutOut == DisplayCutoutModeModel.CameraRight &&
+                                        nav == NavigationModeModel.ThreeButtonRight -> {
+                                    vm.displayCutout.update(this, DisplayCutoutModeModel.CameraLeft)
+                                }
+                            }
+                            render()
+                        }
+                    },
+                    items = NavigationModeModel.entries,
+                    listItemContent = { item, isSelected, _, isItemHovered, isPreviewSelection ->
+                        SimpleListItem(
+                            text = item.name,
+                            state = ListItemState(isSelected, isItemHovered, isPreviewSelection)
+                        )
+                    }
+                )
+            }
+            SettingsRow("Navigationbar contrast enforced", isNewerVersion = vm.annotationVersion < 2) {
+                TriStateCheckbox(
+                    state = vm.navigationBarContrastEnforced.value,
+                    onClick = {
+                        vm.navigationBarContrastEnforced.toggle()
+                    }
+                )
+            }
+            SettingsRow("Display cutout", isNewerVersion = vm.annotationVersion < 2) {
+                GenericComboBox<DisplayCutoutModeModel>(
+                    modifier = Modifier.width(180.dp),
+                    labelText = vm.displayCutout.value.name,
+                    selectedItem = vm.displayCutout.value,
+                    onSelectItem = { item ->
+                        vm.update {
+                            vm.displayCutout.update(this, item)
+                            val cutOut = vm.displayCutout.value
+                            val nav = vm.navigationBar.value
+                            when { // Update navigation bar if needed
+                                cutOut == DisplayCutoutModeModel.CameraBottom &&
+                                        nav == NavigationModeModel.ThreeButtonBottom -> {
+                                    vm.navigationBar.update(this, NavigationModeModel.ThreeButtonBottom)
+                                }
+                                cutOut == DisplayCutoutModeModel.CameraLeft &&
+                                        nav == NavigationModeModel.ThreeButtonLeft -> {
+                                    vm.navigationBar.update(this, NavigationModeModel.ThreeButtonRight)
+                                }
+                                cutOut == DisplayCutoutModeModel.CameraRight &&
+                                        nav == NavigationModeModel.ThreeButtonRight -> {
+                                    vm.navigationBar.update(this, NavigationModeModel.ThreeButtonLeft)
+                                }
+                            }
+                            render()
+                        }
+                    },
+                    items = DisplayCutoutModeModel.entries,
+                    listItemContent = { item, isSelected, _, isItemHovered, isPreviewSelection ->
+                        SimpleListItem(
+                            text = item.name,
+                            state = ListItemState(isSelected, isItemHovered, isPreviewSelection)
+                        )
+                    }
+                )
+            }
             GroupHeader("Display", Modifier.padding(vertical = 4.dp))
             SettingsRow("locale") {
                 TextField(
@@ -270,17 +384,25 @@ fun GutterIconAnnotationSettings(
                     value = vm.locale.value,
                     onValueChange = vm.locale::update,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number
+                        keyboardType = KeyboardType.Text
                     )
+                )
+            }
+            SettingsRow("layout direction RTL", isNewerVersion = vm.annotationVersion < 2) {
+                TriStateCheckbox(
+                    state = vm.layoutDirectionRTL.value,
+                    onClick = {
+                        vm.layoutDirectionRTL.toggle()
+                    }
                 )
             }
             SettingsRow("fontScale") {
                 val selectedScale = remember(vm.fontScale.value) {
-                    densityTemplates.findEntry(vm.fontScale.value)
+                    fontScaleTemplates.findEntry(vm.fontScale.value)
                 }
                 GenericComboBox(
-                    modifier = Modifier.width(180.dp),
-                    labelText = vm.fontScale.value,
+                    modifier = Modifier.width(80.dp),
+                    labelText = selectedScale?.name ?: vm.fontScale.value,
                     items = fontScaleTemplates,
                     selectedItem = selectedScale,
                     onSelectItem = { item ->
@@ -295,35 +417,70 @@ fun GutterIconAnnotationSettings(
                 )
             }
             SettingsRow("Dark mode") {
-                var darkModeState by remember {
-                    val state = if (vm.baseModel.darkMode) ToggleableState.On
-                    else ToggleableState.Off
-                    mutableStateOf(state)
-                }
-                LaunchedEffect(vm) {
-                    if (vm.checkParameterExists("darkMode").not()) {
-                        darkModeState = ToggleableState.Indeterminate
-                    }
-                }
                 TriStateCheckbox(
-                    state = darkModeState,
+                    state = vm.darkMode.value,
                     onClick = {
-                        val newState = when (darkModeState) {
-                            ToggleableState.On -> ToggleableState.Off
-                            ToggleableState.Off -> ToggleableState.Indeterminate
-                            ToggleableState.Indeterminate -> ToggleableState.On
-                        }
-                        darkModeState = newState
-                        val value: String? = when (newState) {
-                            ToggleableState.On -> "true"
-                            ToggleableState.Off -> "false"
-                            ToggleableState.Indeterminate -> null
-                        }
-                        vm.update { parameter("darkMode", value) }
-                        vm.render()
+                        vm.darkMode.toggle()
                     }
                 )
             }
+            /*SettingsRow("Background color") {
+                ActionButton(
+                    onClick = {
+                        /*ColorPicker.showDialog(null, "Select Background Color", vm.backgroundColor.value) { color ->
+                            vm.backgroundColor.update(color.toHexString(), true)
+                        }*/
+                    }
+                ) {
+                    Icon(AllIconsKeys.Ide.Pipette, contentDescription = "Color picker")
+                }
+                TextField(
+                    modifier = Modifier.width(120.dp).updateOnFocusLoss(),
+                    value = vm.backgroundColor.value,
+                    onValueChange = vm.backgroundColor::update,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text
+                    )
+                )
+            }*/
+        }
+    }
+}
+
+@Composable
+fun SettingsRow(
+    description: String,
+    isNewerVersion: Boolean = false,
+    content: @Composable RowScope.() -> Unit
+) {
+    Box {
+        Row(
+            modifier = if (isNewerVersion) Modifier.alpha(0.5f) else Modifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = description,
+                style = Typography.labelTextStyle()
+            )
+            if (isNewerVersion) {
+                Icon(key = AllIconsKeys.General.Warning, contentDescription = "Warning")
+            }
+            Spacer(Modifier.weight(1f))
+            content()
+        }
+        if (isNewerVersion) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .pointerInput(Unit) { /* Consume all input */
+                        awaitPointerEventScope {
+                            while (true) {
+                                awaitPointerEvent()
+                            }
+                        }
+                    }
+            )
         }
     }
 }

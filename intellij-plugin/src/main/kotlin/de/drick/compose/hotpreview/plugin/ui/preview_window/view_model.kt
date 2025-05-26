@@ -18,6 +18,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
+import de.drick.compose.hotpreview.plugin.HOT_PREVIEW_ANNOTATION_VERSION
 import de.drick.compose.hotpreview.plugin.HotPreviewAnnotation
 import de.drick.compose.hotpreview.plugin.HotPreviewFunction
 import de.drick.compose.hotpreview.plugin.HotPreviewView
@@ -26,6 +27,7 @@ import de.drick.compose.hotpreview.plugin.service.RenderCacheKey
 import de.drick.compose.hotpreview.plugin.service.RenderState
 import de.drick.compose.hotpreview.plugin.findFunctionsWithHotPreviewAnnotations
 import de.drick.compose.hotpreview.plugin.findHotPreviewAnnotations
+import de.drick.compose.hotpreview.plugin.getHotPreviewAnnotationVersion
 import de.drick.compose.hotpreview.plugin.getParameterList
 import de.drick.compose.hotpreview.plugin.kotlinFileClassName
 import de.drick.compose.hotpreview.plugin.runCatchingCancellationAware
@@ -85,6 +87,7 @@ sealed interface HotPreviewAction {
 }
 
 interface HotPreviewViewModelI {
+    val outdatedAnnotationVersion: Boolean
     val scaleState: ScaleState
     val isPureTextEditor: Boolean
     val compilingInProgress: Boolean
@@ -117,6 +120,9 @@ class HotPreviewViewModel(
         projectService.getModulePreviewService(file)
     }
     private val renderService = projectService.createRenderService()
+    private var hotPreviewAnnotationVersion = 0
+
+    override val outdatedAnnotationVersion get() = hotPreviewAnnotationVersion < HOT_PREVIEW_ANNOTATION_VERSION && hotPreviewAnnotationVersion > 0
 
     init {
         scope.launch {
@@ -206,6 +212,7 @@ class HotPreviewViewModel(
                     val renderClassLoader = moduleService.get()
                         .getClassPathService()
                         .getRenderClassLoaderInstance(fileClassName)
+                    hotPreviewAnnotationVersion = renderClassLoader.getHotPreviewAnnotationVersion()
                     renderService.render(renderClassLoader)
                 }
             }
@@ -214,10 +221,10 @@ class HotPreviewViewModel(
     }
 
     private suspend fun updatePreviewList(previewFunctions: List<HotPreviewFunction>) {
+        val classLoader = moduleService.get()
+            .getClassPathService()
+            .getRenderClassLoaderInstance(fileClassName)
         previewList = previewFunctions.map { function ->
-            val classLoader = moduleService.get()
-                .getClassPathService()
-                .getRenderClassLoaderInstance(fileClassName)
             println("Update function: $function")
             val annotations = function.annotation.flatMap {
                 val parameterList: List<*> = function.parameter?.let { classLoader.getParameterList(it) } ?: listOf(null)
@@ -310,7 +317,7 @@ class HotPreviewViewModel(
                     val highlighter =
                         editor.markupModel.addLineHighlighter(annotation.lineRange.first, 0, TextAttributes())
                     highlighter.gutterIconRenderer =
-                        HotPreviewGutterIcon(project, file, annotation, groups, requestRender = updatePreviewAnnotations)
+                        HotPreviewGutterIcon(project, file, annotation, hotPreviewAnnotationVersion, groups, updatePreviewAnnotations)
                 }
             }
         }
@@ -327,7 +334,8 @@ class HotPreviewViewModel(
             file = file,
             annotation = annotation,
             groups = groups,
-            requestRender = updatePreviewAnnotations
+            requestRender = updatePreviewAnnotations,
+            annotationVersion = hotPreviewAnnotationVersion
         )
     }
 

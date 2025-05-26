@@ -93,3 +93,101 @@ annotation class HotPreviewLightDark
 annotation class HotPreviewDynamicColors
 */
 //TODO dynamic themes are not supported by multiplatform i think. So not sure if this is possible to support.
+
+
+/**
+ * Annotation classes to check if the App handles WindowInsets correctly.
+ * Also known as edge-to-edge support.
+ * @see https://developer.android.com/develop/ui/compose/system/insets
+ */
+@Retention(AnnotationRetention.BINARY)
+@Target(
+    AnnotationTarget.ANNOTATION_CLASS,
+    AnnotationTarget.FUNCTION
+)
+@HotPreview(
+    name = "Phone portrait Gesture", widthDp = 411, heightDp = 891,
+    displayCutout = DisplayCutoutMode.CameraTop,
+    statusBar = true,
+    navigationBar = NavigationBarMode.GestureBottom,
+)
+@HotPreview(
+    name = "Phone portrait 3button", widthDp = 411, heightDp = 891,
+    displayCutout = DisplayCutoutMode.CameraTop,
+    statusBar = true,
+    navigationBar = NavigationBarMode.ThreeButtonBottom,
+)
+@HotPreview(
+    name = "Phone landscape gesture", widthDp = 891, heightDp = 411,
+    displayCutout = DisplayCutoutMode.CameraLeft,
+    statusBar = true,
+    navigationBar = NavigationBarMode.GestureBottom,
+)
+@HotPreview(
+    name = "Phone landscape nav left", widthDp = 891, heightDp = 411,
+    displayCutout = DisplayCutoutMode.CameraRight,
+    statusBar = true,
+    navigationBar = NavigationBarMode.ThreeButtonLeft,
+)
+@HotPreview(
+    name = "Phone landscape nav right", widthDp = 891, heightDp = 411,
+    displayCutout = DisplayCutoutMode.CameraLeft,
+    statusBar = true,
+    navigationBar = NavigationBarMode.ThreeButtonRight,
+)
+@HotPreview(
+    name = "Tablet caption bar", widthDp = 673, heightDp = 841,
+    captionBar = true
+)
+annotation class HotPreviewWindowInsets
+
+/**
+ * Annotation classes to check if the App handles WindowInsets correctly.
+ * It simulates `window.isNavigationBarContrastEnforced = false`
+ * @see https://developer.android.com/develop/ui/compose/system/system-bars
+ *
+ */
+@Retention(AnnotationRetention.BINARY)
+@Target(
+    AnnotationTarget.ANNOTATION_CLASS,
+    AnnotationTarget.FUNCTION
+)
+@HotPreview(
+    name = "Phone portrait Gesture", widthDp = 411, heightDp = 891,
+    displayCutout = DisplayCutoutMode.CameraTop,
+    statusBar = true,
+    navigationBar = NavigationBarMode.GestureBottom,
+)
+@HotPreview(
+    name = "Phone portrait 3button", widthDp = 411, heightDp = 891,
+    displayCutout = DisplayCutoutMode.CameraTop,
+    statusBar = true,
+    navigationBar = NavigationBarMode.ThreeButtonBottom,
+    navigationBarContrastEnforced = false
+)
+@HotPreview(
+    name = "Phone landscape gesture", widthDp = 891, heightDp = 411,
+    displayCutout = DisplayCutoutMode.CameraLeft,
+    statusBar = true,
+    navigationBar = NavigationBarMode.GestureBottom,
+    navigationBarContrastEnforced = false
+)
+@HotPreview(
+    name = "Phone landscape nav left", widthDp = 891, heightDp = 411,
+    displayCutout = DisplayCutoutMode.CameraRight,
+    statusBar = true,
+    navigationBar = NavigationBarMode.ThreeButtonLeft,
+    navigationBarContrastEnforced = false
+)
+@HotPreview(
+    name = "Phone landscape nav right", widthDp = 891, heightDp = 411,
+    displayCutout = DisplayCutoutMode.CameraLeft,
+    statusBar = true,
+    navigationBar = NavigationBarMode.ThreeButtonRight,
+    navigationBarContrastEnforced = false
+)
+@HotPreview(
+    name = "Tablet caption bar", widthDp = 673, heightDp = 841,
+    captionBar = true
+)
+annotation class HotPreviewWindowInsetsNC

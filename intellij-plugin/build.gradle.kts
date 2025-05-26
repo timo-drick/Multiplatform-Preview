@@ -1,4 +1,6 @@
 import org.intellij.lang.annotations.Language
+import java.nio.file.Files
+import java.nio.file.Paths
 
 plugins {
     id("org.jetbrains.intellij.platform") version "2.2.1"
@@ -25,95 +27,47 @@ repositories {
 
 //val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.2.5")
 //val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("242")
-val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.4")
+val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.5")
 val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("243")
 
-val versionName = "0.7.1-$ijPlatform"
+val versionName = "0.7.2-$ijPlatform"
+
+data class VersionInfo(
+    val version: String,
+    val items: MutableList<String> = mutableListOf<String>()
+)
 
 @Language("HTML")
-val changeNotesText = """
-<h3>V 0.7.0</h3>
-<ul>
-    <li>
-        Updated preview rendering to Compose Multiplatform 1.8.0 
-        (In my tests this now works for both 1.7.3 and 1.8.0 but if you have issues please report them to the github repo)
-     </li>
-</ul>
+val changeNotesText = run {
+    val releaseNotesPath = Paths.get(projectDir.path, "RELEASE_NOTES_PLUGIN.md")
+    val versionModel = mutableListOf<VersionInfo>()
+    var currentVersion: VersionInfo? = null
+    var versionCount = 4
+    Files.readAllLines(releaseNotesPath).forEach { line ->
+        if (line.startsWith("### ") && versionCount > 0) {
+            versionCount--
+            if (versionCount > 0) {
+                val version = line.substring(3).trim()
+                currentVersion = VersionInfo(version).also {
+                    versionModel.add(it)
+                }
+            }
+        } else if (versionCount > 0 && line.startsWith("- ")) {
+            currentVersion?.items?.add(line.substring(2).trim())
+        }
+    }
 
-<h3>V 0.7.0</h3>
-<ul>
-    <li>Added fit content to zoom control. And improved zoom controls.</li>
-    <li>Fixed problem with using WindowInsets. Changed Compose Multiplatform version to 1.7.3</li>
-    <li>Added support for custom sourceSet name for jvm target.</li>
-</ul>
-
-<h3>V 0.6.1</h3>
-<ul>
-    <li>Fixed problem on windows machines with temp file path in a gradle init file.</li>
-</ul>
-
-<h3>V 0.6.0</h3>
-<ul>
-    <li>Tried to fix some stability issues. Now compilation and rendering is synchronized.</li>
-    <li>Refactoring of architecture. Hope there are not too many new issues</li>
-    <li>Fixed a problem with transitive dependencies. Now classpath is collected from gradle task</li>
-    <li>Added HotPreviewParameterProvider to provide mock data for previews</li>
-    <li>Fixed problem with gutter icon when no parameters where attached to the @HotPreview annotation</li>
-</ul>
-
-<h3>V 0.5.0</h3>
-<ul>
-    <li>Added gutter icon to HotPreview annotations with a graphical editor</li>
-    <li>Added Horizontal scrolling when single preview is too wide</li>
-    <li>Added gallery preview mode</li>
-    <li>Fixed stability issues when rendering previews</li>
-</ul>
-
-<h3>V 0.4.0</h3>
-<ul>
-    <li>Added shortcut key to recompile</li>
-    <li>Added settings to change gradle compile parameters and recompiling behaviour</li>
-    <li>Improved rendering performance.</li>
-    <li>Added foldable sections for preview functions</li>
-    <li>Added support for locale</li>
-    <li>Added support for Groups</li>
-</ul>
-
-<h3>V 0.3.1</h3>
-<ul>
-    <li>Added support for Android Studio Ladybug and Intellij 2024.2.5</li>
-</ul>
-
-<h3>V 0.3.0</h3>
-<ul>
-    <li>Improved error handling and visualization.</li>
-    <li>
-        Plugin does override the default editor now all the time for kotlin files.
-        This is necessary because otherwise it is not possible to show preview when the user add @HotPreview annotation.
-    </li>
-    <li>
-        Added support for annotation classes. You can now create annotation classes with @HotPreview annotations.
-    </li>
-    <li>Self preview is now working. So the source of this plugin can also be previewed.</li>
-</ul>
-
-<h3>V 0.2.0</h3>
-<ul>
-    <li>Added support for macos. Window x64/arm64 should also work (untested)</li>
-    <li>Using an independent classloader now. Could solved some issues with resource loading.</li>
-    <li>Turned off recompile when opening a file.</li>
-    <li>Wait until indexing is finished before analyzing files.</li>
-    <li>Replaced @HotPreview annotation reflection code analyzer by psi file analyzer.</li>
-    <li>Set LocalInspectionMode to true in previews.</li>
-    <li>Added navigation to @HotPreview annotation on preview click.</li>
-    <li>Added on hover focus for preview items.</li>
-</ul>
-
-<h3>V 0.1.1</h3>
-<ul>
-    <li>Show errors when trying to compile and render the preview.</li>
-</ul>
-""".trimIndent()
+    val htmlBuilder = StringBuilder()
+    versionModel.forEach { versionInfo ->
+        htmlBuilder.append("<h3>${versionInfo.version}</h3>")
+        htmlBuilder.append("<ul>")
+        versionInfo.items.forEach { items ->
+            htmlBuilder.append("<li>$items</li>")
+        }
+        htmlBuilder.append("</ul>")
+    }
+    htmlBuilder.toString()
+}
 
 dependencies {
 
@@ -170,7 +124,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx")
     }*/
 
-    implementation("de.drick.compose:hotpreview:0.1.6") {
+    implementation("de.drick.compose:hotpreview:0.1.9") {
         exclude(group = "org.jetbrains.kotlinx")
     }
 
@@ -180,14 +134,20 @@ dependencies {
 tasks.register<GradleBuild>("buildRenderModule") {
     group = "build"
     dir = file("../")
-    tasks = listOf(":hot_preview_render:shadowJar")
+    tasks = listOf(
+        ":hot_preview_render_1_7:shadowJar",
+        ":hot_preview_render_1_8:shadowJar",
+        ":hot_preview_render_1_9:shadowJar"
+    )
 }
 
-val renderModulePath = layout.projectDirectory.dir("../hot_preview_render/build/libs")
+val renderModulePath17 = layout.projectDirectory.dir("../hot_preview_render_1_7/build/libs")
+val renderModulePath18 = layout.projectDirectory.dir("../hot_preview_render_1_8/build/libs")
+val renderModulePath19 = layout.projectDirectory.dir("../hot_preview_render_1_9/build/libs")
 
 tasks.processResources {
     dependsOn("buildRenderModule")
-    from(renderModulePath)
+    from(renderModulePath17, renderModulePath18, renderModulePath19)
 }
 
 
@@ -251,3 +211,4 @@ tasks.named("dependencyUpdates", com.github.benmanes.gradle.versions.updates.Dep
         (isNonStable(candidate.version) && isNonStable(currentVersion).not())
     }
 }
+

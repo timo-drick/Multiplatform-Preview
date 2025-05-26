@@ -1,13 +1,11 @@
 object Versions {
-    const val mavenLib = "0.1.6"
+    const val mavenLib = "0.1.13"
     const val mavenGroupId = "de.drick.compose"
 
     const val kotlin = "2.0.21"
     const val benManesPlugin = "0.52.0"
 
     const val composeLintChecks = "1.3.1"
-    //const val composeMP = "1.7.3"
-    const val composeMP = "1.8.0"
 
     const val shadow = "8.3.6"
 
