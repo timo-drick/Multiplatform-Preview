@@ -40,7 +40,8 @@ data class HotPreviewModel(
     val navigationBar: NavigationModeModel = NavigationModeModel.Off,
     val navigationBarContrastEnforced: Boolean = true,
     val displayCutout: DisplayCutoutModeModel = DisplayCutoutModeModel.Off,
-    val captionBar: Boolean = false
+    val captionBar: Boolean = false,
+    val inspectionMode: Boolean = true,
 )
 
 enum class NavigationModeModel {

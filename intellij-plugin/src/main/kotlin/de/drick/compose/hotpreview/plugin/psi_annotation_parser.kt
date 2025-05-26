@@ -100,7 +100,8 @@ private fun KaAnnotation.toHotPreviewAnnotation(): HotPreviewModel {
         navigationBar = findEnumParameterWithDefault("navigationBar", dv.navigationBar),
         navigationBarContrastEnforced = findParameterWithDefault("navigationBarContrastEnforced", dv.navigationBarContrastEnforced),
         displayCutout = findEnumParameterWithDefault("displayCutout", dv.displayCutout),
-        captionBar = findParameterWithDefault("captionBar", dv.captionBar)
+        captionBar = findParameterWithDefault("captionBar", dv.captionBar),
+        inspectionMode = findParameterWithDefault("inspectionMode", dv.inspectionMode)
     )
 }
 

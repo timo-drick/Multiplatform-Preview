@@ -73,7 +73,7 @@ fun renderPreview(
             annotation.darkMode,
             annotation.locale,
             annotation.layoutDirectionRTL,
-            true,
+            annotation.inspectionMode,
             windowInsets
         )
         when (result) {
