@@ -22,6 +22,7 @@ import de.drick.compose.hotpreview.plugin.ui.components.GenericComboBox
 import de.drick.compose.hotpreview.plugin.ui.Typography
 import org.jetbrains.jewel.foundation.theme.JewelTheme
 import org.jetbrains.jewel.ui.Orientation
+import org.jetbrains.jewel.ui.component.ActionButton
 import org.jetbrains.jewel.ui.component.Divider
 import org.jetbrains.jewel.ui.component.GroupHeader
 import org.jetbrains.jewel.ui.component.Icon
@@ -99,7 +100,7 @@ val mockGutterIconViewModel = object: GutterIconViewModelI {
     override val density = createMockArgumentField("${baseModel.density}f")
     override val locale = createMockArgumentField("de")
     override val layoutDirectionRTL = createMockArgumentFieldTrieState(null)
-    override val fontScale = createMockArgumentField("1f")
+    override val fontScale = createMockArgumentField("1.50f")
     override val darkMode = createMockArgumentFieldTrieState(null)
     override val backgroundColor = createMockArgumentField(baseModel.backgroundColor.toHexString())
     override val statusBar = createMockArgumentFieldTrieState(null)
@@ -400,7 +401,7 @@ fun GutterIconAnnotationSettings(
                     fontScaleTemplates.findEntry(vm.fontScale.value)
                 }
                 GenericComboBox(
-                    modifier = Modifier.width(180.dp),
+                    modifier = Modifier.width(80.dp),
                     labelText = selectedScale?.name ?: vm.fontScale.value,
                     items = fontScaleTemplates,
                     selectedItem = selectedScale,
@@ -423,16 +424,25 @@ fun GutterIconAnnotationSettings(
                     }
                 )
             }
-            SettingsRow("Background color") {
+            /*SettingsRow("Background color") {
+                ActionButton(
+                    onClick = {
+                        /*ColorPicker.showDialog(null, "Select Background Color", vm.backgroundColor.value) { color ->
+                            vm.backgroundColor.update(color.toHexString(), true)
+                        }*/
+                    }
+                ) {
+                    Icon(AllIconsKeys.Ide.Pipette, contentDescription = "Color picker")
+                }
                 TextField(
-                    modifier = Modifier.width(160.dp).updateOnFocusLoss(),
+                    modifier = Modifier.width(120.dp).updateOnFocusLoss(),
                     value = vm.backgroundColor.value,
                     onValueChange = vm.backgroundColor::update,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text
                     )
                 )
-            }
+            }*/
         }
     }
 }

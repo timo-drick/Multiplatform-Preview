@@ -55,6 +55,7 @@ fun MainScreen(model: HotPreviewViewModelI) {
             compilingInProgress = compilingInProgress,
             groups = if (model.selectedTab == null) model.groups else emptySet(),
             selectedGroup = model.selectedGroup,
+            isOutdatedHotPreviewAnnotation = model.outdatedAnnotationVersion,
             onAction = model::onAction
         )
         val style = JewelTheme.groupHeaderStyle

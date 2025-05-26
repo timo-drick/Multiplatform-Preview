@@ -176,6 +176,7 @@ fun mockViewModel(
     env: ResourceEnvironment,
     mockData: List<UIHotPreviewData>,
 ) = object : HotPreviewViewModelI {
+    override val outdatedAnnotationVersion = false
     override val scaleState: ScaleState = ScaleState(MockPersistentStore())
     override val isPureTextEditor = false
     override var compilingInProgress = false
