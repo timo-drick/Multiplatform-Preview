@@ -18,8 +18,9 @@ allprojects {
         val compileFile = layout.buildDirectory.file("hotPreviewCompileClasspath.txt")
         //val configFile = layout.buildDirectory.file("hotPreviewConfigurations.txt")
         val jvmTargetName = layout.buildDirectory.file("hotPreviewJvmTargetName.txt")
-
+        val buildDirectory = layout.buildDirectory
         doLast {
+            buildDirectory.get().asFile.mkdirs()
             //configFile.get().asFile.writeText(allConfigurationNames)
             runtimeFile.get().asFile.writeText(runtimeClasspath?.joinToString("\n") ?: "")
             compileFile.get().asFile.writeText(compileClasspath?.joinToString("\n") ?: "")
