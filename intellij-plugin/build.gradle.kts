@@ -3,7 +3,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 plugins {
-    id("org.jetbrains.intellij.platform") version "2.2.1"
+    id("org.jetbrains.intellij.platform") version "2.6.0"
     id("java")
     kotlin("jvm")
     kotlin("plugin.compose")
@@ -73,7 +73,7 @@ dependencies {
 
     intellijPlatform {
         //See this list for available versions: https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html
-        //androidStudio("2024.3.1.13") //Meerkat
+        //androidStudio("2024.3.2.14") //Meerkat
         //androidStudio("2024.2.2.13") //Ladybug
         intellijIdeaCommunity(ijPlatform)
         pluginVerifier()

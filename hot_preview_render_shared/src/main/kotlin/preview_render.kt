@@ -87,7 +87,8 @@ class RenderPreviewImpl {
                     }
                 }
             ).use { scene ->
-                val image = scene.render()
+                scene.render()
+                val image = scene.render(100)
                 calculatedSize = scene.calculateContentSize()
                 image
             }
