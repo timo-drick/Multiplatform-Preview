@@ -1,0 +1,14 @@
+<!--suppress PluginXmlPluginLogo --> <!-- The plugin icon comes from core -->
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+
+    <dependencies>
+        <plugin id="com.intellij.modules.platform"/>
+        <module name="intellij.platform.jewel.foundation"/>
+        <module name="intellij.platform.jewel.ui"/>
+        <module name="intellij.platform.jewel.ideLafBridge"/>
+        <module name="intellij.libraries.compose.foundation.desktop"/>
+        <module name="intellij.libraries.skiko"/>
+    </dependencies>
+
+    <xi:include href="/META-INF/plugin-core.xml"/>
+</idea-plugin>

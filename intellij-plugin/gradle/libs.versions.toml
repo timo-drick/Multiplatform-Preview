@@ -1,0 +1,31 @@
+[versions]
+# libraries
+jewel = "0.28.0-243.27100"
+jewel251 = "0.28.0-251.26137"
+junit = "4.13.2"
+
+# plugins
+intelliJPlatform = "2.6.0"
+kotlin = "2.1.10"  # aligned with IJP 251 and Jewel 0.28.0
+
+compose = "1.8.0-alpha04" # aligned with IJP 251 and Jewel 0.28.0
+
+hotpreview = "0.2.0"
+
+[libraries]
+jewel-ideLafBridge = { module = "org.jetbrains.jewel:jewel-ide-laf-bridge", version.ref = "jewel" }
+jewel-intUi = { module = "org.jetbrains.jewel:jewel-int-ui-standalone", version.ref = "jewel251" }
+junit = { module = "junit:junit", version.ref = "junit" }
+
+# Plugin libraries for build-logic's convention plugins to use to resolve the types/tasks coming from these plugins
+kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose" }
+
+drick-compose-hotpreview = { module = "de.drick.compose:hotpreview", version.ref = "hotpreview" }
+
+[plugins]
+intelliJPlugin = { id = "org.jetbrains.intellij.platform", version.ref = "intelliJPlatform" }
+intelliJModule = { id = "org.jetbrains.intellij.platform.module", version.ref = "intelliJPlatform" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+composePlugin = { id = "org.jetbrains.compose", version.ref = "compose" }
