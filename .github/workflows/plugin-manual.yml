@@ -22,5 +22,5 @@ jobs:
 
       - id: Publish
         uses: ./.github/actions/plugin-publish-steps
-          with:
-            channel: ${{ inputs.channel }}
+        with:
+          channel: ${{ inputs.channel }}
