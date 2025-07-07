@@ -40,8 +40,6 @@ runs:
       env:
         PLUGIN_PUBLISH_TOKEN: ${{ inputs.PLUGIN_PUBLISH_TOKEN }}
         PLUGIN_PUBLISH_CHANNEL: ${{ inputs.channel }}
-      run: |
-        echo "Publishing to channel: ${{ inputs.channel }}"
-      #run: ./gradlew :plugin-251:publishPlugin
+      run: ./gradlew :plugin-251:publishPlugin
       shell: bash
       working-directory: ./intellij-plugin
