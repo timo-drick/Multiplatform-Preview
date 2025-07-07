@@ -55,6 +55,7 @@ intellijPlatform {
     name = rootProperties.getProperty("pluginName")
     version = project.version.toString()
     description = rootProperties.getProperty("pluginDescription")
+    changeNotes = getChangeNotesText(rootProject)
 
     ideaVersion {
       sinceBuild = pluginProperties.getProperty("pluginSinceBuild")
@@ -68,12 +69,19 @@ intellijPlatform {
   }
 
   signing {
-    certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
-    privateKey = providers.environmentVariable("PRIVATE_KEY")
-    password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+    certificateChain = providers.environmentVariable("PLUGIN_CERTIFICATE_CHAIN")
+    privateKey = providers.environmentVariable("PLUGIN_PRIVATE_KEY")
+    password = providers.environmentVariable("PLUGIN_PRIVATE_KEY_PASSWORD")
   }
 
-  publishing { token = providers.environmentVariable("PUBLISH_TOKEN") }
+  publishing {
+    token = providers.environmentVariable("PLUGIN_PUBLISH_TOKEN")
+    // The pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
+    // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
+    // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
+    val channel: String = providers.environmentVariable("PLUGIN_PUBLISH_CHANNEL").getOrElse("dev")
+    channels = listOf(channel)
+  }
 
   pluginVerification { ides { recommended() } }
 }
