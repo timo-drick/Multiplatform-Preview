@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+
       - id: Publish
         uses: ./.github/actions/plugin-publish-steps
           with:

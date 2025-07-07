@@ -15,5 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v4
+
       - id: build
         uses: ./.github/actions/plugin-build-steps

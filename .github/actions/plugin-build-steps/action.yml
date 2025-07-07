@@ -8,9 +8,6 @@ description: 'Builds and checks all IJP targets'
 runs:
   using: "composite"
   steps:
-    - name: Fetch Sources
-      uses: actions/checkout@v4
-
     - name: Set Up JDK
       uses: actions/setup-java@v4
       with:
