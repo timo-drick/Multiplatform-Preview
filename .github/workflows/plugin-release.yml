@@ -20,6 +20,6 @@ jobs:
 
     steps:
       - id: Publish
-        uses: ./github/actions/plugin-publish-steps
+        uses: ./.github/actions/plugin-publish-steps
           with:
             channel: "default"

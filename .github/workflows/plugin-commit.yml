@@ -16,4 +16,4 @@ jobs:
 
     steps:
       - id: build
-        uses: ./github/actions/plugin-build-steps
+        uses: ./.github/actions/plugin-build-steps
