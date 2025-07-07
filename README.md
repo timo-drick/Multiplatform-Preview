@@ -13,7 +13,7 @@ Release notes for the HotPreview annotation dependency are here: https://github.
 
 ## Requirements
 
-Supported are projects with:
+Supported projects:
 
 - Compose Multiplatform versions: 1.7.3, 1.8.0 and 1.9.0 (Maybe also other versions)
 - Compose for Desktop (CFD) only code.
@@ -26,8 +26,8 @@ This is because the previews are rendered using CFD itself.
 
 Supported IDEs:
 
-- IntelliJ 2024.2, 2024.3 (Important: 2025.1 is not supported yet!)
-- Android Studio Ladybug, Meerkat
+- IntelliJ ~~2024.2~~, 2024.3, 2025.1
+- Android Studio ~~Ladybug~~, Meerkat, Narwhal
 
 ## Usage
 

@@ -1,0 +1,35 @@
+# This workflow will build a package using Gradle
+# and then verify and sing the plugin
+# TODO publish the plugin to IntelliJ marketplace
+
+name: Publish package to Maven Central
+
+inputs:
+  channel:
+    description: 'The channel to publish the plugin to'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - id: build
+      uses: action.yml
+
+    - name: Sign Plugin
+      env:
+        PLUGIN_CERTIFICATE_CHAIN: ${{ secrets.PLUGIN_CERTIFICATE_CHAIN }}
+        PLUGIN_PRIVATE_KEY: ${{ secrets.PLUGIN_PRIVATE_KEY }}
+        PLUGIN_PRIVATE_KEY_PASSWORD: ${{ secrets.PLUGIN_PRIVATE_KEY_PASSWORD }}
+      run: ./gradlew :plugin-251:signPlugin
+      shell: bash
+      working-directory: ./intellij-plugin
+
+    - name: Release to plugin market
+      env:
+        PLUGIN_PUBLISH_TOKEN: ${{ secrets.PLUGIN_PUBLISH_TOKEN }}
+        PLUGIN_PUBLISH_CHANNEL: ${{ inputs.channel }}
+      run: |
+        echo "Publishing to channel: ${{ inputs.channel }}"
+      #run: ./gradlew :plugin-251:publishPlugin
+      shell: bash
+      working-directory: ./intellij-plugin

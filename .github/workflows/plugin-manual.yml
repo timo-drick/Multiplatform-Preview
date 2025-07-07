@@ -1,14 +1,16 @@
-# This workflow will build a package using Gradle
-# and then verify and sing the plugin
-# TODO publish the plugin to IntelliJ marketplace
-
-name: Publish package to Maven Central
-
+name: plugin-manual.yml
 on:
-  push:
-    tags:
-      - plugin_*
-
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'The channel to publish the plugin to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - alpha
+          - beta
 jobs:
   build:
     name: Release
@@ -21,7 +23,7 @@ jobs:
       - id: Publish
         uses: ./.github/actions/plugin-publish-steps
         with:
-          channel: "default"
+          channel: ${{ inputs.channel }}
 
       - name: Finished
         run: |
