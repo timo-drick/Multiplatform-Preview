@@ -1,13 +1,9 @@
 # This workflow will build a package using Gradle
 # and then verify and sing the plugin
-# TODO publish the plugin to IntelliJ marketplace
 
 name: Publish package to Maven Central
 
-on:
-  push:
-    tags:
-      - plugin_*
+on: push
 
 defaults:
   run:
@@ -15,11 +11,9 @@ defaults:
 
 jobs:
   build:
-    name: Release
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
-      - id: Publish
-        uses: plugin-publish-steps.yml
-          with:
-            channel: "default"
+      - id: build
+        uses: plugin-build-steps.yml

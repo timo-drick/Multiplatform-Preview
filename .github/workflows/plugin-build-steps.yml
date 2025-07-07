@@ -1,0 +1,30 @@
+# This workflow will build a package using Gradle
+# and then verify and sing the plugin
+# TODO publish the plugin to IntelliJ marketplace
+
+name: 'Prepare and build plugin'
+description: 'Builds and checks all IJP targets'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Fetch Sources
+      uses: actions/checkout@v4
+
+    - name: Set Up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu' # See 'Supported distributions' for available options
+        java-version: '21'
+        cache: 'gradle'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Build plugin
+      run: ./gradlew :plugin-251:buildPlugin
+
+    - name: Run Plugin Verification tasks
+      run: ./gradlew :plugin-251:verifyPlugin
+
+        

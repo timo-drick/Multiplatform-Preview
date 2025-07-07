@@ -1,0 +1,23 @@
+name: plugin-manual.yml
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'The channel to publish the plugin to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - alpha
+          - beta
+jobs:
+  build:
+    name: Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - id: Publish
+        uses: plugin-publish-steps.yml
+          with:
+            channel: ${{ inputs.channel }}
