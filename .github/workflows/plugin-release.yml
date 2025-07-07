@@ -24,5 +24,10 @@ jobs:
 
       - id: Publish
         uses: ./.github/actions/plugin-publish-steps
-          with:
-            channel: "default"
+        with:
+          channel: "default"
+
+      - name: Finished
+        run: |
+          echo "Plugin published to channel: ${{ inputs.channel }}"
+        shell: bash
