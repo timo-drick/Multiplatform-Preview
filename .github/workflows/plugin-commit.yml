@@ -16,4 +16,4 @@ jobs:
 
     steps:
       - id: build
-        uses: plugin-build-steps.yml
+        uses: ./github/actions/plugin-build-steps

@@ -13,7 +13,7 @@ runs:
   using: "composite"
   steps:
     - id: build
-      uses: plugin-build-steps.yml
+      uses: action.yml
 
     - name: Sign Plugin
       env:
