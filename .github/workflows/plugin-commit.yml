@@ -5,10 +5,6 @@ name: Publish package to Maven Central
 
 on: push
 
-defaults:
-  run:
-    working-directory: ./intellij-plugin
-
 jobs:
   build:
     name: Build

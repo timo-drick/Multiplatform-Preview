@@ -5,6 +5,10 @@
 name: 'Prepare and build plugin'
 description: 'Builds and checks all IJP targets'
 
+defaults:
+  run:
+    working-directory: ./intellij-plugin
+
 runs:
   using: "composite"
   steps:

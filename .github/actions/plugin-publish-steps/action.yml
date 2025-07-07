@@ -9,6 +9,10 @@ inputs:
     description: 'The channel to publish the plugin to'
     required: true
 
+defaults:
+  run:
+    working-directory: ./intellij-plugin
+
 runs:
   using: "composite"
   steps:

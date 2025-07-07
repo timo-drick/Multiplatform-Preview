@@ -9,10 +9,6 @@ on:
     tags:
       - plugin_*
 
-defaults:
-  run:
-    working-directory: ./intellij-plugin
-
 jobs:
   build:
     name: Release
