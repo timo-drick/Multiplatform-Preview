@@ -20,8 +20,8 @@ runs:
 
     - name: Build plugin
       run: ./gradlew :plugin-251:buildPlugin
+      shell: bash
 
     - name: Run Plugin Verification tasks
       run: ./gradlew :plugin-251:verifyPlugin
-
-        
+      shell: bash
