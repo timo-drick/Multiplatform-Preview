@@ -9,10 +9,6 @@ inputs:
     description: 'The channel to publish the plugin to'
     required: true
 
-defaults:
-  run:
-    working-directory: ./intellij-plugin
-
 runs:
   using: "composite"
   steps:
@@ -26,6 +22,7 @@ runs:
         PLUGIN_PRIVATE_KEY_PASSWORD: ${{ secrets.PLUGIN_PRIVATE_KEY_PASSWORD }}
       run: ./gradlew :plugin-251:signPlugin
       shell: bash
+      working-directory: ./intellij-plugin
 
     - name: Release to plugin market
       env:
@@ -35,3 +32,4 @@ runs:
         echo "Publishing to channel: ${{ inputs.channel }}"
       #run: ./gradlew :plugin-251:publishPlugin
       shell: bash
+      working-directory: ./intellij-plugin

@@ -5,10 +5,6 @@
 name: 'Prepare and build plugin'
 description: 'Builds and checks all IJP targets'
 
-defaults:
-  run:
-    working-directory: ./intellij-plugin
-
 runs:
   using: "composite"
   steps:
@@ -25,7 +21,9 @@ runs:
     - name: Build plugin
       run: ./gradlew :plugin-251:buildPlugin
       shell: bash
+      working-directory: ./intellij-plugin
 
     - name: Run Plugin Verification tasks
       run: ./gradlew :plugin-251:verifyPlugin
       shell: bash
+      working-directory: ./intellij-plugin
