@@ -8,28 +8,38 @@ inputs:
   channel:
     description: 'The channel to publish the plugin to'
     required: true
+  PLUGIN_CERTIFICATE_CHAIN:
+    description: 'The certificate chain for signing the plugin'
+    required: true
+  PLUGIN_PRIVATE_KEY:
+    description: 'The private key for signing the plugin'
+    required: true
+  PLUGIN_PRIVATE_KEY_PASSWORD:
+    description: 'The password for the private key'
+    required: true
+  PLUGIN_PUBLISH_TOKEN:
+    description: 'The token for publishing the plugin to the marketplace'
+    required: true
 
 runs:
   using: "composite"
   steps:
     - id: build
-      uses: action.yml
+      uses: ./.github/actions/plugin-build-steps
 
     - name: Sign Plugin
       env:
-        PLUGIN_CERTIFICATE_CHAIN: ${{ secrets.PLUGIN_CERTIFICATE_CHAIN }}
-        PLUGIN_PRIVATE_KEY: ${{ secrets.PLUGIN_PRIVATE_KEY }}
-        PLUGIN_PRIVATE_KEY_PASSWORD: ${{ secrets.PLUGIN_PRIVATE_KEY_PASSWORD }}
+        PLUGIN_CERTIFICATE_CHAIN: ${{ inputs.PLUGIN_CERTIFICATE_CHAIN }}
+        PLUGIN_PRIVATE_KEY: ${{ inputs.PLUGIN_PRIVATE_KEY }}
+        PLUGIN_PRIVATE_KEY_PASSWORD: ${{ inputs.PLUGIN_PRIVATE_KEY_PASSWORD }}
       run: ./gradlew :plugin-251:signPlugin
       shell: bash
       working-directory: ./intellij-plugin
 
     - name: Release to plugin market
       env:
-        PLUGIN_PUBLISH_TOKEN: ${{ secrets.PLUGIN_PUBLISH_TOKEN }}
+        PLUGIN_PUBLISH_TOKEN: ${{ inputs.PLUGIN_PUBLISH_TOKEN }}
         PLUGIN_PUBLISH_CHANNEL: ${{ inputs.channel }}
-      run: |
-        echo "Publishing to channel: ${{ inputs.channel }}"
-      #run: ./gradlew :plugin-251:publishPlugin
+      run: ./gradlew :plugin-251:publishPlugin
       shell: bash
       working-directory: ./intellij-plugin
