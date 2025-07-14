@@ -30,7 +30,7 @@ repositories {
 val ijPlatform = providers.environmentVariable("IJP_VERSION").getOrElse("2024.3.5")
 val branch = providers.environmentVariable("IJP_BRANCH").getOrElse("243")
 
-val versionName = "0.8.0-$ijPlatform"
+val versionName = "0.9.1-$ijPlatform"
 
 data class VersionInfo(
     val version: String,
