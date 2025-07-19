@@ -1,3 +1,7 @@
+### V 0.9.1
+- Fixed issue when file name is changed with recompiling code.
+- Fixed error message on first initialization of the Preview in the file editor.
+
 ### V 0.9.0
 - Migrated to IntelliJ 2025.1 (IJP 251 target)
 - Still support IntelliJ 2024.3 (IJP 243 target)
