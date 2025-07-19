@@ -125,14 +125,14 @@ class HotPreviewViewModel(
     override val outdatedAnnotationVersion get() = hotPreviewAnnotationVersion < HOT_PREVIEW_ANNOTATION_VERSION && hotPreviewAnnotationVersion > 0
 
     init {
-        scope.launch {
+        scope.launch(Dispatchers.Main) {
             moduleService.get().classPathServiceFlow.filterNotNull().collect {
                 rerender()
             }
         }
     }
 
-    private val fileClassName = kotlinFileClassName(file)
+    private var fileClassName = kotlinFileClassName(file)
 
     private val properties = PluginPersistentStore(project, file)
 
@@ -191,7 +191,7 @@ class HotPreviewViewModel(
     }
 
     private fun recompile() {
-        scope.launch {
+        scope.launch(Dispatchers.Main) {
             compilingInProgress = true
             errorHandling {
                 val functions = analyzePreviewAnnotations()
@@ -204,7 +204,7 @@ class HotPreviewViewModel(
     }
 
     private fun rerender() {
-        scope.launch {
+        scope.launch(Dispatchers.Main) {
             compilingInProgress = true
             errorHandling {
                 updatePreviewList(analyzePreviewAnnotations())
@@ -271,7 +271,7 @@ class HotPreviewViewModel(
     }
 
     private fun monitorChanges(scope: CoroutineScope) {
-        scope.launch {
+        scope.launch(Dispatchers.Main) {
             compilingInProgress = true
             errorHandling {
                 rerender()
@@ -279,10 +279,11 @@ class HotPreviewViewModel(
             compilingInProgress = false
         }
         subscribeForFileChanges(scope) {
-            if (settings.recompileOnSave) {
-                recompile()
-            } else {
-                rerender()
+            when {
+                settings.recompileOnSave || it == FileChangeType.CURRENT_FILE_NAME_CHANGED -> {
+                    recompile()
+                }
+                else -> rerender()
             }
         }
     }
@@ -345,23 +346,41 @@ class HotPreviewViewModel(
         return previews
     }
 
-    private fun subscribeForFileChanges(scope: CoroutineScope, onChanged: () -> Unit) {
+    private enum class FileChangeType {
+        CURRENT_FILE_NAME_CHANGED,
+        KOTLIN_FILE_CHANGED
+    }
+
+    private fun subscribeForFileChanges(scope: CoroutineScope, onChanged: (FileChangeType) -> Unit) {
         project.messageBus.connect(scope).subscribe(
             VirtualFileManager.VFS_CHANGES,
             object : BulkFileListener {
                 override fun after(events: MutableList<out VFileEvent>) {
                     // Check file is part of the current module
                     //TODO check for source folders
-                    var changedKotlinFile = false
+                    var changeType: FileChangeType? = null
                     events.forEach { event ->
-                        event.file?.let { file ->
-                            if (file.extension == "kt") {
+                        event.file?.let { eventFile ->
+                            if (eventFile.extension == "kt") {
                                 LOG.debug("File event: $event")
-                                changedKotlinFile = true
+                                if (changeType != FileChangeType.CURRENT_FILE_NAME_CHANGED) {
+                                    changeType = FileChangeType.KOTLIN_FILE_CHANGED
+                                }
+                                if (eventFile == file) { // Check if file name changed
+                                    println("File changed: $eventFile")
+                                    val newFileClassName = kotlinFileClassName(file)
+                                    if (newFileClassName != fileClassName) {
+                                        fileClassName = newFileClassName
+                                        LOG.debug("File class name changed: $fileClassName")
+                                        changeType = FileChangeType.CURRENT_FILE_NAME_CHANGED
+                                    }
+                                }
                             }
                         }
                     }
-                    if (changedKotlinFile) onChanged()
+                    if (changeType != null) {
+                        onChanged(changeType)
+                    }
                 }
             }
         )

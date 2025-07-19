@@ -49,16 +49,7 @@ dependencies {
     exclude("org.jetbrains.skiko")
   }
 
-  implementation(libs.drick.compose.hotpreview) {
-    exclude("org.jetbrains.compose")
-    exclude("org.jetbrains.compose.foundation")
-    exclude("org.jetbrains.compose.runtime")
-    exclude("org.jetbrains.compose.ui")
-    exclude("org.jetbrains.jewel")
-    exclude("org.jetbrains.kotlin")
-    exclude("org.jetbrains.kotlinx")
-    exclude("org.jetbrains.skiko")
-  }
+  implementation(libs.drick.compose.hotpreview)
 
   testImplementation(libs.junit)
 
